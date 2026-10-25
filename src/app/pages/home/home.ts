@@ -34,6 +34,13 @@ export class HomePage {
           link: 'eau',
         };
       }),
+      ...v.openFindings.map((f) => ({
+        tankId: v.tank.id,
+        level: f.severity === 'danger' ? ('danger' as const) : ('warn' as const),
+        title: `${f.title} — ${v.tank.name}`,
+        detail: f.advice?.[0] ?? f.detail ?? 'Constat du dernier bilan visuel.',
+        link: 'population',
+      })),
       ...v.issues.map((i) => ({
         tankId: v.tank.id,
         level: i.level,

@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "ai": "node scripts/build-ai.mjs",
+    "prestart": "npm run ai",
     "start": "ng serve",
+    "prebuild": "npm run ai",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

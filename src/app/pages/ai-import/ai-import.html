@@ -1,0 +1,202 @@
+<div class="page" style="max-width: 760px; gap: 16px">
+  <header class="top">
+    <div>
+      <h1 class="h1">Importer depuis l’IA</h1>
+      <p class="sub">Inventaire, relevé de tests en gouttes ou bilan visuel à partir d’une photo.</p>
+    </div>
+  </header>
+
+  @if (!store.tankViews().length && store.ready()) {
+    <p class="card empty">Crée d’abord un bac pour pouvoir importer.</p>
+  } @else if (!preview()) {
+    <section class="card how">
+      <h2 class="h2">Comment faire</h2>
+      <ol>
+        <li>Dans Claude, ajoute le skill <b>my-aquarium-json</b> (une seule fois), ou colle le prompt dans n’importe quelle IA.</li>
+        <li>Envoie ta photo en demandant un <b>inventaire</b>, la <b>lecture des tests</b> ou un <b>bilan de santé</b>.</li>
+        <li>Copie la réponse JSON et colle-la ici.</li>
+      </ol>
+      <div class="row" style="flex-wrap: wrap; gap: 8px">
+        <a class="btn ton" href="ai/my-aquarium-json.zip" download><app-icon name="download" [size]="20" />Skill Claude</a>
+        <button class="btn out" type="button" (click)="copyPrompt()">
+          <app-icon [name]="copied() ? 'check' : 'book'" [size]="20" />{{ copied() ? 'Prompt copié' : 'Copier le prompt' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="stack">
+      <div class="field">
+        <label for="tank">Bac concerné</label>
+        <select id="tank" (change)="changeTank($any($event.target).value)">
+          @for (v of store.tankViews(); track v.tank.id) {
+            <option [value]="v.tank.id" [selected]="v.tank.id === tankId()">{{ v.tank.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="json">Réponse de l’IA</label>
+        <textarea id="json" class="json" rows="9" spellcheck="false" placeholder='```json&#10;{ "format": "my-aquarium-ai", … }&#10;```'
+          [value]="raw()" (input)="raw.set($any($event.target).value)"></textarea>
+      </div>
+      <div class="row" style="flex-wrap: wrap; gap: 8px">
+        <button class="btn fill" type="button" [disabled]="!raw().trim()" (click)="analyze()">Analyser</button>
+        <button class="btn ton" type="button" (click)="pasteFromClipboard()">Coller</button>
+        <label class="btn out" style="cursor: pointer">
+          Fichier .json
+          <input type="file" accept="application/json,.json,.txt,.md" class="sr-only" (change)="loadFile($event)" />
+        </label>
+      </div>
+      @if (errors().length) {
+        <div class="card errors" role="alert">
+          <p><b>Ce JSON ne peut pas être importé :</b></p>
+          <ul>
+            @for (e of errors(); track $index) {
+              <li>{{ e }}</li>
+            }
+          </ul>
+          <p class="sub">Redemande à l’IA de respecter le format « my-aquarium-ai » version 1.</p>
+        </div>
+      }
+    </section>
+  } @else {
+    @let p = preview()!;
+    <div class="field">
+      <label for="tank2">Importer dans</label>
+      <select id="tank2" (change)="changeTank($any($event.target).value)">
+        @for (v of store.tankViews(); track v.tank.id) {
+          <option [value]="v.tank.id" [selected]="v.tank.id === tankId()">{{ v.tank.name }}</option>
+        }
+      </select>
+    </div>
+
+    @if (p.warnings.length) {
+      <div class="card warnings">
+        <app-icon name="warn" [size]="20" />
+        <ul>
+          @for (w of p.warnings; track $index) {
+            <li>{{ w }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (p.inventory.length) {
+      <section class="stack">
+        <h2 class="h2">Inventaire <span class="sub" style="margin: 0; font-weight: 500">{{ p.inventory.length }} espèces</span></h2>
+        <div class="card">
+          @for (r of p.inventory; track $index; let i = $index) {
+            <div class="li inv" [class.off]="!r.include">
+              <input type="checkbox" [checked]="r.include" (change)="updateRow(i, { include: $any($event.target).checked })"
+                [attr.aria-label]="'Importer ' + r.scientificName" />
+              <div class="ph" [class.pl]="r.kind === 'plant'" [class.fa]="r.kind !== 'plant'" style="width: 44px; height: 44px">
+                @if (r.species) {
+                  <app-icon [name]="icon(r.species)" [size]="22" [stroke]="1.6" />
+                } @else {
+                  <app-icon [name]="r.kind === 'plant' ? 'sprout' : r.kind === 'shrimp' ? 'shrimp' : r.kind === 'snail' ? 'snail' : 'fish'" [size]="22" [stroke]="1.6" />
+                }
+              </div>
+              <div class="grow">
+                <p class="nm">{{ r.species?.commonNames?.[0] ?? r.commonName ?? r.scientificName }}</p>
+                <p class="sci">{{ r.scientificName }}</p>
+                <div class="chips">
+                  <span class="chip" [class.p]="r.confidence === 'high'" [class.o]="r.confidence === 'low'">{{ conf[r.confidence] }}</span>
+                  @if (!r.species) {
+                    <span class="chip w">Nouvelle fiche</span>
+                  }
+                  @if (r.existingQty != null) {
+                    <span class="chip">Déjà {{ r.existingQty }} dans le bac</span>
+                  }
+                </div>
+                @if (r.note) {
+                  <p class="sub">{{ r.note }}</p>
+                }
+                @if (r.existingQty != null) {
+                  <label class="check small">
+                    <input type="checkbox" [checked]="r.replace" (change)="updateRow(i, { replace: $any($event.target).checked })" />
+                    Remplacer la quantité (sinon, ajouter)
+                  </label>
+                }
+              </div>
+              <div class="qty">
+                <input class="num" inputmode="numeric" [value]="r.quantity" (input)="updateRow(i, { quantity: $any($event.target).value })"
+                  [attr.aria-label]="'Quantité de ' + r.scientificName" />
+                <select (change)="updateRow(i, { unit: $any($event.target).value })" [attr.aria-label]="'Unité de ' + r.scientificName">
+                  @for (u of unitList; track u[0]) {
+                    <option [value]="u[0]" [selected]="u[0] === r.unit">{{ r.estimate ? '~ ' : '' }}{{ u[1][1] }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (p.readings.length) {
+      <section class="stack">
+        <h2 class="h2">Relevé {{ p.readingMethod === 'drops' ? '(tests en gouttes)' : '' }}</h2>
+        <div class="card">
+          @for (r of p.readings; track r.key; let i = $index) {
+            @let check = readingChecks()[r.key];
+            <div class="li reading" [class.off]="!r.include">
+              <input type="checkbox" [checked]="r.include" (change)="updateReading(i, { include: $any($event.target).checked })"
+                [attr.aria-label]="'Importer ' + params[r.key].label" />
+              <div class="grow">
+                <p class="nm">{{ params[r.key].label }}</p>
+                <div class="chips">
+                  <span class="chip" [class.p]="r.confidence === 'high'" [class.o]="r.confidence === 'low'">{{ conf[r.confidence] }}</span>
+                  @if (check?.range) {
+                    <span class="chip" [class.r]="check.level === 'danger'" [class.o]="check.level === 'warn'">idéal {{ check.range }}</span>
+                  }
+                </div>
+                @if (r.note) {
+                  <p class="sub">{{ r.note }}</p>
+                }
+              </div>
+              <div class="val field" [class.warn]="r.confidence === 'low'">
+                <input class="num" inputmode="decimal" [value]="r.value" (input)="updateReading(i, { value: $any($event.target).value })"
+                  [attr.aria-label]="params[r.key].label" />
+                <span class="unit">{{ params[r.key].unit }}</span>
+              </div>
+            </div>
+          }
+        </div>
+        <p class="sub">Les valeurs « À vérifier » sont à comparer toi-même au nuancier avant d’importer.</p>
+      </section>
+    }
+
+    @if (p.sanity; as s) {
+      <section class="stack">
+        <div class="row between">
+          <h2 class="h2">Bilan visuel</h2>
+          <span class="pill" [class.ok]="s.overall === 'good'" [class.wn]="s.overall === 'watch'" [class.dg]="s.overall === 'problem'">
+            <span class="dot"></span>{{ overallLabels[s.overall] }}
+          </span>
+        </div>
+        @if (s.summary) {
+          <p>{{ s.summary }}</p>
+        }
+        @for (f of s.findings; track $index) {
+          <article class="card finding" [class.warn]="f.severity === 'warn'" [class.danger]="f.severity === 'danger'">
+            <p class="lbl">{{ categories[f.category] }} · {{ conf[f.confidence] }}</p>
+            <p class="nm">{{ f.title }}</p>
+            @if (f.detail) { <p class="sub">{{ f.detail }}</p> }
+            @if (f.likelyCause) { <p class="sub"><b>Cause probable :</b> {{ f.likelyCause }}</p> }
+            @if (f.advice?.length) {
+              <ul>
+                @for (a of f.advice; track $index) { <li>{{ a }}</li> }
+              </ul>
+            }
+          </article>
+        }
+      </section>
+    }
+
+    <div class="actions card">
+      <button class="btn out" type="button" (click)="reset()">Annuler</button>
+      <button class="btn fill" type="button" [disabled]="!count() || saving()" (click)="save()">
+        <app-icon name="check" [size]="20" />Importer ({{ count() }})
+      </button>
+    </div>
+  }
+</div>

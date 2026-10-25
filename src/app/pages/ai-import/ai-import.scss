@@ -1,0 +1,135 @@
+.how {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.how ol {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.json {
+  font: 500 13px var(--mono) !important;
+  min-height: 160px;
+}
+.errors {
+  padding: 14px;
+  border-color: var(--dg);
+  background: var(--dgb);
+  color: var(--dg);
+  font-size: 14px;
+}
+.errors ul {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+.warnings {
+  padding: 12px 14px;
+  display: flex;
+  gap: 10px;
+  background: var(--wnb);
+  color: var(--wn);
+  border-color: var(--wn);
+  font-size: 13px;
+}
+.warnings ul {
+  margin: 0;
+  padding-left: 16px;
+}
+.li input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--pl);
+  flex: none;
+}
+.li.off {
+  opacity: 0.45;
+}
+.inv,
+.reading {
+  align-items: flex-start;
+}
+.nm {
+  font-weight: 700;
+  font-size: 15px;
+}
+.sci {
+  font-size: 12.5px;
+  margin: 1px 0 6px;
+}
+.small {
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 36px;
+}
+.small input {
+  width: 18px !important;
+  height: 18px !important;
+}
+.qty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 92px;
+  flex: none;
+}
+.qty input,
+.qty select {
+  border: 1px solid var(--ln);
+  background: var(--sf);
+  border-radius: 10px;
+  padding: 6px 8px;
+  width: 100%;
+}
+.qty input {
+  font: 600 18px var(--mono);
+  text-align: right;
+}
+.qty select {
+  font-size: 13px;
+}
+.val {
+  width: 112px;
+  flex: none;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+}
+.val input {
+  text-align: right;
+}
+.unit {
+  font-size: 11px;
+  color: var(--mu);
+}
+.finding {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.finding ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+}
+.finding.warn {
+  background: var(--wnb);
+}
+.finding.danger {
+  background: var(--dgb);
+}
+.actions {
+  position: sticky;
+  bottom: calc(var(--tabs-h) + 8px);
+  padding: 12px 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  box-shadow: var(--shadow);
+}

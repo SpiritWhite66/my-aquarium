@@ -10,6 +10,7 @@ import type {
   InhabitantEvent,
   MaintenanceLog,
   MaintenanceTask,
+  Observation,
   Species,
   Tank,
   TaskType,
@@ -39,6 +40,9 @@ export interface TankView {
   level: Level;
   statusLabel: string;
   tasks: MaintenanceTask[];
+  /** Dernier bilan visuel (IA) et ses constats non résolus. */
+  lastObservation?: Observation;
+  openFindings: Observation['findings'];
 }
 
 export interface DueTask {
@@ -70,6 +74,7 @@ export class AquariumStore {
   readonly waterTests = this.live(() => this.db.waterTests.orderBy('date').toArray(), []);
   readonly tasks = this.live(() => this.db.tasks.orderBy('nextDue').toArray(), []);
   readonly logs = this.live(() => this.db.logs.orderBy('date').reverse().toArray(), []);
+  readonly observations = this.live(() => this.db.observations.orderBy('date').toArray(), []);
 
   readonly speciesById = computed(() => new Map(this.species().map((s) => [s.id, s])));
 
@@ -84,6 +89,7 @@ export class AquariumStore {
     const inhabitants = this.inhabitants();
     const tests = this.waterTests();
     const tasks = this.tasks();
+    const observations = this.observations();
     return this.activeTanks().map((tank) => {
       const members = inhabitants
         .filter((i) => i.tankId === tank.id && isAlive(i) && byId.has(i.speciesId))
@@ -97,11 +103,15 @@ export class AquariumStore {
         tank,
         members.map((m) => ({ species: m.species, quantity: m.inhabitant.quantity })),
       );
-      const level = worst(alerts.map((a) => a.level));
+      const lastObservation = observations.filter((o) => o.tankId === tank.id).at(-1);
+      const openFindings = (lastObservation?.findings ?? []).filter((f) => !f.resolved && f.severity !== 'info');
+      const level = worst([...alerts.map((a) => a.level), ...openFindings.map((f) => (f.severity === 'danger' ? 'danger' : 'warn') as Level)]);
       const first = alerts[0];
       const statusLabel = first
         ? `${PARAM_BY_KEY[first.key].short} ${first.direction === 'high' ? 'élevé' : 'bas'}`
-        : 'OK';
+        : openFindings.length
+          ? 'Bilan visuel'
+          : 'OK';
       return {
         tank,
         members,
@@ -114,6 +124,8 @@ export class AquariumStore {
         level,
         statusLabel,
         tasks: tasks.filter((t) => t.tankId === tank.id && t.active),
+        lastObservation,
+        openFindings,
       };
     });
   });
@@ -153,10 +165,10 @@ export class AquariumStore {
   async deleteTank(id: string): Promise<void> {
     await this.db.transaction(
       'rw',
-      [this.db.tanks, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs],
+      [this.db.tanks, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations],
       async () => {
         await this.db.tanks.delete(id);
-        for (const table of [this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs]) {
+        for (const table of [this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations]) {
           await table.where('tankId').equals(id).delete();
         }
       },
@@ -237,6 +249,29 @@ export class AquariumStore {
     await this.db.logs.put({ ...log, id: log.id ?? uuid(), updatedAt: now() } as MaintenanceLog);
   }
 
+  // ---------- Catalogue personnel ----------
+
+  async saveSpecies(species: New<Species>): Promise<string> {
+    const id = species.id ?? `custom-${uuid()}`;
+    await this.db.species.put({ ...species, id, source: 'custom', updatedAt: now() } as Species);
+    return id;
+  }
+
+  // ---------- Bilans visuels ----------
+
+  async addObservation(o: New<Observation>): Promise<void> {
+    await this.db.observations.put({ ...o, id: o.id ?? uuid(), updatedAt: now() } as Observation);
+  }
+
+  async setFindingResolved(o: Observation, index: number, resolved: boolean): Promise<void> {
+    const findings = o.findings.map((f, i) => (i === index ? { ...f, resolved } : f));
+    await this.db.observations.update(o.id, { findings, updatedAt: now() });
+  }
+
+  async deleteObservation(id: string): Promise<void> {
+    await this.db.observations.delete(id);
+  }
+
   // ---------- Export / import ----------
 
   async exportData(): Promise<ExportFile> {
@@ -252,6 +287,7 @@ export class AquariumStore {
         waterTests: await this.db.waterTests.toArray(),
         tasks: await this.db.tasks.toArray(),
         logs: await this.db.logs.toArray(),
+        observations: await this.db.observations.toArray(),
       },
     };
   }
@@ -263,7 +299,7 @@ export class AquariumStore {
       throw new Error('Ce fichier n’est pas une sauvegarde My Aquarium valide.');
     }
     const d = f.data;
-    const tables = [this.db.tanks, this.db.species, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs];
+    const tables = [this.db.tanks, this.db.species, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations];
     await this.db.transaction('rw', tables, async () => {
       for (const t of tables) if (t !== this.db.species) await t.clear();
       await this.db.species.where('source').equals('custom').delete();
@@ -274,12 +310,8 @@ export class AquariumStore {
       await this.db.waterTests.bulkPut(d.waterTests ?? []);
       await this.db.tasks.bulkPut(d.tasks ?? []);
       await this.db.logs.bulkPut(d.logs ?? []);
+      await this.db.observations.bulkPut(d.observations ?? []);
     });
-    try {
-      localStorage.setItem('lastBackup', now());
-    } catch {
-      /* stockage indisponible */
-    }
   }
 
   // ---------- Interne ----------

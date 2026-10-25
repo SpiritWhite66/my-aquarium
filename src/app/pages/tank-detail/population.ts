@@ -4,11 +4,12 @@ import { AquariumStore } from '../../core/store';
 import { STATUSES, unitLabel } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { SpeciesChips } from '../../shared/species-chips';
+import { ObservationCard } from '../../shared/observation-card';
 import { speciesIcon } from '../../shared/visuals';
 
 @Component({
   selector: 'app-population',
-  imports: [RouterLink, Icon, SpeciesChips],
+  imports: [RouterLink, Icon, SpeciesChips, ObservationCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; gap: 18px; }
@@ -20,9 +21,16 @@ import { speciesIcon } from '../../shared/visuals';
     .qty .pill { height: 20px; margin-top: 4px; }
     .issue { padding: 12px 14px; display: flex; gap: 10px; background: var(--wnb); color: var(--wn); border-color: var(--wn); }
     .issue p { font-size: 13px; line-height: 1.4; }
+    .ai { align-self: flex-start; }
   `,
   template: `
     @if (view(); as v) {
+      @if (v.lastObservation; as o) {
+        <app-observation-card [observation]="o" />
+      }
+      <a class="btn out ai" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">
+        <app-icon name="upload" [size]="18" />Importer un inventaire ou un bilan (IA)
+      </a>
       @for (i of v.issues; track $index) {
         <div class="card issue">
           <app-icon name="warn" [size]="20" />

@@ -41,6 +41,9 @@ import { ParamChart } from '../../shared/param-chart';
           }
         </section>
 
+        <a class="btn out" style="align-self: flex-start" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">
+          <app-icon name="upload" [size]="18" />Lire une photo de tests (IA)
+        </a>
         <div class="row between">
           <h2 class="h2">Évolution</h2>
           <div class="row legend"><i></i>Plage idéale du bac</div>
@@ -83,6 +86,7 @@ import { ParamChart } from '../../shared/param-chart';
         <div class="card empty">
           <p>Aucun relevé pour ce bac.</p>
           <a class="btn water" routerLink="/releve" [queryParams]="{ bac: v.tank.id }"><app-icon name="plus" [size]="20" />Premier relevé</a>
+          <a class="btn out" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }"><app-icon name="upload" [size]="18" />Lire une photo de tests (IA)</a>
         </div>
       }
       <a class="fab" routerLink="/releve" [queryParams]="{ bac: v.tank.id }"><app-icon name="plus" [size]="20" [stroke]="2.2" />Relevé</a>

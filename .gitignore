@@ -25,3 +25,7 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Fichiers IA générés (npm run ai)
+/public/ai/
+/ai/dist/

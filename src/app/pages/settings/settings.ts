@@ -61,6 +61,21 @@ import { Icon } from '../../shared/icon';
       </section>
 
       <section>
+        <h2 class="h2">Assistant IA</h2>
+        <div class="card">
+          <a class="it" routerLink="/import-ia">
+            <span class="ic w"><app-icon name="upload" [size]="20" /></span>
+            <div class="grow"><p style="font-weight: 600">Importer depuis l’IA</p><p class="sub">Inventaire, tests en gouttes ou bilan visuel à partir d’une photo</p></div>
+            <app-icon name="chevron" [size]="18" style="color: var(--mu)" />
+          </a>
+          <a class="it" href="ai/my-aquarium-json.zip" download>
+            <span class="ic"><app-icon name="download" [size]="20" /></span>
+            <div class="grow"><p style="font-weight: 600">Skill pour Claude</p><p class="sub">À ajouter dans Claude › Paramètres › Capacités</p></div>
+          </a>
+        </div>
+      </section>
+
+      <section>
         <h2 class="h2">Données</h2>
         <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 12px">
           <p class="sub" style="margin: 0">

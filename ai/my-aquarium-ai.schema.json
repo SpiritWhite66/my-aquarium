@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://my-aquarium/ai/v1",
+  "title": "My Aquarium — analyse de photo par une IA",
+  "description": "Un seul objet JSON par photo. Le bac n'est jamais indiqué : l'utilisateur le choisit à l'import.",
+  "type": "object",
+  "required": ["format", "version", "kind", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "format": { "const": "my-aquarium-ai" },
+    "version": { "const": 1 },
+    "kind": { "enum": ["inventory", "water_test", "sanity"] },
+    "capturedAt": { "type": "string", "description": "Date ISO 8601 de la photo si elle est connue." },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "photo": { "type": "string", "description": "Description courte de la photo analysée." },
+        "model": { "type": "string" }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Limites de l'analyse : flou, reflets, éclairage coloré, valeur illisible…"
+    },
+    "data": {
+      "type": "object",
+      "description": "Contenu selon kind : InventoryData, WaterTestData ou SanityData."
+    }
+  },
+  "$defs": {
+    "confidence": { "enum": ["high", "medium", "low"] },
+    "InventoryData": {
+      "type": "object",
+      "required": ["items"],
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["scientificName", "kind", "quantity", "unit", "confidence"],
+            "additionalProperties": false,
+            "properties": {
+              "scientificName": { "type": "string", "description": "Nom scientifique (genre espèce). « Genre sp. » si l'espèce est incertaine." },
+              "commonName": { "type": "string", "description": "Nom commun en français." },
+              "kind": { "enum": ["fish", "shrimp", "snail", "plant", "other"] },
+              "quantity": { "type": "integer", "minimum": 1 },
+              "quantityIsEstimate": { "type": "boolean", "description": "true si les individus ne sont pas tous visibles ou comptables." },
+              "unit": { "enum": ["individual", "stem", "pot", "portion", "rosette", "cm2"], "description": "individual pour les animaux ; stem, pot, portion, rosette ou cm2 pour les plantes." },
+              "confidence": { "$ref": "#/$defs/confidence" },
+              "note": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "WaterTestData": {
+      "type": "object",
+      "required": ["method", "values"],
+      "additionalProperties": false,
+      "properties": {
+        "method": { "enum": ["drops", "strips", "probe"] },
+        "testKit": { "type": "string", "description": "Marque ou gamme des tests si visible." },
+        "values": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "temp": { "$ref": "#/$defs/reading" },
+            "ph": { "$ref": "#/$defs/reading" },
+            "gh": { "$ref": "#/$defs/reading" },
+            "kh": { "$ref": "#/$defs/reading" },
+            "no2": { "$ref": "#/$defs/reading" },
+            "no3": { "$ref": "#/$defs/reading" },
+            "nh4": { "$ref": "#/$defs/reading" },
+            "po4": { "$ref": "#/$defs/reading" },
+            "fe": { "$ref": "#/$defs/reading" },
+            "co2": { "$ref": "#/$defs/reading" },
+            "conductivity": { "$ref": "#/$defs/reading" }
+          }
+        }
+      }
+    },
+    "reading": {
+      "type": "object",
+      "required": ["value", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "number", "minimum": 0 },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "note": { "type": "string", "description": "Ex. « entre 25 et 50 sur le nuancier »." }
+      }
+    },
+    "SanityData": {
+      "type": "object",
+      "required": ["overall", "findings"],
+      "additionalProperties": false,
+      "properties": {
+        "overall": { "enum": ["good", "watch", "problem"] },
+        "summary": { "type": "string", "description": "Une ou deux phrases de bilan." },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["category", "severity", "title", "confidence"],
+            "additionalProperties": false,
+            "properties": {
+              "category": { "enum": ["algae", "fish_health", "invertebrate_health", "plant_health", "water_clarity", "equipment", "aquascape", "other"] },
+              "severity": { "enum": ["info", "warn", "danger"] },
+              "title": { "type": "string", "description": "Constat court, ex. « Algues filamenteuses sur la Rotala »." },
+              "detail": { "type": "string" },
+              "scientificName": { "type": "string", "description": "Espèce concernée, si une espèce est concernée." },
+              "likelyCause": { "type": "string" },
+              "advice": { "type": "array", "items": { "type": "string" } },
+              "confidence": { "$ref": "#/$defs/confidence" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

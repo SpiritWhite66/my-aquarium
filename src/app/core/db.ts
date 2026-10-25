@@ -4,6 +4,7 @@ import type {
   InhabitantEvent,
   MaintenanceLog,
   MaintenanceTask,
+  Observation,
   Species,
   Tank,
   WaterTest,
@@ -18,6 +19,7 @@ export class AquariumDb extends Dexie {
   waterTests!: EntityTable<WaterTest, 'id'>;
   tasks!: EntityTable<MaintenanceTask, 'id'>;
   logs!: EntityTable<MaintenanceLog, 'id'>;
+  observations!: EntityTable<Observation, 'id'>;
 
   constructor(name = 'my-aquarium') {
     super(name);
@@ -29,6 +31,9 @@ export class AquariumDb extends Dexie {
       waterTests: 'id, tankId, date',
       tasks: 'id, tankId, nextDue',
       logs: 'id, tankId, taskId, date',
+    });
+    this.version(2).stores({
+      observations: 'id, tankId, date',
     });
   }
 }

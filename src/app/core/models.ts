@@ -165,6 +165,40 @@ export interface MaintenanceLog extends Entity {
   note?: string;
 }
 
+// ---------- Bilans visuels (analyse « sanity » d'une photo par une IA) ----------
+export type FindingCategory =
+  | 'algae'
+  | 'fish_health'
+  | 'invertebrate_health'
+  | 'plant_health'
+  | 'water_clarity'
+  | 'equipment'
+  | 'aquascape'
+  | 'other';
+
+export interface Finding {
+  category: FindingCategory;
+  severity: 'info' | 'warn' | 'danger';
+  title: string;
+  detail?: string;
+  scientificName?: string;
+  speciesId?: string; // rattaché au catalogue à l'import
+  likelyCause?: string;
+  advice?: string[];
+  confidence: 'high' | 'medium' | 'low';
+  resolved?: boolean;
+}
+
+export interface Observation extends Entity {
+  tankId: string;
+  date: string; // ISO datetime
+  overall: 'good' | 'watch' | 'problem';
+  summary?: string;
+  findings: Finding[];
+  source?: string; // description de la photo
+  warnings?: string[];
+}
+
 // ---------- Export ----------
 export interface ExportFile {
   format: 'my-aquarium';
@@ -178,5 +212,6 @@ export interface ExportFile {
     waterTests: WaterTest[];
     tasks: MaintenanceTask[];
     logs: MaintenanceLog[];
+    observations?: Observation[]; // ajouté après la v1 du format, facultatif
   };
 }
