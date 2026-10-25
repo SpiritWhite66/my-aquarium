@@ -23,6 +23,7 @@ export interface Tank extends Entity {
   notes?: string;
   coverPhotoId?: string; // photo affichée sur la carte et en tête du bac
   cycling?: boolean; // bac en cours de cyclage (pas encore prêt pour les animaux)
+  co2Target?: number; // bulles par minute visées
 }
 
 // ---------- Catalogue ----------
@@ -218,6 +219,47 @@ export interface Observation extends Entity {
   warnings?: string[];
 }
 
+// ---------- Matériel et consommables ----------
+export type EquipmentType = 'filter' | 'heater' | 'light' | 'co2' | 'pump' | 'air' | 'thermometer' | 'controller' | 'other';
+
+export interface Equipment extends Entity {
+  tankId?: string; // vide : en réserve
+  type: EquipmentType;
+  name: string;
+  brand?: string;
+  model?: string;
+  purchaseDate?: string; // YYYY-MM-DD
+  price?: number;
+  warrantyMonths?: number;
+  specs?: string; // débit, puissance…
+  notes?: string;
+}
+
+export type ConsumableCategory = 'food' | 'fertilizer' | 'conditioner' | 'test_kit' | 'co2' | 'medicine' | 'substrate' | 'other';
+export type StockLevel = 'full' | 'half' | 'low' | 'empty';
+
+export interface Consumable extends Entity {
+  name: string;
+  category: ConsumableCategory;
+  brand?: string;
+  level: StockLevel;
+  openedDate?: string;
+  expiryDate?: string; // YYYY-MM-DD
+  price?: number;
+  notes?: string;
+}
+
+// ---------- CO2 ----------
+export type DropChecker = 'blue' | 'green' | 'yellow';
+
+export interface Co2Reading extends Entity {
+  tankId: string;
+  date: string; // ISO datetime
+  bubblesPerMinute?: number;
+  dropChecker?: DropChecker;
+  note?: string;
+}
+
 // ---------- Export ----------
 export interface ExportFile {
   format: 'my-aquarium';
@@ -233,5 +275,8 @@ export interface ExportFile {
     logs: MaintenanceLog[];
     observations?: Observation[]; // ajouté après la v1 du format, facultatif
     photos?: ExportedPhoto[]; // idem
+    equipment?: Equipment[];
+    consumables?: Consumable[];
+    co2Readings?: Co2Reading[];
   };
 }

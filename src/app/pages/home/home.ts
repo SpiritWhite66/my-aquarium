@@ -10,7 +10,7 @@ import { BackupService } from '../../core/backup';
 import { WaterChangeSheet } from '../../shared/water-change-sheet';
 import type { MaintenanceTask } from '../../core/models';
 import { idealRange } from '../../core/rules';
-import { trendOf } from '../../core/insights';
+import { stockAlerts, trendOf } from '../../core/insights';
 
 @Component({
   selector: 'app-home',
@@ -77,6 +77,10 @@ export class HomePage {
     if (task.type === 'water_change') this.waterChange.set(task);
     else this.store.completeTask(task);
   }
+
+  protected readonly stock = computed(() =>
+    stockAlerts(this.store.consumables(), this.store.equipment(), this.store.today()).filter((a) => a.level !== 'info'),
+  );
 
   protected readonly lateCount = computed(
     () => this.store.dueTasks().filter((d) => d.task.nextDue < this.store.today()).length,

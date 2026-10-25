@@ -1,8 +1,8 @@
 // Calculs d'aide à la décision : changement d'eau, tendances, cyclage, agenda.
 // Fonctions pures, testées dans insights.spec.ts.
 
-import type { MaintenanceTask, ParamKey, Range, Tank, WaterTest } from './models';
-import { addDays } from './dates';
+import type { Consumable, DropChecker, Equipment, MaintenanceTask, ParamKey, Range, Tank, WaterTest } from './models';
+import { addDays, daysBetween, parseIsoDate, toIsoDate } from './dates';
 
 // ---------- Changement d'eau ----------
 
@@ -125,4 +125,75 @@ export function tasksToIcs(tasks: MaintenanceTask[], tanks: Tank[], now = new Da
   }
   lines.push('END:VCALENDAR');
   return lines.join('\r\n') + '\r\n';
+}
+
+// ---------- CO2 ----------
+
+/**
+ * Bulles par minute à partir des instants (ms) où l'utilisateur a tapé à chaque bulle.
+ * On mesure les intervalles entre bulles : le premier tap démarre le chrono.
+ */
+export function bpmFromTaps(taps: number[]): number | undefined {
+  if (taps.length < 2) return undefined;
+  const span = taps.at(-1)! - taps[0];
+  if (span <= 0) return undefined;
+  return Math.round(((taps.length - 1) * 60_000) / span);
+}
+
+export const DROP_CHECKER: Record<DropChecker, { label: string; detail: string; level: 'ok' | 'warn' | 'danger' }> = {
+  blue: { label: 'Bleu', detail: 'CO2 insuffisant (moins de ~15 mg/L) : augmente légèrement le débit.', level: 'warn' },
+  green: { label: 'Vert', detail: 'CO2 correct (~30 mg/L).', level: 'ok' },
+  yellow: { label: 'Jaune', detail: 'Trop de CO2 (plus de ~40 mg/L) : dangereux pour les poissons, baisse le débit.', level: 'danger' },
+};
+
+/** Écart d'une mesure de bulles à la cible : dans la cible à ±15 %. */
+export function co2Status(bpm: number, target?: number): 'ok' | 'low' | 'high' | undefined {
+  if (!target) return undefined;
+  if (bpm < target * 0.85) return 'low';
+  if (bpm > target * 1.15) return 'high';
+  return 'ok';
+}
+
+// ---------- Matériel et consommables ----------
+
+export interface StockAlert {
+  level: 'info' | 'warn' | 'danger';
+  title: string;
+  detail: string;
+  kind: 'consumable' | 'equipment';
+  id: string;
+}
+
+/** Fin de garantie (YYYY-MM-DD) d'un équipement, si connue. */
+export function warrantyEnd(e: Pick<Equipment, 'purchaseDate' | 'warrantyMonths'>): string | undefined {
+  if (!e.purchaseDate || !e.warrantyMonths) return undefined;
+  const d = parseIsoDate(e.purchaseDate);
+  d.setMonth(d.getMonth() + e.warrantyMonths);
+  return toIsoDate(d);
+}
+
+/** Consommables à racheter ou périmés, garanties qui se terminent bientôt. */
+export function stockAlerts(consumables: Consumable[], equipment: Equipment[], today: string): StockAlert[] {
+  const out: StockAlert[] = [];
+  for (const c of consumables) {
+    if (c.level === 'empty') out.push({ level: 'warn', title: `${c.name} : vide`, detail: 'À racheter.', kind: 'consumable', id: c.id });
+    else if (c.level === 'low') out.push({ level: 'info', title: `${c.name} : bientôt vide`, detail: 'Pense à en racheter.', kind: 'consumable', id: c.id });
+    if (c.expiryDate) {
+      const days = daysBetween(today, c.expiryDate);
+      if (days < 0) {
+        const why = c.category === 'test_kit' ? ' Un test périmé donne des valeurs fausses.' : '';
+        out.push({ level: c.category === 'test_kit' ? 'danger' : 'warn', title: `${c.name} : périmé`, detail: `Depuis ${-days} j.${why}`, kind: 'consumable', id: c.id });
+      } else if (days <= 30) {
+        out.push({ level: 'info', title: `${c.name} : périme bientôt`, detail: `Dans ${days} j.`, kind: 'consumable', id: c.id });
+      }
+    }
+  }
+  for (const e of equipment) {
+    const end = warrantyEnd(e);
+    if (!end) continue;
+    const days = daysBetween(today, end);
+    if (days >= 0 && days <= 30) out.push({ level: 'info', title: `Garantie : ${e.name}`, detail: `Se termine dans ${days} j.`, kind: 'equipment', id: e.id });
+  }
+  const rank = { danger: 0, warn: 1, info: 2 };
+  return out.sort((a, b) => rank[a.level] - rank[b.level]);
 }

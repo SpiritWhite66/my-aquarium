@@ -60,6 +60,12 @@ import { Icon } from '../../shared/icon';
           </div>
         </div>
         <label class="check"><input type="checkbox" [checked]="co2()" (change)="co2.set($any($event.target).checked)" />Injection de CO2</label>
+        @if (co2()) {
+          <div class="field" style="max-width: 280px">
+            <label for="co2t">Débit CO2 visé (bulles/min)</label>
+            <input id="co2t" class="num" inputmode="numeric" [value]="co2Target()" (input)="co2Target.set(val($event))" placeholder="60" />
+          </div>
+        }
         <label class="check"><input type="checkbox" [checked]="cycling()" (change)="cycling.set($any($event.target).checked)" />Bac en cours de cyclage (pas encore d’animaux)</label>
         @if (!id()) {
           <label class="check"><input type="checkbox" [checked]="defaults()" (change)="defaults.set($any($event.target).checked)" />Créer les tâches d’entretien habituelles</label>
@@ -93,6 +99,7 @@ export class TankFormPage {
   protected readonly notes = signal('');
   protected readonly co2 = signal(false);
   protected readonly cycling = signal(false);
+  protected readonly co2Target = signal('');
   protected readonly defaults = signal(true);
 
   protected readonly existing = computed(() => this.store.tanks().find((t) => t.id === this.id()));
@@ -116,6 +123,7 @@ export class TankFormPage {
       this.notes.set(t.notes ?? '');
       this.co2.set(t.co2);
       this.cycling.set(!!t.cycling);
+      this.co2Target.set(t.co2Target != null ? String(t.co2Target) : '');
     });
   }
 
@@ -140,6 +148,7 @@ export class TankFormPage {
         notes: this.notes().trim() || undefined,
         co2: this.co2(),
         cycling: this.cycling() || undefined,
+        co2Target: this.co2() ? parseNumber(this.co2Target()) : undefined,
         lighting: photo != null ? { ...prev?.lighting, photoperiodHours: photo } : prev?.lighting,
         archived: prev?.archived ?? false,
       },

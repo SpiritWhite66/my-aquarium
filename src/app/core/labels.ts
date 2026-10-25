@@ -1,6 +1,9 @@
 // Libellés français et mise en forme.
 
 import type {
+  ConsumableCategory,
+  EquipmentType,
+  StockLevel,
   FaunaInfo,
   FloraInfo,
   HealthStatus,
@@ -19,6 +22,36 @@ export const TANK_TYPES: Record<TankType, string> = {
   quarantine: 'Quarantaine',
   nursery: 'Nurserie',
   other: 'Autre',
+};
+
+export const EQUIPMENT_TYPES: Record<EquipmentType, string> = {
+  filter: 'Filtre',
+  heater: 'Chauffage',
+  light: 'Éclairage',
+  co2: 'CO2',
+  pump: 'Pompe',
+  air: 'Bulleur',
+  thermometer: 'Thermomètre',
+  controller: 'Programmateur',
+  other: 'Autre',
+};
+
+export const CONSUMABLE_CATEGORIES: Record<ConsumableCategory, string> = {
+  food: 'Nourriture',
+  fertilizer: 'Engrais',
+  conditioner: 'Conditionneur',
+  test_kit: 'Test',
+  co2: 'CO2',
+  medicine: 'Traitement',
+  substrate: 'Sol',
+  other: 'Autre',
+};
+
+export const STOCK_LEVELS: Record<StockLevel, string> = {
+  full: 'Plein',
+  half: 'Moitié',
+  low: 'Bas',
+  empty: 'Vide',
 };
 
 export const KINDS: Record<SpeciesKind, string> = {

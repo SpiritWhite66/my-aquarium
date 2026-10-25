@@ -25,6 +25,11 @@ export const routes: Routes = [
   { path: 'catalogue/:id/modifier', title: 'Modifier la fiche', loadComponent: () => import('./pages/species-form/species-form').then((m) => m.SpeciesFormPage) },
   { path: 'catalogue/:id', title: 'Fiche espèce', loadComponent: () => import('./pages/species/species').then((m) => m.SpeciesPage) },
   { path: 'import-ia', title: 'Importer depuis l’IA', loadComponent: () => import('./pages/ai-import/ai-import').then((m) => m.AiImportPage) },
+  { path: 'materiel', title: 'Matériel', loadComponent: () => import('./pages/gear/gear').then((m) => m.GearPage) },
+  { path: 'materiel/equipement/nouveau', title: 'Nouvel équipement', loadComponent: () => import('./pages/gear/gear-forms').then((m) => m.EquipmentFormPage) },
+  { path: 'materiel/equipement/:id', title: 'Équipement', loadComponent: () => import('./pages/gear/gear-forms').then((m) => m.EquipmentFormPage) },
+  { path: 'materiel/consommable/nouveau', title: 'Nouveau consommable', loadComponent: () => import('./pages/gear/gear-forms').then((m) => m.ConsumableFormPage) },
+  { path: 'materiel/consommable/:id', title: 'Consommable', loadComponent: () => import('./pages/gear/gear-forms').then((m) => m.ConsumableFormPage) },
   { path: 'reglages', title: 'Réglages', loadComponent: () => import('./pages/settings/settings').then((m) => m.SettingsPage) },
   { path: '**', redirectTo: '' },
 ];

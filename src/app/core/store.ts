@@ -13,6 +13,9 @@ import type {
   MaintenanceTask,
   Observation,
   Photo,
+  Co2Reading,
+  Consumable,
+  Equipment,
   Species,
   Tank,
   TaskType,
@@ -79,6 +82,10 @@ export class AquariumStore {
   readonly observations = this.live(() => this.db.observations.orderBy('date').toArray(), []);
   /** Photos, de la plus récente à la plus ancienne. */
   readonly photos = this.live(() => this.db.photos.orderBy('date').reverse().toArray(), []);
+  readonly equipment = this.live(() => this.db.equipment.toArray(), []);
+  readonly consumables = this.live(() => this.db.consumables.toArray(), []);
+  /** Mesures CO2, de la plus ancienne à la plus récente. */
+  readonly co2Readings = this.live(() => this.db.co2Readings.orderBy('date').toArray(), []);
 
   /** Dernière photo de chaque habitant (id habitant → id photo). */
   readonly inhabitantCovers = computed(() => {
@@ -182,10 +189,12 @@ export class AquariumStore {
   async deleteTank(id: string): Promise<void> {
     await this.db.transaction(
       'rw',
-      [this.db.tanks, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos],
+      [this.db.tanks, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.co2Readings, this.db.equipment],
       async () => {
+        // Le matériel du bac est conservé, en réserve.
+        await this.db.equipment.where('tankId').equals(id).modify({ tankId: undefined });
         await this.db.tanks.delete(id);
-        for (const table of [this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos]) {
+        for (const table of [this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.co2Readings]) {
           await table.where('tankId').equals(id).delete();
         }
       },
@@ -316,6 +325,34 @@ export class AquariumStore {
     }
   }
 
+  // ---------- Matériel, consommables, CO2 ----------
+
+  async saveEquipment(e: New<Equipment>): Promise<string> {
+    const id = e.id ?? uuid();
+    await this.db.equipment.put({ ...e, id, updatedAt: now() } as Equipment);
+    return id;
+  }
+  async deleteEquipment(id: string): Promise<void> {
+    await this.db.equipment.delete(id);
+  }
+  async saveConsumable(c: New<Consumable>): Promise<string> {
+    const id = c.id ?? uuid();
+    await this.db.consumables.put({ ...c, id, updatedAt: now() } as Consumable);
+    return id;
+  }
+  async setConsumableLevel(id: string, level: Consumable['level']): Promise<void> {
+    await this.db.consumables.update(id, { level, updatedAt: now() });
+  }
+  async deleteConsumable(id: string): Promise<void> {
+    await this.db.consumables.delete(id);
+  }
+  async addCo2Reading(r: New<Co2Reading>): Promise<void> {
+    await this.db.co2Readings.put({ ...r, id: r.id ?? uuid(), updatedAt: now() } as Co2Reading);
+  }
+  async deleteCo2Reading(id: string): Promise<void> {
+    await this.db.co2Readings.delete(id);
+  }
+
   // ---------- Déplacement, corrections ----------
 
   /** Déplace tout ou partie d'un habitant vers un autre bac (quarantaine → bac principal…). */
@@ -400,6 +437,9 @@ export class AquariumStore {
         tasks: await this.db.tasks.toArray(),
         logs: await this.db.logs.toArray(),
         observations: await this.db.observations.toArray(),
+        equipment: await this.db.equipment.toArray(),
+        consumables: await this.db.consumables.toArray(),
+        co2Readings: await this.db.co2Readings.toArray(),
         photos: await Promise.all(
           (await this.db.photos.toArray()).map(async (p) => ({ ...p, full: await blobToDataUrl(p.full), thumb: await blobToDataUrl(p.thumb) })),
         ),
@@ -414,7 +454,7 @@ export class AquariumStore {
       throw new Error('Ce fichier n’est pas une sauvegarde My Aquarium valide.');
     }
     const d = f.data;
-    const tables = [this.db.tanks, this.db.species, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos];
+    const tables = [this.db.tanks, this.db.species, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.equipment, this.db.consumables, this.db.co2Readings];
     await this.db.transaction('rw', tables, async () => {
       for (const t of tables) if (t !== this.db.species) await t.clear();
       await this.db.species.where('source').equals('custom').delete();
@@ -426,6 +466,9 @@ export class AquariumStore {
       await this.db.tasks.bulkPut(d.tasks ?? []);
       await this.db.logs.bulkPut(d.logs ?? []);
       await this.db.observations.bulkPut(d.observations ?? []);
+      await this.db.equipment.bulkPut(d.equipment ?? []);
+      await this.db.consumables.bulkPut(d.consumables ?? []);
+      await this.db.co2Readings.bulkPut(d.co2Readings ?? []);
       await this.db.photos.bulkPut((d.photos ?? []).map((p) => ({ ...p, full: dataUrlToBlob(p.full), thumb: dataUrlToBlob(p.thumb) })));
     });
   }

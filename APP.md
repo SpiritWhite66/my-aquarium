@@ -75,6 +75,19 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - Le bac n'est jamais dans le JSON : il est choisi à l'import. Les espèces sont rattachées au catalogue par leur nom scientifique.
 - Sources : `ai/SKILL.md` et `ai/my-aquarium-ai.schema.json`. Le futur serveur MCP pourra réutiliser ce format.
 
+### 8. Matériel, consommables et CO2
+- Équipements par bac (ou en réserve) : type, marque, modèle, caractéristiques, date d'achat, garantie.
+- Consommables (nourriture, engrais, tests, traitements…) : niveau en un geste (plein, moitié, bas, vide), péremption. Alertes stock vide, produit périmé (un test en gouttes périmé fausse les mesures), fin de garantie.
+- CO2 : débit visé, compteur de bulles (on tape à chaque bulle, l'app calcule les bulles/minute), couleur du drop checker, historique.
+
+### 9. Aide au quotidien
+- Changement d'eau détaillé : pourcentage ou litres, estimation des nitrates après le changement.
+- Tendances des paramètres et date estimée de sortie de plage ; alerte si les nitrates vont dépasser dans la semaine.
+- Suivi du cyclage d'un nouveau bac (NH4 → NO2 → NO3 → prêt).
+- Mode vacances (décale les tâches) et export des rappels vers un agenda (.ics).
+- Protection des données : stockage persistant, rappel de sauvegarde tous les 14 jours.
+- Fiches espèces personnelles et personnalisation des fiches intégrées ; déplacement d'un habitant entre bacs ; correction des relevés.
+
 ## Catalogue de départ
 
 Environ 30 espèces courantes, dont celles déjà possédées :
@@ -89,7 +102,6 @@ Le reste : poissons, crevettes et escargots courants, plus une large part de **p
 
 - **Backend** : synchronisation entre appareils.
 - **Serveur MCP** pour interroger et alimenter les données depuis Claude.ai.
-- **Matériel** (filtre, chauffage, éclairage, garanties) et **stock** de consommables.
-- Notifications push.
+- Notifications push (en attendant : export des rappels vers l'agenda).
 - Alimentation et programmation de l'éclairage.
 - Capteurs connectés.

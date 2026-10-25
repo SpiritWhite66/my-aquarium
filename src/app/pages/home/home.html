@@ -36,9 +36,9 @@
     </section>
   }
 
-  @if (alerts().length) {
+  @if (alerts().length || stock().length) {
     <section class="stack alerts" aria-labelledby="alerts-title">
-      <h2 class="h2" id="alerts-title">Alertes <span class="pill dg">{{ alerts().length }}</span></h2>
+      <h2 class="h2" id="alerts-title">Alertes <span class="pill dg">{{ alerts().length + stock().length }}</span></h2>
       @for (a of alerts(); track $index) {
         <a class="card alert" [class.danger]="a.level === 'danger'" [routerLink]="['/bacs', a.tankId, a.link]">
           <span class="pill" [class.dg]="a.level === 'danger'" [class.wn]="a.level !== 'danger'" style="padding: 0 8px">
@@ -48,6 +48,12 @@
             <p class="atitle">{{ a.title }}</p>
             <p class="sub">{{ a.detail }}</p>
           </div>
+        </a>
+      }
+      @for (s of stock(); track s.id + s.title) {
+        <a class="card alert" [class.danger]="s.level === 'danger'" routerLink="/materiel" [queryParams]="{ vue: s.kind === 'consumable' ? 'consommables' : 'equipements' }">
+          <span class="pill" [class.dg]="s.level === 'danger'" [class.wn]="s.level !== 'danger'" style="padding: 0 8px"><span class="dot"></span></span>
+          <div class="grow"><p class="atitle">{{ s.title }}</p><p class="sub">{{ s.detail }}</p></div>
         </a>
       }
     </section>

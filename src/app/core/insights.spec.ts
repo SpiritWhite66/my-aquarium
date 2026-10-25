@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MaintenanceTask, Tank, WaterTest } from './models';
-import { afterWaterChange, cyclingPhase, percentFromLabel, tasksToIcs, trendOf } from './insights';
+import { afterWaterChange, bpmFromTaps, co2Status, cyclingPhase, percentFromLabel, stockAlerts, tasksToIcs, trendOf, warrantyEnd } from './insights';
+import type { Consumable, Equipment } from './models';
 
 const DAY = 86_400_000;
 const NOW = new Date('2026-10-25T12:00:00Z').getTime();
@@ -53,5 +54,38 @@ describe('agenda', () => {
     expect(ics).toContain('SUMMARY:Changement d’eau 30 % — Bac salon');
     expect(ics).toContain('TRIGGER:PT9H');
     expect(ics.split('BEGIN:VEVENT')).toHaveLength(2);
+  });
+});
+
+describe('CO2', () => {
+  it('calcule les bulles par minute à partir des taps', () => {
+    expect(bpmFromTaps([0])).toBeUndefined();
+    // 11 bulles à 1 s d'intervalle : 10 intervalles en 10 s → 60 bulles/min
+    expect(bpmFromTaps(Array.from({ length: 11 }, (_, i) => i * 1000))).toBe(60);
+    expect(bpmFromTaps([0, 2000, 4000, 6000])).toBe(30);
+  });
+  it('compare à la cible', () => {
+    expect(co2Status(60, 60)).toBe('ok');
+    expect(co2Status(45, 60)).toBe('low');
+    expect(co2Status(75, 60)).toBe('high');
+    expect(co2Status(60)).toBeUndefined();
+  });
+});
+
+describe('matériel et consommables', () => {
+  const c = (o: Partial<Consumable>): Consumable => ({ id: 'c', updatedAt: '', name: 'Test NO3', category: 'test_kit', level: 'full', ...o });
+  it('calcule la fin de garantie', () => {
+    expect(warrantyEnd({ purchaseDate: '2025-11-15', warrantyMonths: 24 })).toBe('2027-11-15');
+    expect(warrantyEnd({ purchaseDate: '2025-11-15' })).toBeUndefined();
+  });
+  it('signale stock bas, péremption et garantie', () => {
+    const eq: Equipment = { id: 'e', updatedAt: '', type: 'filter', name: 'Filtre', purchaseDate: '2024-11-10', warrantyMonths: 24 };
+    const alerts = stockAlerts(
+      [c({ id: '1', expiryDate: '2026-10-01' }), c({ id: '2', name: 'Engrais', category: 'fertilizer', level: 'low' }), c({ id: '3', name: 'Granulés', category: 'food', level: 'full', expiryDate: '2026-11-10' })],
+      [eq],
+      '2026-10-25',
+    );
+    expect(alerts.map((a) => a.title)).toEqual(['Test NO3 : périmé', 'Engrais : bientôt vide', 'Granulés : périme bientôt', 'Garantie : Filtre']);
+    expect(alerts[0].level).toBe('danger');
   });
 });

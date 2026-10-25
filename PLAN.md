@@ -73,6 +73,16 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] Bilans visuels enregistrés par bac, constats à cocher, alertes sur l'accueil.
 - [ ] Tester le skill avec de vraies photos de tes bacs et de tes tests en gouttes, puis affiner les consignes.
 
+## Étape 8 quater — Confort et matériel
+- [x] Stockage persistant, état du stockage, rappel de sauvegarde.
+- [x] Fiches personnelles (création, modification, personnalisation d'une fiche intégrée).
+- [x] Déplacement d'un habitant entre bacs (partiel ou complet) ; correction et datation des relevés.
+- [x] Changement d'eau détaillé avec estimation des nitrates.
+- [x] Tendances, suivi du cyclage, mode vacances, export agenda (.ics).
+- [x] Envoi d'une photo à une app d'IA depuis la visionneuse.
+- [x] Matériel (garanties) et consommables (niveau, péremption) avec alertes.
+- [x] CO2 : débit visé, compteur de bulles, drop checker.
+
 ## Étape 9 — Finitions V1
 - [x] Tests unitaires des règles métier.
 - [ ] Activer GitHub Pages (Settings › Pages › Source : GitHub Actions) et vérifier le déploiement.
@@ -83,5 +93,5 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 ## Après la V1
 1. **Backend et synchronisation** : remplacer l'implémentation Dexie d'`AquariumStore` par une implémentation API (avec cache local).
 2. **Serveur MCP** : outils pour lire les bacs et les relevés, ajouter un relevé et valider une tâche depuis Claude.ai (les règles de `core/rules.ts` sont réutilisables telles quelles).
-3. **Matériel et stock** de consommables.
-4. **Notifications push**, journal photo, alimentation et éclairage.
+3. **Notifications push**, alimentation et programmation de l'éclairage.
+4. Capteurs connectés (température, pH).

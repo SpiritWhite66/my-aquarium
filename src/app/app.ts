@@ -24,6 +24,7 @@ export class App {
     { path: '/', label: 'Accueil', icon: 'home', exact: true },
     { path: '/bacs', label: 'Bacs', icon: 'tank', exact: false },
     { path: '/catalogue', label: 'Catalogue', icon: 'book', exact: false },
+    { path: '/materiel', label: 'Matériel', icon: 'tool', exact: false },
     { path: '/reglages', label: 'Réglages', icon: 'settings', exact: false },
   ];
 }

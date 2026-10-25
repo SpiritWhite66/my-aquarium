@@ -1,15 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf } from '../../core/rules';
 import { agoLabel, fmt, fmtRange, fmtShortDate, speciesName } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { ParamChart } from '../../shared/param-chart';
-import { CYCLING_LABELS, cyclingPhase, trendOf } from '../../core/insights';
+import { CYCLING_LABELS, DROP_CHECKER, co2Status, cyclingPhase, trendOf } from '../../core/insights';
+import { Co2Counter } from '../../shared/co2-counter';
 
 @Component({
   selector: 'app-water',
-  imports: [RouterLink, Icon, ParamChart],
+  imports: [RouterLink, Icon, ParamChart, Co2Counter],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; gap: 14px; }
@@ -28,6 +29,12 @@ import { CYCLING_LABELS, cyclingPhase, trendOf } from '../../core/insights';
     .chart .t { font-weight: 700; }
     .chart .r { font-size: 13px; color: var(--mu); }
     .hist .li { font-size: 13px; }
+    .co2 { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .big { font: 600 24px var(--mono); }
+    .big small { font-size: 12px; }
+    .dcv { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-top: 4px; }
+    .dcv i { width: 14px; height: 14px; border-radius: 7px; }
+    .dcv i.blue { background: #2f6fd6; } .dcv i.green { background: #2f9e55; } .dcv i.yellow { background: #e3c22b; }
     .trend { font-size: 13px; font-weight: 600; color: var(--wa); margin-top: 4px; }
     .trend.bad { color: var(--wn); }
     .cyc { padding: 14px; display: flex; flex-direction: column; gap: 10px; border-color: var(--wa); }
@@ -56,6 +63,38 @@ import { CYCLING_LABELS, cyclingPhase, trendOf } from '../../core/insights';
             <button class="btn fill" type="button" style="align-self: flex-start" (click)="endCycling()">Terminer le cyclage</button>
           }
         </section>
+      }
+      @if (v.tank.co2) {
+        <section class="card co2">
+          <div class="row between">
+            <h2 class="h2"><app-icon name="bubble" [size]="18" />CO2</h2>
+            @if (v.tank.co2Target) { <span class="sub" style="margin: 0">cible {{ v.tank.co2Target }} bulles/min</span> }
+          </div>
+          @if (co2Last(); as r) {
+            <div class="row" style="gap: 16px; flex-wrap: wrap">
+              @if (r.bubblesPerMinute != null) {
+                <div><p class="lbl">Débit</p><p class="big">{{ r.bubblesPerMinute }}<small> b/min</small></p></div>
+              }
+              @if (r.dropChecker; as d) {
+                <div><p class="lbl">Drop checker</p><p class="dcv"><i [class]="d"></i>{{ dropInfo[d].label }}</p></div>
+              }
+              @if (co2State(); as s) {
+                <span class="pill" [class.ok]="s === 'ok'" [class.wn]="s !== 'ok'">{{ s === 'ok' ? 'Dans la cible' : s === 'low' ? 'Sous la cible' : 'Au-dessus' }}</span>
+              }
+            </div>
+            <p class="sub" style="margin: 0">Mesuré {{ ago(r.date, store.today()) }}{{ r.note ? ' · ' + r.note : '' }}</p>
+            @if (r.dropChecker && r.dropChecker !== 'green') { <p class="sub" style="margin: 0; color: var(--wn)">{{ dropInfo[r.dropChecker].detail }}</p> }
+          } @else {
+            <p class="sub" style="margin: 0">Aucune mesure. Compte les bulles pour régler ton débit.</p>
+          }
+          <button class="btn water" type="button" style="align-self: flex-start" (click)="counting.set(true)"><app-icon name="timer" [size]="20" />Compter les bulles</button>
+          @if (co2History().length > 1) {
+            <p class="sub" style="margin: 0">Précédentes : {{ co2History() }}</p>
+          }
+        </section>
+        @if (counting()) {
+          <app-co2-counter [tank]="v.tank" (closed)="counting.set(false)" />
+        }
       }
       @if (v.lastTest; as last) {
         <p class="sub" style="margin: 0">Dernier relevé {{ ago(last.date, store.today()) }} ({{ shortDate(last.date) }})</p>
@@ -182,6 +221,17 @@ export class WaterTab {
   });
 
   protected readonly fmtN = fmt;
+  protected readonly dropInfo = DROP_CHECKER;
+  protected readonly counting = signal(false);
+  private readonly co2List = computed(() => this.store.co2Readings().filter((r) => r.tankId === this.id()));
+  protected readonly co2Last = computed(() => this.co2List().at(-1));
+  protected readonly co2State = computed(() => {
+    const r = this.co2Last();
+    return r?.bubblesPerMinute != null ? co2Status(r.bubblesPerMinute, this.view()?.tank.co2Target) : undefined;
+  });
+  protected readonly co2History = computed(() =>
+    this.co2List().slice(-6, -1).reverse().filter((r) => r.bubblesPerMinute != null).map((r) => `${r.bubblesPerMinute} (${fmtShortDate(r.date)})`).join(' · '),
+  );
   protected readonly cyclingLabels = CYCLING_LABELS;
   protected readonly cyclingSteps = [
     { key: 'ammonia', label: 'NH4' },
