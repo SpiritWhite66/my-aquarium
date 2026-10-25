@@ -197,3 +197,66 @@ export function stockAlerts(consumables: Consumable[], equipment: Equipment[], t
   const rank = { danger: 0, warn: 1, info: 2 };
   return out.sort((a, b) => rank[a.level] - rank[b.level]);
 }
+
+// ---------- CO2 estimé à partir du KH et du pH ----------
+
+/**
+ * Concentration de CO2 dissous (mg/L) d'après l'équilibre carbonate : CO2 ≈ 3 × KH × 10^(7 − pH).
+ * Valable si le KH vient des carbonates (faussé par les tampons phosphatés, la tourbe, les tanins).
+ * Le pH doit être mesuré pendant l'injection, idéalement en fin de matinée d'éclairage.
+ */
+export function co2FromKhPh(kh: number, ph: number): number | undefined {
+  if (!(kh > 0) || !(ph > 0)) return undefined;
+  return Math.round(3 * kh * 10 ** (7 - ph) * 10) / 10;
+}
+
+export interface Co2Advice {
+  mgL: number;
+  level: 'ok' | 'warn' | 'danger';
+  verdict: 'very_low' | 'low' | 'ok' | 'high' | 'very_high';
+  title: string;
+  detail: string;
+  /** Débit conseillé en bulles/min (si le débit actuel est connu), par paliers de 20 % max. */
+  suggestedBpm?: number;
+}
+
+/** Zone visée pour un bac planté : 20 à 30 mg/L. */
+export const CO2_TARGET = { min: 20, max: 30 };
+
+export function co2Advice(mgL: number, currentBpm?: number): Co2Advice {
+  // Ajustement progressif : on vise le milieu de la zone, sans dépasser ±20 % par étape.
+  const step = (factor: number) => (currentBpm ? Math.max(1, Math.round(currentBpm * factor)) : undefined);
+  const ratio = 25 / Math.max(mgL, 1);
+  if (mgL < 10)
+    return { mgL, level: 'warn', verdict: 'very_low', title: 'CO2 très insuffisant',
+      detail: 'Les plantes en manquent fortement. Augmente le débit par paliers de 20 % et remesure le pH 2 h après chaque réglage.', suggestedBpm: step(1.2) };
+  if (mgL < CO2_TARGET.min)
+    return { mgL, level: 'warn', verdict: 'low', title: 'CO2 un peu faible',
+      detail: 'Augmente légèrement le débit, puis remesure le pH en fin de matinée d’éclairage.', suggestedBpm: step(Math.min(1.2, ratio)) };
+  if (mgL <= 35)
+    return { mgL, level: 'ok', verdict: 'ok', title: 'CO2 correct', detail: 'Garde ce débit.', suggestedBpm: currentBpm };
+  if (mgL <= 45)
+    return { mgL, level: 'warn', verdict: 'high', title: 'CO2 un peu élevé',
+      detail: 'Baisse légèrement le débit et surveille les poissons (respiration en surface).', suggestedBpm: step(Math.max(0.85, ratio)) };
+  return { mgL, level: 'danger', verdict: 'very_high', title: 'Trop de CO2',
+    detail: 'Danger pour les poissons et crevettes : baisse nettement le débit et augmente l’agitation de surface.', suggestedBpm: step(0.7) };
+}
+
+/**
+ * Dernier couple KH + pH exploitable : pris dans le même relevé, ou le pH le plus récent
+ * avec un KH mesuré dans les 7 jours (le KH varie lentement).
+ */
+export function latestKhPh(tests: WaterTest[]): { kh: number; ph: number; date: string } | undefined {
+  for (let i = tests.length - 1; i >= 0; i--) {
+    const ph = tests[i].values.ph;
+    if (ph == null) continue;
+    const t = new Date(tests[i].date).getTime();
+    for (let j = i; j >= 0; j--) {
+      const kh = tests[j].values.kh;
+      if (kh == null) continue;
+      if (t - new Date(tests[j].date).getTime() <= 7 * 86_400_000) return { kh, ph, date: tests[i].date };
+      break;
+    }
+  }
+  return undefined;
+}

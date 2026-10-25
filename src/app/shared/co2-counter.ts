@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import type { DropChecker, Tank } from '../core/models';
 import { AquariumStore } from '../core/store';
-import { DROP_CHECKER, bpmFromTaps, co2Status } from '../core/insights';
+import { DROP_CHECKER, bpmFromTaps, co2Advice, co2FromKhPh, co2Status, latestKhPh } from '../core/insights';
+import { fmt } from '../core/labels';
 import { parseNumber } from '../core/labels';
 import { Icon } from './icon';
 
@@ -38,6 +39,11 @@ import { Icon } from './icon';
           <h2 id="co2-title" class="h2" style="font-size: 18px">Compteur de bulles</h2>
           <button class="iconbtn" type="button" aria-label="Fermer" (click)="closed.emit()"><app-icon name="close" /></button>
         </div>
+        @if (advice(); as a) {
+          <p class="pill" [class.ok]="a.level === 'ok'" [class.wn]="a.level === 'warn'" [class.dg]="a.level === 'danger'" style="align-self: flex-start; height: auto; padding: 6px 12px; white-space: normal">
+            CO2 estimé {{ fmtN(a.mgL) }} mg/L · {{ a.title }}{{ a.suggestedBpm ? ' → vise ~' + a.suggestedBpm + ' bulles/min' : '' }}
+          </p>
+        }
         <p class="sub hint" style="margin: 0">Regarde ton compte-bulles et tape le bouton à chaque bulle. Au moins 10 bulles pour une mesure fiable.</p>
 
         <button class="tap" type="button" (click)="tap()" aria-describedby="co2-live">
@@ -116,6 +122,15 @@ export class Co2Counter {
   protected readonly status = computed(() => {
     const v = this.value();
     return v == null ? undefined : co2Status(v, this.tank().co2Target);
+  });
+  protected readonly fmtN = fmt;
+  protected readonly advice = computed(() => {
+    const tests = this.store.waterTests().filter((t) => t.tankId === this.tank().id);
+    const kp = latestKhPh(tests);
+    const mg = kp && co2FromKhPh(kp.kh, kp.ph);
+    if (mg == null) return undefined;
+    const last = this.store.co2Readings().filter((r) => r.tankId === this.tank().id).at(-1)?.bubblesPerMinute;
+    return co2Advice(mg, last);
   });
   protected readonly canSave = computed(() => this.value() != null || !!this.drop());
 

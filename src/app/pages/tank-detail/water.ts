@@ -5,7 +5,7 @@ import { MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf } from '../../core/rules
 import { agoLabel, fmt, fmtRange, fmtShortDate, speciesName } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { ParamChart } from '../../shared/param-chart';
-import { CYCLING_LABELS, DROP_CHECKER, co2Status, cyclingPhase, trendOf } from '../../core/insights';
+import { CYCLING_LABELS, CO2_TARGET, DROP_CHECKER, co2Advice, co2FromKhPh, co2Status, cyclingPhase, latestKhPh, trendOf } from '../../core/insights';
 import { Co2Counter } from '../../shared/co2-counter';
 
 @Component({
@@ -31,6 +31,9 @@ import { Co2Counter } from '../../shared/co2-counter';
     .hist .li { font-size: 13px; }
     .co2 { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
     .big { font: 600 24px var(--mono); }
+    .est { padding: 10px 12px; border-radius: 14px; background: var(--okb); display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+    .est.warn { background: var(--wnb); }
+    .est.danger { background: var(--dgb); }
     .big small { font-size: 12px; }
     .dcv { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-top: 4px; }
     .dcv i { width: 14px; height: 14px; border-radius: 7px; }
@@ -86,6 +89,17 @@ import { Co2Counter } from '../../shared/co2-counter';
             @if (r.dropChecker && r.dropChecker !== 'green') { <p class="sub" style="margin: 0; color: var(--wn)">{{ dropInfo[r.dropChecker].detail }}</p> }
           } @else {
             <p class="sub" style="margin: 0">Aucune mesure. Compte les bulles pour régler ton débit.</p>
+          }
+          @if (co2Est(); as e) {
+            <div class="est" [class.warn]="e.level === 'warn'" [class.danger]="e.level === 'danger'">
+              <p><b>CO2 estimé : {{ fmtN(e.mgL) }} mg/L</b> <span class="sub">(visé {{ co2Target.min }}–{{ co2Target.max }})</span> · {{ e.title }}</p>
+              <p class="sub" style="margin: 0">D’après KH {{ fmtN(e.kh) }} et pH {{ fmtN(e.ph) }} ({{ shortDate(e.date) }}). {{ e.detail }}</p>
+              @if (e.suggestedBpm != null && e.suggestedBpm !== co2Last()?.bubblesPerMinute) {
+                <p style="margin-top: 4px"><b>Débit conseillé : ~{{ e.suggestedBpm }} bulles/min</b> (actuellement {{ co2Last()?.bubblesPerMinute }})</p>
+              }
+            </div>
+          } @else {
+            <p class="sub" style="margin: 0">Mesure le KH et le pH (pendant l’injection) pour estimer le CO2 dissous.</p>
           }
           <button class="btn water" type="button" style="align-self: flex-start" (click)="counting.set(true)"><app-icon name="timer" [size]="20" />Compter les bulles</button>
           @if (co2History().length > 1) {
@@ -228,6 +242,14 @@ export class WaterTab {
   protected readonly co2State = computed(() => {
     const r = this.co2Last();
     return r?.bubblesPerMinute != null ? co2Status(r.bubblesPerMinute, this.view()?.tank.co2Target) : undefined;
+  });
+  protected readonly co2Target = CO2_TARGET;
+  /** CO2 dissous estimé à partir du dernier KH + pH, avec conseil de débit. */
+  protected readonly co2Est = computed(() => {
+    const kp = latestKhPh(this.view()?.tests ?? []);
+    const mg = kp && co2FromKhPh(kp.kh, kp.ph);
+    if (!kp || mg == null) return undefined;
+    return { ...co2Advice(mg, this.co2Last()?.bubblesPerMinute), ...kp };
   });
   protected readonly co2History = computed(() =>
     this.co2List().slice(-6, -1).reverse().filter((r) => r.bubblesPerMinute != null).map((r) => `${r.bubblesPerMinute} (${fmtShortDate(r.date)})`).join(' · '),

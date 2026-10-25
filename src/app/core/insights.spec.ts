@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MaintenanceTask, Tank, WaterTest } from './models';
-import { afterWaterChange, bpmFromTaps, co2Status, cyclingPhase, percentFromLabel, stockAlerts, tasksToIcs, trendOf, warrantyEnd } from './insights';
+import { afterWaterChange, bpmFromTaps, co2Advice, co2FromKhPh, co2Status, latestKhPh, cyclingPhase, percentFromLabel, stockAlerts, tasksToIcs, trendOf, warrantyEnd } from './insights';
 import type { Consumable, Equipment } from './models';
 
 const DAY = 86_400_000;
@@ -87,5 +87,24 @@ describe('matériel et consommables', () => {
     );
     expect(alerts.map((a) => a.title)).toEqual(['Test NO3 : périmé', 'Engrais : bientôt vide', 'Granulés : périme bientôt', 'Garantie : Filtre']);
     expect(alerts[0].level).toBe('danger');
+  });
+});
+
+describe('CO2 estimé par KH et pH', () => {
+  it('applique la formule', () => {
+    expect(co2FromKhPh(4, 6.8)).toBeCloseTo(19, 0); // 3 × 4 × 10^0,2 ≈ 19
+    expect(co2FromKhPh(4, 6.6)).toBeCloseTo(30.1, 0);
+    expect(co2FromKhPh(0, 7)).toBeUndefined();
+  });
+  it('conseille le débit', () => {
+    expect(co2Advice(19, 60)).toMatchObject({ verdict: 'low', suggestedBpm: 72 });
+    expect(co2Advice(5, 50)).toMatchObject({ verdict: 'very_low', suggestedBpm: 60 });
+    expect(co2Advice(28, 60)).toMatchObject({ verdict: 'ok', suggestedBpm: 60 });
+    expect(co2Advice(50, 60)).toMatchObject({ verdict: 'very_high', level: 'danger', suggestedBpm: 42 });
+  });
+  it('associe le pH récent à un KH de la semaine', () => {
+    const tests = [test(5, { kh: 4 }), test(0, { ph: 6.7 })];
+    expect(latestKhPh(tests)).toMatchObject({ kh: 4, ph: 6.7 });
+    expect(latestKhPh([test(20, { kh: 4 }), test(0, { ph: 6.7 })])).toBeUndefined();
   });
 });
