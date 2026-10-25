@@ -44,8 +44,9 @@ const norm = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').to
       <header class="top">
         <div>
           <h1 class="h1">Catalogue</h1>
-          <p class="sub"><span class="num">{{ store.species().length }}</span> espèces · <span class="num">{{ plantCount() }}</span> plantes</p>
+          <p class="sub"><span class="num">{{ store.catalog().length }}</span> espèces · <span class="num">{{ plantCount() }}</span> plantes</p>
         </div>
+        <a class="btn ton" routerLink="/catalogue/nouvelle"><app-icon name="plus" [size]="20" />Nouvelle espèce</a>
       </header>
       @if (targetTank(); as t) {
         <p class="card banner">Choisis une espèce à ajouter dans <b>{{ t.name }}</b>.</p>
@@ -74,7 +75,7 @@ const norm = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').to
         @for (s of results(); track s.id) {
           <a class="sp" [routerLink]="['/catalogue', s.id]" [queryParams]="bac() ? { bac: bac() } : {}">
             <div class="img ph" [class.pl]="s.kind === 'plant'" [class.fa]="s.kind !== 'plant'">
-              <span class="tag">{{ kinds[s.kind] }}</span>
+              <span class="tag">{{ kinds[s.kind] }}{{ s.source === 'custom' ? ' · perso' : '' }}</span>
               <app-icon [name]="icon(s)" [size]="38" [stroke]="1.4" />
             </div>
             <div class="b">
@@ -105,7 +106,7 @@ export class CatalogPage {
   protected readonly noCo2 = signal(false);
 
   protected readonly targetTank = computed(() => this.store.tanks().find((t) => t.id === this.bac()));
-  protected readonly plantCount = computed(() => this.store.species().filter((s) => s.kind === 'plant').length);
+  protected readonly plantCount = computed(() => this.store.catalog().filter((s) => s.kind === 'plant').length);
 
   protected readonly results = computed(() => {
     const q = norm(this.query().trim());
@@ -113,7 +114,7 @@ export class CatalogPage {
     const view = this.store.tankViews().find((v) => v.tank.id === this.compatWith());
     const members = view?.members.map((m) => ({ species: m.species, quantity: m.inhabitant.quantity })) ?? [];
     return this.store
-      .species()
+      .catalog()
       .filter((s) => kind === 'all' || s.kind === kind)
       .filter((s) => !q || norm([s.scientificName, ...s.commonNames].join(' ')).includes(q))
       .filter((s) => !this.noCo2() || s.kind !== 'plant' || s.flora?.co2 !== 'required')

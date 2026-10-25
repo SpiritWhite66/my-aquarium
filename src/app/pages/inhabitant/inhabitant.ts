@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { Location } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import type { HealthStatus, Inhabitant, InhabitantEventType } from '../../core/models';
 import { STATUSES, fmtShortDate, unitLabel } from '../../core/labels';
@@ -86,6 +86,25 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
           </div>
         </div>
 
+        @if (otherTanks().length) {
+          <section class="stack">
+            <h2 class="h2">Déplacer vers un autre bac</h2>
+            <div class="form-grid">
+              <div class="field">
+                <label for="to">Bac</label>
+                <select id="to" (change)="moveTo.set($any($event.target).value)">
+                  @for (t of otherTanks(); track t.id) { <option [value]="t.id" [selected]="t.id === moveTo()">{{ t.name }}</option> }
+                </select>
+              </div>
+              <div class="field">
+                <label for="mq">Quantité (sur {{ d.inhabitant.quantity }})</label>
+                <input id="mq" class="num" inputmode="numeric" [value]="moveQty() || d.inhabitant.quantity" (input)="moveQty.set(+$any($event.target).value || 0)" />
+              </div>
+            </div>
+            <button class="btn ton" type="button" style="align-self: flex-start" (click)="move(d.inhabitant)">Déplacer</button>
+          </section>
+        }
+
         <section class="stack">
           <h2 class="h2">Noter un événement</h2>
           <div class="field">
@@ -149,6 +168,7 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
 export class InhabitantPage {
   protected readonly store = inject(AquariumStore);
   protected readonly location = inject(Location);
+  private readonly router = inject(Router);
 
   readonly id = input.required<string>();
   readonly hid = input.required<string>();
@@ -173,6 +193,22 @@ export class InhabitantPage {
   });
   protected readonly isPlant = computed(() => this.data()?.species.kind === 'plant');
   protected readonly events = computed(() => (this.isPlant() ? FLORA_EVENTS : FAUNA_EVENTS));
+
+  protected readonly moveQty = signal(0);
+  protected readonly otherTanks = computed(() => this.store.activeTanks().filter((t) => t.id !== this.data()?.inhabitant.tankId));
+  protected readonly moveTo = linkedSignal(() => this.otherTanks()[0]?.id ?? '');
+
+  protected async move(i: Inhabitant): Promise<void> {
+    const to = this.moveTo();
+    const qty = Math.min(this.moveQty() || i.quantity, i.quantity);
+    if (!to || qty < 1) return;
+    const name = this.store.tanks().find((t) => t.id === to)?.name;
+    if (!confirm(`Déplacer ${qty} ${unitLabel(i.unit, qty)} vers « ${name} » ?`)) return;
+    await this.store.moveInhabitant(i, to, qty);
+    this.moveQty.set(0);
+    // Déplacement complet : on suit l'habitant dans son nouveau bac.
+    if (qty >= i.quantity) this.router.navigate(['/bacs', to, 'habitants', i.id], { replaceUrl: true });
+  }
 
   protected setQuantity(i: Inhabitant, raw: string): void {
     const q = Math.max(0, Math.round(Number(raw.replace(',', '.'))));

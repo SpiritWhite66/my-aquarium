@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Location } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import type { QuantityUnit, Range } from '../../core/models';
 import {
@@ -21,7 +21,7 @@ const SCALES = {
 
 @Component({
   selector: 'app-species',
-  imports: [Icon, SpeciesChips],
+  imports: [Icon, SpeciesChips, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .hero { height: 200px; position: relative; display: grid; place-items: center; margin: 0 -16px; border-radius: 0; }
@@ -49,6 +49,8 @@ const SCALES = {
         <div class="hero ph" [class.pl]="s.kind === 'plant'" [class.fa]="s.kind !== 'plant'">
           <app-icon [name]="icon(s)" [size]="72" [stroke]="1.1" />
           <button class="iconbtn" type="button" aria-label="Retour" (click)="location.back()"><app-icon name="back" /></button>
+          <a class="iconbtn" [routerLink]="['/catalogue', s.id, 'modifier']" style="left: auto; right: 14px"
+            [attr.aria-label]="s.source === 'custom' ? 'Modifier la fiche' : 'Personnaliser la fiche'"><app-icon name="edit" [size]="20" /></a>
         </div>
         <div>
           <p class="kind">{{ kinds[s.kind] }}{{ s.flora?.form ? ' · ' + s.flora?.form : '' }}</p>

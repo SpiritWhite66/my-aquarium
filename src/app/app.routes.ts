@@ -21,6 +21,8 @@ export const routes: Routes = [
   },
   { path: 'releve', title: 'Nouveau relevé', loadComponent: () => import('./pages/reading/reading').then((m) => m.ReadingPage) },
   { path: 'catalogue', title: 'Catalogue', loadComponent: () => import('./pages/catalog/catalog').then((m) => m.CatalogPage) },
+  { path: 'catalogue/nouvelle', title: 'Nouvelle espèce', loadComponent: () => import('./pages/species-form/species-form').then((m) => m.SpeciesFormPage) },
+  { path: 'catalogue/:id/modifier', title: 'Modifier la fiche', loadComponent: () => import('./pages/species-form/species-form').then((m) => m.SpeciesFormPage) },
   { path: 'catalogue/:id', title: 'Fiche espèce', loadComponent: () => import('./pages/species/species').then((m) => m.SpeciesPage) },
   { path: 'import-ia', title: 'Importer depuis l’IA', loadComponent: () => import('./pages/ai-import/ai-import').then((m) => m.AiImportPage) },
   { path: 'reglages', title: 'Réglages', loadComponent: () => import('./pages/settings/settings').then((m) => m.SettingsPage) },

@@ -24,7 +24,7 @@ import { Icon } from '../../shared/icon';
       <header class="row head">
         <button class="iconbtn" type="button" aria-label="Fermer" (click)="location.back()"><app-icon name="close" /></button>
         <div class="grow">
-          <h1 style="font-size: 20px; font-weight: 700">Nouveau relevé</h1>
+          <h1 style="font-size: 20px; font-weight: 700">{{ editing() ? 'Corriger le relevé' : 'Nouveau relevé' }}</h1>
           <label class="sub tank">
             <span class="sr-only">Bac</span>
             <select (change)="tankId.set($any($event.target).value)">
@@ -64,6 +64,11 @@ import { Icon } from '../../shared/icon';
       }
 
       <div class="field">
+        <label for="when">Date et heure du test</label>
+        <input id="when" type="datetime-local" [value]="when()" [max]="nowLocal" (input)="when.set($any($event.target).value)" />
+      </div>
+
+      <div class="field">
         <label for="note">Note</label>
         <input id="note" [value]="note()" (input)="note.set($any($event.target).value)" placeholder="Bandelettes, après changement d’eau…" />
       </div>
@@ -76,6 +81,13 @@ export class ReadingPage {
 
   /** `?bac=` dans l'URL. */
   readonly bac = input<string>();
+  /** `?edit=` : identifiant du relevé à corriger. */
+  readonly edit = input<string>();
+
+  protected readonly nowLocal = toLocalInput(new Date().toISOString());
+  protected readonly when = signal(this.nowLocal);
+  protected readonly editing = computed(() => this.store.waterTests().find((t) => t.id === this.edit()));
+  private loadedEdit = false;
 
   protected readonly tankId = signal('');
   protected readonly raw = signal<Partial<Record<ParamKey, string>>>({});
@@ -132,6 +144,16 @@ export class ReadingPage {
     });
   }
 
+  private readonly loadEdit = effect(() => {
+    const t = this.editing();
+    if (!t || this.loadedEdit) return;
+    this.loadedEdit = true;
+    this.tankId.set(t.tankId);
+    this.raw.set(Object.fromEntries(Object.entries(t.values).map(([k, v]) => [k, String(v).replace('.', ',')])));
+    this.note.set(t.note ?? '');
+    this.when.set(toLocalInput(t.date));
+  });
+
   protected set(key: ParamKey, value: string): void {
     this.raw.update((r) => ({ ...r, [key]: value }));
   }
@@ -143,7 +165,18 @@ export class ReadingPage {
       const n = parseNumber(v);
       if (n != null) values[k] = n;
     }
-    await this.store.addWaterTest({ tankId: this.tankId(), date: new Date().toISOString(), values, note: this.note().trim() || undefined });
+    const date = this.when() ? new Date(this.when()).toISOString() : new Date().toISOString();
+    const note = this.note().trim() || undefined;
+    const prev = this.editing();
+    if (prev) await this.store.updateWaterTest({ ...prev, tankId: this.tankId(), date, values, note });
+    else await this.store.addWaterTest({ tankId: this.tankId(), date, values, note });
     this.location.back();
   }
+}
+
+/** Date ISO → valeur d'un champ datetime-local (heure locale). */
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }

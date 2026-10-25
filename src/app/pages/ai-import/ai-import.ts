@@ -160,7 +160,7 @@ export class AiImportPage {
   /** Construit l'aperçu ; relancé si on change de bac (quantités déjà présentes). */
   private rebuild(payloads: AiPayload[]): void {
     this.lastPayloads = payloads;
-    const species = this.store.species();
+    const species = this.store.catalog();
     const inTank = this.store.inhabitants().filter((i) => i.tankId === this.tankId() && isAlive(i));
     const preview: Preview = { inventory: [], readings: [], warnings: [] };
 
@@ -273,7 +273,7 @@ export class AiImportPage {
       }
 
       if (p.sanity) {
-        const species = this.store.species();
+        const species = this.store.catalog();
         await this.store.addObservation({
           tankId,
           date: p.sanity.date ?? new Date().toISOString(),

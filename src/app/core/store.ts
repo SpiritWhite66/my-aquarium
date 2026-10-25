@@ -89,6 +89,12 @@ export class AquariumStore {
 
   readonly speciesById = computed(() => new Map(this.species().map((s) => [s.id, s])));
 
+  /** Catalogue affiché : les fiches intégrées personnalisées sont remplacées par leur copie. */
+  readonly catalog = computed(() => {
+    const overridden = new Set(this.species().map((s) => s.overrides).filter(Boolean));
+    return this.species().filter((s) => !overridden.has(s.id));
+  });
+
   readonly activeTanks = computed(() =>
     this.tanks()
       .filter((t) => !t.archived)
@@ -303,7 +309,52 @@ export class AquariumStore {
     }
   }
 
+  // ---------- Déplacement, corrections ----------
+
+  /** Déplace tout ou partie d'un habitant vers un autre bac (quarantaine → bac principal…). */
+  async moveInhabitant(inh: Inhabitant, toTankId: string, quantity = inh.quantity): Promise<void> {
+    if (toTankId === inh.tankId || quantity < 1) return;
+    const from = this.tanks().find((t) => t.id === inh.tankId)?.name ?? 'bac';
+    const to = this.tanks().find((t) => t.id === toTankId)?.name ?? 'bac';
+    if (quantity >= inh.quantity) {
+      await this.db.inhabitants.update(inh.id, { tankId: toTankId, updatedAt: now() });
+      // L'historique et les photos suivent l'habitant.
+      await this.db.inhabitantEvents.where('inhabitantId').equals(inh.id).modify({ tankId: toTankId });
+      await this.db.photos.where('inhabitantId').equals(inh.id).modify({ tankId: toTankId });
+      await this.addEvent({ inhabitantId: inh.id, tankId: toTankId, date: now(), type: 'moved', note: `${from} → ${to}` });
+      return;
+    }
+    await this.updateInhabitant(inh.id, { quantity: inh.quantity - quantity });
+    await this.addEvent({ inhabitantId: inh.id, tankId: inh.tankId, date: now(), type: 'moved', quantityDelta: -quantity, note: `${quantity} vers ${to}` });
+    const target = this.inhabitants().find((i) => i.tankId === toTankId && i.speciesId === inh.speciesId && isAlive(i) && i.unit === inh.unit);
+    if (target) {
+      await this.updateInhabitant(target.id, { quantity: target.quantity + quantity });
+      await this.addEvent({ inhabitantId: target.id, tankId: toTankId, date: now(), type: 'moved', quantityDelta: quantity, note: `depuis ${from}` });
+    } else {
+      const id = uuid();
+      await this.db.inhabitants.put({ ...inh, id, tankId: toTankId, quantity, addedDate: this.today(), origin: `Déplacé depuis ${from}`, updatedAt: now() });
+      await this.addEvent({ inhabitantId: id, tankId: toTankId, date: now(), type: 'moved', quantityDelta: quantity, note: `depuis ${from}` });
+    }
+  }
+
+  async updateWaterTest(test: WaterTest): Promise<void> {
+    await this.db.waterTests.put({ ...test, updatedAt: now() });
+  }
+
   // ---------- Catalogue personnel ----------
+
+  /** Fait pointer les habitants d'une fiche vers une autre (personnalisation d'une fiche intégrée). */
+  async replaceSpecies(oldId: string, newId: string): Promise<void> {
+    await this.db.inhabitants.where('speciesId').equals(oldId).modify({ speciesId: newId, updatedAt: now() });
+  }
+
+  /** Supprime une fiche personnelle ; les habitants d'une fiche personnalisée retrouvent la fiche intégrée. */
+  async deleteSpecies(id: string): Promise<void> {
+    const s = this.speciesById().get(id);
+    if (!s || s.source !== 'custom') return;
+    if (s.overrides) await this.replaceSpecies(id, s.overrides);
+    await this.db.species.delete(id);
+  }
 
   async saveSpecies(species: New<Species>): Promise<string> {
     const id = species.id ?? `custom-${uuid()}`;

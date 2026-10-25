@@ -77,6 +77,7 @@ import { ParamChart } from '../../shared/param-chart';
                   <b>{{ shortDate(t.date) }}</b>
                   <span class="sub" style="display: block">{{ summary(t.values) }}</span>
                 </span>
+                <a class="iconbtn" routerLink="/releve" [queryParams]="{ bac: v.tank.id, edit: t.id }" aria-label="Corriger ce relevé"><app-icon name="edit" [size]="18" /></a>
                 <button class="iconbtn" (click)="remove(t.id)" aria-label="Supprimer ce relevé"><app-icon name="trash" [size]="18" /></button>
               </div>
             }

@@ -61,6 +61,8 @@ export interface Species extends Entity {
   scientificName: string;
   commonNames: string[];
   source: 'builtin' | 'custom';
+  /** Fiche du catalogue intégré que cette fiche personnelle remplace. */
+  overrides?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   gbifKey?: number;
   wikidataId?: string;
