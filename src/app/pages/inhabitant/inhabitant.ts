@@ -6,6 +6,9 @@ import type { HealthStatus, Inhabitant, InhabitantEventType } from '../../core/m
 import { STATUSES, fmtShortDate, unitLabel } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { speciesIcon } from '../../shared/visuals';
+import { PhotoAdd } from '../../shared/photo-add';
+import { PhotoUrls } from '../../shared/photo-urls';
+import { PhotoViewer } from '../../shared/photo-viewer';
 
 interface QuickEvent {
   type: InhabitantEventType;
@@ -34,12 +37,15 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
 /** Fiche d'un habitant d'un bac : quantité, état et journal. */
 @Component({
   selector: 'app-inhabitant',
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, PhotoAdd, PhotoViewer],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .ev { display: flex; flex-wrap: wrap; gap: 8px; }
     .ev .btn { height: 40px; }
     .log .li { display: block; }
+    .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+    .th { aspect-ratio: 1; border: 0; padding: 0; border-radius: 12px; overflow: hidden; background: var(--sf2); cursor: pointer; }
+    .th img { width: 100%; height: 100%; object-fit: cover; display: block; }
   `,
   template: `
     @if (data(); as d) {
@@ -47,7 +53,11 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
         <header class="top" style="justify-content: flex-start">
           <button class="iconbtn" type="button" aria-label="Retour" (click)="location.back()"><app-icon name="back" /></button>
           <div class="ph" [class.pl]="isPlant()" [class.fa]="!isPlant()" style="width: 52px; height: 52px">
-            <app-icon [name]="icon(d.species)" [size]="26" [stroke]="1.6" />
+            @if (urls.url(photos()[0]?.id); as photo) {
+              <img class="img-abs" [src]="photo" alt="" />
+            } @else {
+              <app-icon [name]="icon(d.species)" [size]="26" [stroke]="1.6" />
+            }
           </div>
           <div class="grow">
             <h1 class="h1" style="font-size: 22px">{{ d.species.commonNames[0] }}</h1>
@@ -88,6 +98,23 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
           </div>
         </section>
 
+        <section class="stack">
+          <h2 class="h2"><app-icon name="camera" [size]="18" />Photos <span class="sub" style="margin: 0; font-weight: 500">{{ photos().length }}</span></h2>
+          @if (photos().length) {
+            <div class="thumbs">
+              @for (p of photos(); track p.id) {
+                <button type="button" class="th" (click)="viewing.set(p.id)" [attr.aria-label]="'Photo du ' + date(p.date)">
+                  <img [src]="urls.url(p.id)" alt="" loading="lazy" />
+                </button>
+              }
+            </div>
+          }
+          <div class="row"><app-photo-add [tankId]="d.inhabitant.tankId" [inhabitantId]="d.inhabitant.id" /></div>
+        </section>
+        @if (viewing(); as id) {
+          <app-photo-viewer [photos]="photos()" [startId]="id" (closed)="viewing.set(null)" />
+        }
+
         <section class="stack log">
           <h2 class="h2">Journal</h2>
           <div class="card">
@@ -123,6 +150,9 @@ export class InhabitantPage {
   protected readonly unit = unitLabel;
   protected readonly date = fmtShortDate;
   protected readonly note = signal('');
+  protected readonly urls = inject(PhotoUrls);
+  protected readonly viewing = signal<string | null>(null);
+  protected readonly photos = computed(() => this.store.photos().filter((p) => p.inhabitantId === this.hid()));
 
   protected readonly data = computed(() => {
     const inhabitant = this.store.inhabitants().find((i) => i.id === this.hid());

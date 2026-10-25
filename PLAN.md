@@ -25,7 +25,7 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] Liste des bacs (cartes) et formulaire de création/modification.
 - [x] Détail d'un bac avec onglets Population, Eau, Entretien.
 - [x] Archivage et suppression.
-- [ ] Photo du bac.
+- [x] Photos du bac (couverture, galerie) et des habitants, incluses dans la sauvegarde.
 
 ## Étape 4 — Catalogue d'espèces
 - [x] Catalogue de départ (34 espèces, dont Neritina, Red Cherry, Danio margaritatus et Apistogramma borellii, autant de plantes que de poissons).
@@ -57,6 +57,13 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] Tableau de bord : alertes, état des bacs, tâches du jour et en retard.
 - [x] Export et import JSON versionnés.
 - [x] Choix du thème.
+
+## Étape 8 ter — Photos
+- [x] Table `photos` (Blob réduits + vignettes), ajout depuis l'appareil photo ou la galerie, légendes.
+- [x] Onglet Photos d'un bac, photos par habitant, visionneuse, photo de couverture.
+- [x] Export/import JSON des photos.
+- [ ] Comparaison avant/après d'un même bac dans le temps.
+- [ ] Envoyer une photo directement à l'import IA.
 
 ## Étape 8 bis — Assistant IA (photo → JSON)
 - [x] Schéma `ai/my-aquarium-ai.schema.json` v1 : `inventory`, `water_test` (tests en gouttes), `sanity` (bilan visuel).

@@ -21,6 +21,7 @@ export interface Tank extends Entity {
   lighting?: { model?: string; photoperiodHours?: number };
   archived: boolean;
   notes?: string;
+  coverPhotoId?: string; // photo affichée sur la carte et en tête du bac
 }
 
 // ---------- Catalogue ----------
@@ -165,6 +166,21 @@ export interface MaintenanceLog extends Entity {
   note?: string;
 }
 
+// ---------- Photos ----------
+export interface Photo extends Entity {
+  tankId: string;
+  inhabitantId?: string; // vide : photo du bac
+  date: string; // ISO datetime de la prise (ou de l'ajout)
+  caption?: string;
+  full: Blob; // ~1600 px
+  thumb: Blob; // ~400 px
+  width: number;
+  height: number;
+}
+
+/** Photo telle qu'écrite dans une sauvegarde JSON (images en data URL). */
+export type ExportedPhoto = Omit<Photo, 'full' | 'thumb'> & { full: string; thumb: string };
+
 // ---------- Bilans visuels (analyse « sanity » d'une photo par une IA) ----------
 export type FindingCategory =
   | 'algae'
@@ -213,5 +229,6 @@ export interface ExportFile {
     tasks: MaintenanceTask[];
     logs: MaintenanceLog[];
     observations?: Observation[]; // ajouté après la v1 du format, facultatif
+    photos?: ExportedPhoto[]; // idem
   };
 }

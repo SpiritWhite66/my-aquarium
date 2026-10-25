@@ -36,6 +36,8 @@ const PATHS: Record<string, string[]> = {
   warn: ['M12 4l9 16H3z', 'M12 10v4M12 17.5v.5'],
   download: ['M12 4v11M7 10l5 5 5-5M5 20h14'],
   upload: ['M12 20V9M7 14l5-5 5 5M5 4h14'],
+  camera: ['M4 8h3l2-3h6l2 3h3v11H4z', 'M12 10a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7z'],
+  star: ['M12 4l2.5 5.2 5.7.8-4.1 4 1 5.7L12 17l-5.1 2.7 1-5.7-4.1-4 5.7-.8z'],
   moon: ['M20 14A8 8 0 0 1 10 4a8 8 0 1 0 10 10z'],
 };
 

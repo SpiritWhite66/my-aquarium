@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { TankView } from '../core/store';
 import { TANK_TYPES, fmt } from '../core/labels';
 import { Icon } from './icon';
+import { PhotoUrls } from './photo-urls';
 
 /** Carte d'un bac : visuel, état, volume, dernière température et dernier pH. */
 @Component({
@@ -25,7 +26,11 @@ import { Icon } from './icon';
     @let v = view();
     <a class="card" [class.danger]="v.level === 'danger'" [routerLink]="['/bacs', v.tank.id]">
       <div class="ph" [class.pl]="isPlanted()" [class.fa]="!isPlanted()">
-        <app-icon [name]="isPlanted() ? 'landscape' : 'fish'" [size]="44" [stroke]="1.4" />
+        @if (urls.url(v.tank.coverPhotoId); as cover) {
+          <img class="img-abs" [src]="cover" alt="" />
+        } @else {
+          <app-icon [name]="isPlanted() ? 'landscape' : 'fish'" [size]="44" [stroke]="1.4" />
+        }
         <span class="pill state" [class.ok]="v.level === 'ok'" [class.wn]="v.level === 'warn'" [class.dg]="v.level === 'danger'">
           <span class="dot"></span>{{ v.level === 'danger' && v.statusLabel === 'OK' ? 'Danger' : v.statusLabel }}
         </span>
@@ -53,6 +58,7 @@ import { Icon } from './icon';
 export class TankCard {
   readonly view = input.required<TankView>();
   protected readonly fmt = fmt;
+  protected readonly urls = inject(PhotoUrls);
   protected readonly types = TANK_TYPES;
   protected readonly isPlanted = computed(() => this.view().tank.type === 'planted' || this.view().plants.length > 0);
 }

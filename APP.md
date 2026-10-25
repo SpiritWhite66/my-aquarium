@@ -60,7 +60,14 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - Export et import complets des données en JSON.
 - Choix du thème clair ou sombre.
 
-### 6. Assistant IA (photo → JSON)
+### 6. Photos
+- Photos d'un bac (onglet Photos) et de chaque habitant (animal ou plante), prises avec l'appareil photo ou choisies dans la galerie.
+- Réduites à ~1600 px avant stockage (une photo de 1 Mo pèse environ 160 Ko), avec une vignette pour la galerie.
+- Photo de couverture d'un bac affichée sur sa carte et en tête de sa page ; dernière photo d'un habitant affichée dans la population.
+- Visionneuse plein écran : navigation, légende, téléchargement (pour l'envoyer à une IA), suppression.
+- Incluses dans l'export/import JSON.
+
+### 7. Assistant IA (photo → JSON)
 - Une IA (Claude avec le skill `my-aquarium-json`, ou n'importe quelle IA avec le prompt fourni) analyse une photo et renvoie un JSON strict.
 - Trois analyses : **inventaire** (espèces et quantités), **relevé** (lecture des tests en gouttes face au nuancier), **bilan visuel** (algues, maladies, carences, eau trouble).
 - L'app valide le JSON avec le même schéma que celui donné à l'IA, affiche un aperçu modifiable et n'enregistre rien sans validation.
@@ -83,6 +90,5 @@ Le reste : poissons, crevettes et escargots courants, plus une large part de **p
 - **Serveur MCP** pour interroger et alimenter les données depuis Claude.ai.
 - **Matériel** (filtre, chauffage, éclairage, garanties) et **stock** de consommables.
 - Notifications push.
-- Journal photo du bac.
 - Alimentation et programmation de l'éclairage.
 - Capteurs connectés.

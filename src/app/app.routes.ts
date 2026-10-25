@@ -15,6 +15,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'population' },
       { path: 'population', title: 'Population', loadComponent: () => import('./pages/tank-detail/population').then((m) => m.PopulationTab) },
       { path: 'eau', title: 'Eau', loadComponent: () => import('./pages/tank-detail/water').then((m) => m.WaterTab) },
+      { path: 'photos', title: 'Photos', loadComponent: () => import('./pages/tank-detail/photos').then((m) => m.PhotosTab) },
       { path: 'entretien', title: 'Entretien', loadComponent: () => import('./pages/tank-detail/maintenance').then((m) => m.MaintenanceTab) },
     ],
   },

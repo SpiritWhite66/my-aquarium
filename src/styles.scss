@@ -258,6 +258,16 @@ textarea {
   display: grid;
   place-items: center;
   flex: none;
+  position: relative;
+  overflow: hidden;
+}
+// Photo qui remplit son cadre (couverture, avatar).
+.img-abs {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .ph.pl {
   background: var(--plb);
@@ -315,6 +325,12 @@ textarea {
 .btn.water:hover {
   color: var(--sf);
   filter: brightness(1.08);
+}
+
+label.btn:focus-within,
+label.fab:focus-within {
+  outline: 2px solid var(--wa);
+  outline-offset: 2px;
 }
 
 .iconbtn {
@@ -396,7 +412,7 @@ textarea {
 .seg button {
   flex: 1;
   height: 36px;
-  padding: 0 12px;
+  padding: 0 4px;
   border-radius: 18px;
   display: grid;
   place-items: center;

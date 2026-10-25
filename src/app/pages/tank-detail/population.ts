@@ -6,6 +6,7 @@ import { Icon } from '../../shared/icon';
 import { SpeciesChips } from '../../shared/species-chips';
 import { ObservationCard } from '../../shared/observation-card';
 import { speciesIcon } from '../../shared/visuals';
+import { PhotoUrls } from '../../shared/photo-urls';
 
 @Component({
   selector: 'app-population',
@@ -48,7 +49,11 @@ import { speciesIcon } from '../../shared/visuals';
               @for (m of g.items; track m.inhabitant.id) {
                 <a class="li" [routerLink]="['/bacs', v.tank.id, 'habitants', m.inhabitant.id]">
                   <div class="ph" [class.pl]="m.species.kind === 'plant'" [class.fa]="m.species.kind !== 'plant'" style="width: 52px; height: 52px">
-                    <app-icon [name]="icon(m.species)" [size]="24" [stroke]="1.6" />
+                    @if (urls.url(store.inhabitantCovers().get(m.inhabitant.id)); as photo) {
+                      <img class="img-abs" [src]="photo" alt="" />
+                    } @else {
+                      <app-icon [name]="icon(m.species)" [size]="24" [stroke]="1.6" />
+                    }
                   </div>
                   <div class="grow">
                     <p class="nm">{{ m.species.commonNames[0] }}</p>
@@ -77,7 +82,8 @@ import { speciesIcon } from '../../shared/visuals';
   `,
 })
 export class PopulationTab {
-  private readonly store = inject(AquariumStore);
+  protected readonly store = inject(AquariumStore);
+  protected readonly urls = inject(PhotoUrls);
   readonly id = input.required<string>();
 
   protected readonly statuses = STATUSES;

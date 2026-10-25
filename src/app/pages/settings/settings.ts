@@ -79,7 +79,7 @@ import { Icon } from '../../shared/icon';
         <h2 class="h2">Données</h2>
         <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 12px">
           <p class="sub" style="margin: 0">
-            Tout est stocké sur cet appareil. Pense à exporter régulièrement.
+            Tout est stocké sur cet appareil{{ store.photos().length ? ', photos comprises (' + store.photos().length + ')' : '' }}. Pense à exporter régulièrement : la sauvegarde contient aussi les photos.
             Dernière sauvegarde : <b style="color: var(--ink)">{{ lastBackup() ?? 'jamais' }}</b>
           </p>
           <div class="row" style="flex-wrap: wrap; gap: 8px">
