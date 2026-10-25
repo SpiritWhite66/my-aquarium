@@ -28,7 +28,7 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [ ] Photo du bac.
 
 ## Étape 4 — Catalogue d'espèces
-- [x] Catalogue de départ (33 espèces, dont Neritina, Red Cherry, Danio margaritatus et Apistogramma borellii, autant de plantes que de poissons).
+- [x] Catalogue de départ (34 espèces, dont Neritina, Red Cherry, Danio margaritatus et Apistogramma borellii, autant de plantes que de poissons).
 - [x] Mise à jour automatique du catalogue intégré au démarrage.
 - [x] Recherche, filtres par type, filtre « compatible avec mon bac », filtre « sans CO2 ».
 - [x] Fiche détaillée faune et flore, avec barres de paramètres comparées au bac.
@@ -57,6 +57,14 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] Tableau de bord : alertes, état des bacs, tâches du jour et en retard.
 - [x] Export et import JSON versionnés.
 - [x] Choix du thème.
+
+## Étape 8 bis — Assistant IA (photo → JSON)
+- [x] Schéma `ai/my-aquarium-ai.schema.json` v1 : `inventory`, `water_test` (tests en gouttes), `sanity` (bilan visuel).
+- [x] Skill Claude `ai/SKILL.md` + prompt autonome, générés par `npm run ai` (zip et prompt servis par l'app).
+- [x] Écran « Importer depuis l'IA » : collage, fichier ou partage Android, validation par le schéma, aperçu modifiable.
+- [x] Rattachement des espèces au catalogue, fiche personnelle pour une espèce inconnue, remplacement ou ajout des quantités.
+- [x] Bilans visuels enregistrés par bac, constats à cocher, alertes sur l'accueil.
+- [ ] Tester le skill avec de vraies photos de tes bacs et de tes tests en gouttes, puis affiner les consignes.
 
 ## Étape 9 — Finitions V1
 - [x] Tests unitaires des règles métier.

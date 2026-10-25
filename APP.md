@@ -60,6 +60,13 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - Export et import complets des données en JSON.
 - Choix du thème clair ou sombre.
 
+### 6. Assistant IA (photo → JSON)
+- Une IA (Claude avec le skill `my-aquarium-json`, ou n'importe quelle IA avec le prompt fourni) analyse une photo et renvoie un JSON strict.
+- Trois analyses : **inventaire** (espèces et quantités), **relevé** (lecture des tests en gouttes face au nuancier), **bilan visuel** (algues, maladies, carences, eau trouble).
+- L'app valide le JSON avec le même schéma que celui donné à l'IA, affiche un aperçu modifiable et n'enregistre rien sans validation.
+- Le bac n'est jamais dans le JSON : il est choisi à l'import. Les espèces sont rattachées au catalogue par leur nom scientifique.
+- Sources : `ai/SKILL.md` et `ai/my-aquarium-ai.schema.json`. Le futur serveur MCP pourra réutiliser ce format.
+
 ## Catalogue de départ
 
 Environ 30 espèces courantes, dont celles déjà possédées :
