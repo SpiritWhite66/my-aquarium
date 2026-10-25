@@ -12,7 +12,7 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] `@angular/pwa` (manifeste, icônes, service worker).
 - [x] Pipeline GitHub Actions : tests, build, déploiement sur GitHub Pages.
 - [x] Navigation : barre d'onglets en bas (mobile), barre latérale (ordinateur).
-- [ ] Icônes de l'app aux couleurs du design (actuellement celles d'Angular par défaut).
+- [x] Logo et icônes de l'app aux couleurs du design (`public/logo.svg`).
 
 ## Étape 2 — Modèle de données et stockage
 - [x] Interfaces TypeScript (`src/app/core/models.ts`).
