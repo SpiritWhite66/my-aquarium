@@ -6,6 +6,7 @@ import { TANK_TYPES, dueLabel, fmt, fmtLongDate, fmtRange } from '../../core/lab
 import { parseIsoDate } from '../../core/dates';
 import { Icon } from '../../shared/icon';
 import { TankCard } from '../../shared/tank-card';
+import { BackupService } from '../../core/backup';
 
 @Component({
   selector: 'app-home',
@@ -16,6 +17,7 @@ import { TankCard } from '../../shared/tank-card';
 })
 export class HomePage {
   protected readonly store = inject(AquariumStore);
+  protected readonly backup = inject(BackupService);
   protected readonly dueLabel = dueLabel;
   protected readonly types = TANK_TYPES;
 

@@ -67,3 +67,16 @@
     padding-inline: 0;
   }
 }
+
+.backup {
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--wab);
+  border-color: var(--wa);
+  color: var(--ink);
+}
+.backup > app-icon {
+  color: var(--wa);
+}

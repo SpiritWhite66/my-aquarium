@@ -14,6 +14,20 @@
     }
   </header>
 
+  @if (backup.reminderDue()) {
+    <section class="card backup" role="status">
+      <app-icon name="download" [size]="22" />
+      <div class="grow">
+        <p class="atitle">{{ backup.daysSince() === null ? 'Aucune sauvegarde pour l’instant' : 'Dernière sauvegarde il y a ' + backup.daysSince() + ' jours' }}</p>
+        <p class="sub">Tes données ne sont que sur cet appareil. Une sauvegarde les protège en cas de perte du téléphone.</p>
+        <div class="row" style="gap: 8px; margin-top: 10px; flex-wrap: wrap">
+          <button class="btn fill" type="button" (click)="backup.exportNow()">Sauvegarder</button>
+          <button class="btn out" type="button" (click)="backup.snooze()">Plus tard</button>
+        </div>
+      </div>
+    </section>
+  }
+
   @if (store.ready() && !store.tankViews().length) {
     <section class="card empty">
       <span class="ph pl" style="width: 64px; height: 64px"><app-icon name="landscape" [size]="34" [stroke]="1.4" /></span>

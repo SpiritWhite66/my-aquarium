@@ -4,6 +4,7 @@ import { AquariumStore } from '../../core/store';
 import { ThemeService, type ThemeChoice } from '../../core/theme';
 import { TANK_TYPES, fmtShortDate } from '../../core/labels';
 import { Icon } from '../../shared/icon';
+import { BackupService, fmtBytes } from '../../core/backup';
 
 @Component({
   selector: 'app-settings',
@@ -21,6 +22,7 @@ import { Icon } from '../../shared/icon';
     .seg { padding: 3px; gap: 3px; }
     .seg button { height: 34px; }
     .msg { font-size: 13px; }
+    .linkbtn { border: 0; background: none; padding: 0; color: var(--pl); font: 600 13px var(--font); text-decoration: underline; cursor: pointer; }
   `,
   template: `
     <div class="page" style="max-width: 720px">
@@ -80,7 +82,17 @@ import { Icon } from '../../shared/icon';
         <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 12px">
           <p class="sub" style="margin: 0">
             Tout est stocké sur cet appareil{{ store.photos().length ? ', photos comprises (' + store.photos().length + ')' : '' }}. Pense à exporter régulièrement : la sauvegarde contient aussi les photos.
-            Dernière sauvegarde : <b style="color: var(--ink)">{{ lastBackup() ?? 'jamais' }}</b>
+            Dernière sauvegarde : <b style="color: var(--ink)">{{ backup.lastBackup() ? date(backup.lastBackup()!) : 'jamais' }}</b>
+          </p>
+          <p class="sub" style="margin: 0">
+            @if (backup.persisted() === true) {
+              <span style="color: var(--ok); font-weight: 600">Stockage protégé</span> : le navigateur ne l’effacera pas pour libérer de la place.
+            } @else if (backup.persisted() === false) {
+              <span style="color: var(--wn); font-weight: 600">Stockage non protégé</span> : le navigateur peut l’effacer s’il manque de place.
+              Installe l’app sur l’écran d’accueil puis
+              <button type="button" class="linkbtn" (click)="backup.requestPersist()">réessaie</button>.
+            }
+            @if (backup.usage(); as u) { Espace utilisé : {{ bytes(u.used) }}. }
           </p>
           <div class="row" style="flex-wrap: wrap; gap: 8px">
             <button class="btn fill" type="button" (click)="exportFile()"><app-icon name="download" [size]="20" />Exporter</button>
@@ -103,24 +115,13 @@ export class SettingsPage {
   protected readonly types = TANK_TYPES;
   protected readonly themes: [ThemeChoice, string][] = [['light', 'Clair'], ['dark', 'Sombre'], ['auto', 'Auto']];
 
-  protected readonly lastBackup = signal(readBackup());
+  protected readonly backup = inject(BackupService);
+  protected readonly bytes = fmtBytes;
+  protected readonly date = fmtShortDate;
   protected readonly message = signal<{ text: string; error: boolean } | null>(null);
 
   protected async exportFile(): Promise<void> {
-    const data = await this.store.exportData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `my-aquarium-${this.store.today()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    try {
-      localStorage.setItem('lastBackup', data.exportedAt);
-    } catch {
-      /* stockage indisponible */
-    }
-    this.lastBackup.set(fmtShortDate(data.exportedAt));
+    await this.backup.exportNow();
     this.message.set({ text: 'Sauvegarde téléchargée.', error: false });
   }
 
@@ -136,14 +137,5 @@ export class SettingsPage {
     } catch (err) {
       this.message.set({ text: err instanceof Error ? err.message : 'Import impossible.', error: true });
     }
-  }
-}
-
-function readBackup(): string | null {
-  try {
-    const v = localStorage.getItem('lastBackup');
-    return v ? fmtShortDate(v) : null;
-  } catch {
-    return null;
   }
 }
