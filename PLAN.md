@@ -3,65 +3,70 @@
 Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 
 ## Étape 0 — Design
-- [ ] Générer les maquettes dans OpenDesign (tableau de bord, détail d'un bac, catalogue, saisie d'un relevé, réglages).
-- [ ] Valider la palette et le thème clair/sombre.
+- [x] Maquettes dans Claude Design (accueil, détail d'un bac, catalogue, saisie d'un relevé, réglages, version ordinateur).
+- [x] Palette et thème clair/sombre validés.
 
 ## Étape 1 — Socle technique
-- [ ] Créer le projet Angular 22 (standalone, zoneless, routing, SCSS).
-- [ ] Ajouter Angular Material 3 et le thème personnalisé.
-- [ ] Ajouter `@angular/pwa` (manifeste, icônes, service worker).
-- [ ] Mettre en place le pipeline GitLab CI : lint, tests, build, déploiement sur Pages (`base-href` adapté).
-- [ ] Créer le squelette de navigation : barre d'onglets en bas (mobile), barre latérale (ordinateur).
+- [x] Projet Angular 22 (standalone, zoneless, routing, SCSS).
+- [x] Système de design sur mesure repris de la maquette (Angular Material abandonné : le design est sur mesure).
+- [x] `@angular/pwa` (manifeste, icônes, service worker).
+- [x] Pipeline GitHub Actions : tests, build, déploiement sur GitHub Pages.
+- [x] Navigation : barre d'onglets en bas (mobile), barre latérale (ordinateur).
+- [ ] Icônes de l'app aux couleurs du design (actuellement celles d'Angular par défaut).
 
 ## Étape 2 — Modèle de données et stockage
-- [ ] Définir les interfaces TypeScript : `Tank`, `Species`, `Inhabitant`, `InhabitantEvent`, `WaterTest`, `MaintenanceTask`, `MaintenanceLog`.
-- [ ] Utiliser des UUID et un champ `updatedAt` sur chaque enregistrement (pour la future synchro).
-- [ ] Créer la base Dexie avec ses index et sa gestion de versions (migrations).
-- [ ] Créer des repositories abstraits, une implémentation Dexie et des services exposant des signals.
-- [ ] Écrire des tests unitaires des repositories.
+- [x] Interfaces TypeScript (`src/app/core/models.ts`).
+- [x] UUID et `updatedAt` sur chaque enregistrement.
+- [x] Base Dexie avec index et versionnement.
+- [x] Service unique `AquariumStore` exposant des signals (seule classe à remplacer pour le futur backend).
+- [ ] Tests des opérations de stockage.
 
 ## Étape 3 — Bacs
-- [ ] Liste des bacs (cartes) et formulaire de création/modification.
-- [ ] Page de détail d'un bac avec trois onglets : Population, Eau, Entretien.
-- [ ] Archivage.
+- [x] Liste des bacs (cartes) et formulaire de création/modification.
+- [x] Détail d'un bac avec onglets Population, Eau, Entretien.
+- [x] Archivage et suppression.
+- [ ] Photo du bac.
 
 ## Étape 4 — Catalogue d'espèces
-- [ ] Rédiger le catalogue JSON de départ (~30 espèces, dont Neritina, Red Cherry, Danio margaritatus et Apistogramma borellii, avec une large part de plantes).
-- [ ] Charger le catalogue au premier lancement, puis gérer ses mises à jour.
-- [ ] Écran de recherche avec filtres par type, et fiches détaillées faune et flore.
+- [x] Catalogue de départ (33 espèces, dont Neritina, Red Cherry, Danio margaritatus et Apistogramma borellii, autant de plantes que de poissons).
+- [x] Mise à jour automatique du catalogue intégré au démarrage.
+- [x] Recherche, filtres par type, filtre « compatible avec mon bac », filtre « sans CO2 ».
+- [x] Fiche détaillée faune et flore, avec barres de paramètres comparées au bac.
 - [ ] Création et modification de fiches personnelles.
-- [ ] Enrichissement par GBIF et Wikidata (nom scientifique, photo), avec cache local.
+- [ ] Enrichissement par GBIF et Wikidata (photos, taxonomie).
 
 ## Étape 5 — Inventaire
-- [ ] Ajout d'une espèce à un bac : quantité, unité, origine, prix, emplacement.
-- [ ] Liste de la population, faune et flore au même niveau, avec badges.
-- [ ] Journal des événements par habitant (naissance, décès, taille, bouture…).
-- [ ] Moteur de compatibilité : plages d'eau, herbivores en bac planté, prédation, banc minimal, volume minimal.
+- [x] Ajout d'une espèce à un bac depuis sa fiche.
+- [x] Population : flore puis faune, avec badges.
+- [x] Fiche habitant : quantité, état, emplacement, journal (naissance, décès, taille, bouture…).
+- [x] Moteur de compatibilité : plages d'eau, herbivores, prédation, groupe minimal, volume minimal, CO2.
 
 ## Étape 6 — Paramètres de l'eau
-- [ ] Formulaire de saisie rapide (pavé numérique, dernières valeurs en indication).
-- [ ] Calcul des plages idéales d'un bac à partir de sa population.
-- [ ] Graphiques Chart.js avec la plage idéale affichée en bande colorée.
-- [ ] Mise en évidence des valeurs hors plage.
+- [x] Saisie rapide avec valeurs précédentes et contrôle immédiat de la plage.
+- [x] Plages idéales calculées d'après la population.
+- [x] Graphiques avec plage idéale en bande colorée.
+- [x] Valeurs hors plage mises en évidence, historique des relevés.
+- [ ] Pavé numérique intégré de la maquette (actuellement : clavier numérique du téléphone).
 
 ## Étape 7 — Entretien
-- [ ] Tâches récurrentes par bac, avec modèles par défaut selon le type de bac.
-- [ ] Bouton « fait » : création de l'historique et recalcul de l'échéance.
-- [ ] Historique en chronologie.
+- [x] Tâches récurrentes par bac, modèles par défaut à la création.
+- [x] Bouton « fait » : historique et recalcul de l'échéance.
+- [x] Chronologie commune entretien + événements des habitants.
 
 ## Étape 8 — Tableau de bord et réglages
-- [ ] Tableau de bord : état des bacs, tâches dues et en retard, alertes.
-- [ ] Export et import JSON, avec validation et numéro de version du format.
-- [ ] Choix du thème.
+- [x] Tableau de bord : alertes, état des bacs, tâches du jour et en retard.
+- [x] Export et import JSON versionnés.
+- [x] Choix du thème.
 
 ## Étape 9 — Finitions V1
+- [x] Tests unitaires des règles métier.
+- [ ] Activer GitHub Pages (Settings › Pages › Source : GitHub Actions) et vérifier le déploiement.
 - [ ] Tests de bout en bout sur les parcours principaux.
 - [ ] Vérification hors ligne et installation PWA (Android, ordinateur).
-- [ ] Accessibilité : contrastes, navigation au clavier.
-- [ ] Déploiement de la V1 sur GitLab Pages.
+- [ ] Revue d'accessibilité.
 
 ## Après la V1
-1. **Backend et synchronisation** : remplacer l'implémentation Dexie des repositories par une implémentation API (avec cache local).
-2. **Serveur MCP** : outils pour lire les bacs et les relevés, ajouter un relevé et valider une tâche depuis Claude.ai.
+1. **Backend et synchronisation** : remplacer l'implémentation Dexie d'`AquariumStore` par une implémentation API (avec cache local).
+2. **Serveur MCP** : outils pour lire les bacs et les relevés, ajouter un relevé et valider une tâche depuis Claude.ai (les règles de `core/rules.ts` sont réutilisables telles quelles).
 3. **Matériel et stock** de consommables.
 4. **Notifications push**, journal photo, alimentation et éclairage.

@@ -23,9 +23,9 @@ import { Icon } from '../../shared/icon';
         <div class="form-grid">
           <div class="field full">
             <label for="type">Type</label>
-            <select id="type" [value]="type()" (change)="setType($any($event.target).value)">
+            <select id="type" (change)="setType($any($event.target).value)">
               @for (t of typeList; track t[0]) {
-                <option [value]="t[0]">{{ t[1] }}</option>
+                <option [value]="t[0]" [selected]="t[0] === type()">{{ t[1] }}</option>
               }
             </select>
           </div>

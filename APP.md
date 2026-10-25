@@ -9,7 +9,7 @@ Les **plantes sont aussi importantes que la faune** (poissons, crevettes, escarg
 
 - **Usage personnel**, interface en **français**, pensée d'abord pour le **mobile**.
 - **PWA** installable, utilisable hors ligne.
-- **Hébergement statique** sur GitLab Pages : pas de serveur en V1.
+- **Hébergement statique** sur GitHub Pages : pas de serveur en V1.
 - **Données locales** (IndexedDB), avec **export/import JSON** pour la sauvegarde.
 - L'architecture doit permettre d'ajouter plus tard un **backend** et un **serveur MCP** consommable par Claude.ai.
 
@@ -18,12 +18,18 @@ Les **plantes sont aussi importantes que la faune** (poissons, crevettes, escarg
 | Besoin | Choix |
 |---|---|
 | Framework | Angular 22 (composants standalone, signals, zoneless) |
-| Interface | Angular Material 3, thème personnalisé (clair/sombre) |
+| Interface | Système de design sur mesure (maquette Claude Design), thèmes clair/sombre/auto, polices Figtree et IBM Plex Mono embarquées |
 | Stockage | Dexie (IndexedDB), derrière une couche « repository » |
-| Graphiques | Chart.js |
+| Graphiques | Composant SVG maison (courbe + plage idéale) |
 | PWA | `@angular/pwa` (service worker + manifeste) |
 | Données espèces | Catalogue JSON local, enrichi par GBIF et Wikidata (taxonomie, photos) |
-| CI/CD | GitLab CI → GitLab Pages |
+| CI/CD | GitHub Actions → GitHub Pages |
+| Environnement | Node 24 (voir `.nvmrc`) |
+
+## Design
+
+Maquette de référence : [Claude Design « Aquariums — PWA »](https://claude.ai/artifact/TcknT1TqZsEF5dbKSWTYzs).
+Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 
 ## Fonctionnalités V1
 

@@ -34,7 +34,7 @@ import { Icon } from './icon';
         <p class="name">{{ v.tank.name }}</p>
         <p class="sub">
           <span class="num">{{ v.tank.volumeNet ?? v.tank.volumeGross }}</span> L · {{ v.plants.length }} plante{{ v.plants.length > 1 ? 's' : '' }} ·
-          {{ v.fauna.length }} animal{{ v.fauna.length > 1 ? 'aux' : '' }}
+          {{ v.fauna.length }} {{ v.fauna.length > 1 ? 'animaux' : 'animal' }}
         </p>
         <div class="row vals">
           <div>

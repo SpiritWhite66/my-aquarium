@@ -117,7 +117,10 @@ export interface Issue {
 }
 
 const nameOf = (s: Species) => s.commonNames[0] ?? s.scientificName;
-const list = (xs: Species[]) => xs.map(nameOf).join(', ');
+const list = (xs: Species[]) => {
+  const names = xs.map(nameOf);
+  return names.length > 1 ? `${names.slice(0, -1).join(', ')} et ${names.at(-1)}` : (names[0] ?? '');
+};
 
 export function isAlive(i: Inhabitant): boolean {
   return i.status !== 'dead' && i.status !== 'removed';
@@ -133,6 +136,8 @@ export function compatibilityIssues(tank: Tank, members: { species: Species; qua
   const plants = species.filter((s) => s.kind === 'plant');
   const shrimps = species.filter((s) => s.kind === 'shrimp');
   const snails = species.filter((s) => s.kind === 'snail');
+  // Regroupés en une seule alerte pour ne pas répéter le même conseil.
+  const fryPredators: Species[] = [];
 
   for (const key of ['temp', 'ph', 'gh', 'kh'] as const) {
     const range = idealRange(key, species, tank);
@@ -165,12 +170,7 @@ export function compatibilityIssues(tank: Tank, members: { species: Species; qua
         speciesIds: [s.id, ...shrimps.map((p) => p.id)],
       });
     } else if (f?.predation?.includes('shrimp_fry') && shrimps.length) {
-      issues.push({
-        level: 'warn',
-        title: `${nameOf(s)} mange les jeunes crevettes`,
-        detail: 'Les adultes s’en sortent bien. Prévoir des mousses ou des plantes denses comme abri.',
-        speciesIds: [s.id, ...shrimps.map((p) => p.id)],
-      });
+      fryPredators.push(s);
     }
     if (f?.predation?.includes('snails') && snails.length) {
       issues.push({
@@ -205,6 +205,14 @@ export function compatibilityIssues(tank: Tank, members: { species: Species; qua
         speciesIds: [s.id],
       });
     }
+  }
+  if (fryPredators.length) {
+    issues.push({
+      level: 'warn',
+      title: `${list(fryPredators)} ${fryPredators.length > 1 ? 'mangent' : 'mange'} les jeunes crevettes`,
+      detail: 'Les adultes s’en sortent bien. Prévoir des mousses ou des plantes denses comme abri.',
+      speciesIds: [...fryPredators.map((p) => p.id), ...shrimps.map((p) => p.id)],
+    });
   }
   return issues;
 }

@@ -27,9 +27,9 @@ import { Icon } from '../../shared/icon';
           <h1 style="font-size: 20px; font-weight: 700">Nouveau relevé</h1>
           <label class="sub tank">
             <span class="sr-only">Bac</span>
-            <select [value]="tankId()" (change)="tankId.set($any($event.target).value)">
+            <select (change)="tankId.set($any($event.target).value)">
               @for (v of store.tankViews(); track v.tank.id) {
-                <option [value]="v.tank.id">{{ v.tank.name }}</option>
+                <option [value]="v.tank.id" [selected]="v.tank.id === tankId()">{{ v.tank.name }}</option>
               }
             </select>
           </label>

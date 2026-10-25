@@ -62,9 +62,9 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
           </div>
           <div class="field">
             <label for="st">État</label>
-            <select id="st" [value]="d.inhabitant.status" (change)="setStatus(d.inhabitant, $any($event.target).value)">
+            <select id="st" (change)="setStatus(d.inhabitant, $any($event.target).value)">
               @for (s of statusList; track s[0]) {
-                <option [value]="s[0]">{{ s[1] }}</option>
+                <option [value]="s[0]" [selected]="s[0] === d.inhabitant.status">{{ s[1] }}</option>
               }
             </select>
           </div>

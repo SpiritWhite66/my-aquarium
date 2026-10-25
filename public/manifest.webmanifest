@@ -1,6 +1,6 @@
 {
-  "name": "my-aquarium",
-  "short_name": "my-aquarium",
+  "name": "Mes aquariums",
+  "short_name": "Aquariums",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",
@@ -53,5 +53,9 @@
       "type": "image/png",
       "purpose": "maskable any"
     }
-  ]
+  ],
+  "description": "Suivi de l’eau, de l’entretien et de la population de mes aquariums",
+  "lang": "fr",
+  "theme_color": "#2d6a43",
+  "background_color": "#f3f1ea"
 }

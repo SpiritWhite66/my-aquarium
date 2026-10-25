@@ -99,9 +99,9 @@ const SCALES = {
           <form class="card add" (submit)="$event.preventDefault(); add()">
             <div class="field" style="flex: 2">
               <label for="tank">Bac</label>
-              <select id="tank" [value]="tankId()" (change)="tankId.set($any($event.target).value)">
+              <select id="tank" (change)="tankId.set($any($event.target).value)">
                 @for (v of store.tankViews(); track v.tank.id) {
-                  <option [value]="v.tank.id">{{ v.tank.name }}</option>
+                  <option [value]="v.tank.id" [selected]="v.tank.id === tankId()">{{ v.tank.name }}</option>
                 }
               </select>
             </div>
@@ -111,9 +111,9 @@ const SCALES = {
             </div>
             <div class="field">
               <label for="u">Unité</label>
-              <select id="u" [value]="unit()" (change)="unit.set($any($event.target).value)">
+              <select id="u" (change)="unit.set($any($event.target).value)">
                 @for (u of unitList(); track u[0]) {
-                  <option [value]="u[0]">{{ u[1][1] }}</option>
+                  <option [value]="u[0]" [selected]="u[0] === unit()">{{ u[1][1] }}</option>
                 }
               </select>
             </div>
