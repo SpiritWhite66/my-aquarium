@@ -1,8 +1,9 @@
 // Calculs d'aide à la décision : changement d'eau, tendances, cyclage, agenda.
 // Fonctions pures, testées dans insights.spec.ts.
 
-import type { Consumable, DropChecker, Equipment, MaintenanceTask, ParamKey, Range, Tank, WaterTest } from './models';
+import type { Consumable, DailySchedule, DropChecker, Equipment, LightSpec, MaintenanceTask, ParamKey, Range, Tank, WaterTest } from './models';
 import { addDays, daysBetween, parseIsoDate, toIsoDate } from './dates';
+import { fmt } from './labels';
 
 // ---------- Changement d'eau ----------
 
@@ -259,4 +260,71 @@ export function latestKhPh(tests: WaterTest[]): { kh: number; ph: number; date: 
     }
   }
   return undefined;
+}
+
+// ---------- Contrôles du matériel d'un bac ----------
+
+const minutes = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + (m || 0);
+};
+
+/** Durée d'une plage horaire en heures (gère le passage de minuit). */
+export function scheduleHours(s: DailySchedule): number {
+  let d = minutes(s.off) - minutes(s.on);
+  if (d <= 0) d += 24 * 60;
+  return Math.round((d / 60) * 10) / 10;
+}
+
+/** Durée d'éclairage effective : plage moins la sieste éventuelle. */
+export function photoperiod(light: LightSpec): number | undefined {
+  if (!light.schedule) return undefined;
+  const siesta = light.siesta ? scheduleHours(light.siesta) : 0;
+  return Math.max(0, Math.round((scheduleHours(light.schedule) - siesta) * 10) / 10);
+}
+
+export interface GearCheck {
+  level: 'ok' | 'info' | 'warn';
+  title: string;
+  detail: string;
+}
+
+/** Vérifications croisées du matériel d'un bac : éclairage, brassage, synchronisation CO2/lumière. */
+export function gearChecks(tank: Tank, gear: Equipment[]): GearCheck[] {
+  const out: GearCheck[] = [];
+  const volume = tank.volumeNet ?? tank.volumeGross;
+  const lights = gear.filter((g) => g.type === 'light' && g.light);
+  const light = lights.find((l) => l.light?.schedule)?.light;
+
+  if (light) {
+    const h = photoperiod(light)!;
+    if (h > 9) out.push({ level: 'warn', title: `Éclairage long : ${fmt(h)} h par jour`, detail: 'Au-delà de 8 à 9 h, les algues profitent du surplus de lumière. Vise 7 à 8 h, surtout sur un bac récent.' });
+    else if (h < 6) out.push({ level: 'info', title: `Éclairage court : ${fmt(h)} h par jour`, detail: 'Les plantes exigeantes peuvent manquer de lumière.' });
+    else out.push({ level: 'ok', title: `Éclairage : ${fmt(h)} h par jour`, detail: 'Durée adaptée à un bac planté.' });
+    if (tank.cycling && (light.intensityPct ?? 100) > 60)
+      out.push({ level: 'info', title: 'Intensité élevée pendant le cyclage', detail: 'Pendant les premières semaines, une intensité réduite (40 à 60 %) limite les algues.' });
+  }
+
+  const flow = gear.filter((g) => g.type === 'filter' || g.type === 'pump').reduce((s, g) => s + (g.filter?.flowLh ?? 0), 0);
+  if (flow && volume) {
+    const turns = Math.round((flow / volume) * 10) / 10;
+    if (turns < 4) out.push({ level: 'warn', title: `Brassage faible : ${fmt(turns)} × le volume par heure`, detail: 'Moins de 4 fois le volume par heure : zones mortes, CO2 et engrais mal répartis. Le débit réel est souvent 30 à 50 % inférieur à celui annoncé.' });
+    else out.push({ level: 'ok', title: `Brassage : ${fmt(turns)} × le volume par heure`, detail: tank.type === 'planted' ? 'Pour un bac planté avec CO2, 8 à 10 fois est idéal.' : 'Correct.' });
+  }
+
+  const co2 = gear.find((g) => g.type === 'co2' && g.co2?.schedule)?.co2;
+  if (co2?.schedule && light?.schedule) {
+    const lead = minutes(light.schedule.on) - minutes(co2.schedule.on);
+    const stopBefore = minutes(light.schedule.off) - minutes(co2.schedule.off);
+    if (lead < 30) out.push({ level: 'warn', title: 'CO2 démarré trop tard', detail: 'Allume le CO2 1 à 2 h avant la lumière pour que la concentration soit bonne dès l’allumage.' });
+    if (stopBefore < 0) out.push({ level: 'warn', title: 'CO2 encore actif après l’extinction', detail: 'Sans lumière, les plantes n’utilisent plus le CO2 : coupe-le environ 1 h avant l’extinction.' });
+    if (lead >= 30 && stopBefore >= 0) out.push({ level: 'ok', title: 'CO2 synchronisé avec la lumière', detail: `Démarre ${fmt(Math.round(lead / 6) / 10)} h avant l’allumage.` });
+  } else if (tank.co2 && co2 && !co2.schedule && !co2.solenoid) {
+    out.push({ level: 'info', title: 'CO2 sans électrovanne', detail: 'Injecté jour et nuit : le pH baisse la nuit. Une électrovanne programmée est plus sûre pour les animaux.' });
+  }
+
+  const heater = gear.find((g) => g.type === 'heater' && g.heater?.powerW)?.heater;
+  if (heater?.powerW && volume && heater.powerW < volume * 0.5)
+    out.push({ level: 'info', title: 'Chauffage peut-être juste', detail: `${heater.powerW} W pour ${volume} L : compte environ 1 W par litre dans une pièce fraîche.` });
+  return out;
 }

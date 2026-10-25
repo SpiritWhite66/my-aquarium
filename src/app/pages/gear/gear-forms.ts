@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
-import type { ConsumableCategory, EquipmentType, StockLevel } from '../../core/models';
+import type { Co2Spec, ConsumableCategory, EquipmentType, FilterSpec, HeaterSpec, LightSpec, StockLevel } from '../../core/models';
+import { photoperiod } from '../../core/insights';
+import { fmt } from '../../core/labels';
 import { CONSUMABLE_CATEGORIES, EQUIPMENT_TYPES, STOCK_LEVELS, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 
@@ -34,14 +36,78 @@ const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
             </select></div>
           <div class="field"><label for="brand">Marque</label><input id="brand" [value]="brand()" (input)="brand.set(v($event))" /></div>
           <div class="field"><label for="model">Modèle</label><input id="model" [value]="model()" (input)="model.set(v($event))" /></div>
-          <div class="field full"><label for="specs">Caractéristiques</label>
-            <input id="specs" [value]="specs()" (input)="specs.set(v($event))" placeholder="600 L/h, 50 W…" /></div>
+          <div class="field full"><label for="specs">Autres caractéristiques</label>
+            <input id="specs" [value]="specs()" (input)="specs.set(v($event))" /></div>
           <div class="field"><label for="bought">Date d’achat</label><input id="bought" type="date" [value]="purchaseDate()" (input)="purchaseDate.set(v($event))" /></div>
           <div class="field"><label for="warranty">Garantie (mois)</label>
             <input id="warranty" class="num" inputmode="numeric" [value]="warranty()" (input)="warranty.set(v($event))" placeholder="24" /></div>
           <div class="field"><label for="price">Prix (€)</label><input id="price" class="num" inputmode="decimal" [value]="price()" (input)="price.set(v($event))" /></div>
           <div class="field full"><label for="notes">Notes</label><textarea id="notes" [value]="notes()" (input)="notes.set(v($event))"></textarea></div>
         </div>
+
+        @if (type() === 'light') {
+          <section class="stack">
+            <h2 class="h2">Éclairage</h2>
+            <p class="lbl">Canaux</p>
+            <div class="chips" role="group" aria-label="Canaux de couleur">
+              @for (c of channelList; track c) {
+                <button type="button" class="chipbtn" [class.on]="light().channels?.includes(c)" [attr.aria-pressed]="!!light().channels?.includes(c)" (click)="toggleChannel(c)">{{ c }}</button>
+              }
+            </div>
+            <div class="form-grid">
+              <div class="field"><label for="l-on">Allumage</label><input id="l-on" type="time" [value]="light().schedule?.on ?? ''" (input)="setSchedule('schedule', 'on', v($event))" /></div>
+              <div class="field"><label for="l-off">Extinction</label><input id="l-off" type="time" [value]="light().schedule?.off ?? ''" (input)="setSchedule('schedule', 'off', v($event))" /></div>
+              <div class="field"><label for="s-on">Sieste : début</label><input id="s-on" type="time" [value]="light().siesta?.on ?? ''" (input)="setSchedule('siesta', 'on', v($event))" /></div>
+              <div class="field"><label for="s-off">Sieste : fin</label><input id="s-off" type="time" [value]="light().siesta?.off ?? ''" (input)="setSchedule('siesta', 'off', v($event))" /></div>
+              <div class="field"><label for="l-int">Intensité réglée (%)</label><input id="l-int" class="num" inputmode="numeric" [value]="str(light().intensityPct)" (input)="setLight('intensityPct', v($event))" /></div>
+              <div class="field"><label for="l-lev">Niveaux de puissance</label><input id="l-lev" class="num" inputmode="numeric" [value]="str(light().levels)" (input)="setLight('levels', v($event))" /></div>
+              <div class="field"><label for="l-ramp">Lever/coucher (min)</label><input id="l-ramp" class="num" inputmode="numeric" [value]="str(light().rampMinutes)" (input)="setLight('rampMinutes', v($event))" /></div>
+              <div class="field"><label for="l-par">PAR au sol (µmol/m²/s)</label><input id="l-par" class="num" inputmode="numeric" [value]="str(light().par)" (input)="setLight('par', v($event))" /></div>
+              <div class="field"><label for="l-w">Puissance (W)</label><input id="l-w" class="num" inputmode="decimal" [value]="str(light().powerW)" (input)="setLight('powerW', v($event))" /></div>
+              <div class="field"><label for="l-lm">Lumens</label><input id="l-lm" class="num" inputmode="numeric" [value]="str(light().lumens)" (input)="setLight('lumens', v($event))" /></div>
+              <div class="field"><label for="l-k">Température (K)</label><input id="l-k" class="num" inputmode="numeric" [value]="str(light().kelvin)" (input)="setLight('kelvin', v($event))" /></div>
+            </div>
+            @if (hours(); as h) { <p class="sub" style="margin: 0">Durée d’éclairage : <b>{{ h }} h</b> par jour.</p> }
+          </section>
+        }
+        @if (type() === 'filter' || type() === 'pump') {
+          <section class="stack">
+            <h2 class="h2">Filtration</h2>
+            <div class="form-grid">
+              <div class="field"><label for="f-flow">Débit annoncé (L/h)</label><input id="f-flow" class="num" inputmode="numeric" [value]="str(filter().flowLh)" (input)="filter.update(f => ({ ...f, flowLh: num(v($event)) }))" /></div>
+              <div class="field"><label for="f-media">Masses filtrantes</label><input id="f-media" [value]="filter().media ?? ''" placeholder="Mousse, céramique…" (input)="filter.update(f => ({ ...f, media: v($event) || undefined }))" /></div>
+            </div>
+          </section>
+        }
+        @if (type() === 'heater') {
+          <section class="stack">
+            <h2 class="h2">Chauffage</h2>
+            <div class="form-grid">
+              <div class="field"><label for="h-w">Puissance (W)</label><input id="h-w" class="num" inputmode="numeric" [value]="str(heater().powerW)" (input)="heater.update(h => ({ ...h, powerW: num(v($event)) }))" /></div>
+              <div class="field"><label for="h-c">Consigne (°C)</label><input id="h-c" class="num" inputmode="decimal" [value]="str(heater().setpointC)" (input)="heater.update(h => ({ ...h, setpointC: num(v($event)) }))" /></div>
+            </div>
+          </section>
+        }
+        @if (type() === 'co2') {
+          <section class="stack">
+            <h2 class="h2">Installation CO2</h2>
+            <div class="form-grid">
+              <div class="field"><label for="c-src">Source</label>
+                <select id="c-src" (change)="co2.update(c => ({ ...c, source: $any($event.target).value || undefined }))">
+                  <option value="" [selected]="!co2().source">Non précisée</option>
+                  <option value="cylinder" [selected]="co2().source === 'cylinder'">Bouteille</option>
+                  <option value="citric" [selected]="co2().source === 'citric'">Acide citrique</option>
+                  <option value="yeast" [selected]="co2().source === 'yeast'">Levure</option>
+                </select></div>
+              <div class="field"><label for="c-l">Bouteille (L)</label><input id="c-l" class="num" inputmode="decimal" [value]="str(co2().cylinderL)" (input)="co2.update(c => ({ ...c, cylinderL: num(v($event)) }))" /></div>
+              <div class="field full"><label for="c-diff">Diffuseur</label><input id="c-diff" [value]="co2().diffuser ?? ''" (input)="co2.update(c => ({ ...c, diffuser: v($event) || undefined }))" /></div>
+              <div class="field"><label for="c-on">Ouverture</label><input id="c-on" type="time" [value]="co2().schedule?.on ?? ''" (input)="setCo2Schedule('on', v($event))" /></div>
+              <div class="field"><label for="c-off">Fermeture</label><input id="c-off" type="time" [value]="co2().schedule?.off ?? ''" (input)="setCo2Schedule('off', v($event))" /></div>
+            </div>
+            <label class="check"><input type="checkbox" [checked]="!!co2().solenoid" (change)="co2.update(c => ({ ...c, solenoid: $any($event.target).checked }))" />Électrovanne programmée</label>
+          </section>
+        }
+
         <div class="row" style="gap: 8px; flex-wrap: wrap">
           <button class="btn fill" type="submit" [disabled]="!name().trim()">Enregistrer</button>
           @if (existing()) {
@@ -51,8 +117,48 @@ const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
       </form>
     </div>
   `,
+  styles: `
+    .chipbtn { height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--ln); background: var(--sf); font: 600 13px var(--font); cursor: pointer; }
+    .chipbtn.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  `,
 })
 export class EquipmentFormPage {
+  protected readonly str = str;
+  protected readonly num = parseNumber;
+  protected readonly channelList = ['Blanc', 'Rouge', 'Vert', 'Bleu', 'Blanc chaud', 'UV'];
+  protected readonly light = signal<LightSpec>({});
+  protected readonly filter = signal<FilterSpec>({});
+  protected readonly heater = signal<HeaterSpec>({});
+  protected readonly co2 = signal<Co2Spec>({});
+  protected readonly hours = computed(() => {
+    const h = photoperiod(this.light());
+    return h ? fmt(h) : '';
+  });
+
+  protected toggleChannel(c: string): void {
+    this.light.update((l) => {
+      const set = new Set(l.channels ?? []);
+      if (set.has(c)) set.delete(c);
+      else set.add(c);
+      return { ...l, channels: [...set] };
+    });
+  }
+  protected setLight(key: 'intensityPct' | 'levels' | 'rampMinutes' | 'par' | 'powerW' | 'lumens' | 'kelvin', raw: string): void {
+    this.light.update((l) => ({ ...l, [key]: parseNumber(raw) }));
+  }
+  protected setSchedule(which: 'schedule' | 'siesta', part: 'on' | 'off', value: string): void {
+    this.light.update((l) => {
+      const s = { on: '', off: '', ...l[which], [part]: value };
+      return { ...l, [which]: s.on || s.off ? s : undefined };
+    });
+  }
+  protected setCo2Schedule(part: 'on' | 'off', value: string): void {
+    this.co2.update((c) => {
+      const s = { on: '', off: '', ...c.schedule, [part]: value };
+      return { ...c, schedule: s.on || s.off ? s : undefined };
+    });
+  }
+
   protected readonly store = inject(AquariumStore);
   protected readonly location = inject(Location);
   protected readonly v = v;
@@ -88,13 +194,24 @@ export class EquipmentFormPage {
       this.warranty.set(str(e.warrantyMonths));
       this.price.set(str(e.price));
       this.notes.set(e.notes ?? '');
+      this.light.set(e.light ?? {});
+      this.filter.set(e.filter ?? {});
+      this.heater.set(e.heater ?? {});
+      this.co2.set(e.co2 ?? {});
     });
   }
 
   protected async save(): Promise<void> {
     if (!this.name().trim()) return;
     const opt = (s: string) => s.trim() || undefined;
+    // Une plage horaire incomplète n'est pas enregistrée.
+    const full = <T extends { on: string; off: string }>(s?: T) => (s?.on && s.off ? s : undefined);
+    const t = this.type();
     await this.store.saveEquipment({
+      light: t === 'light' ? { ...this.light(), schedule: full(this.light().schedule), siesta: full(this.light().siesta) } : undefined,
+      filter: t === 'filter' || t === 'pump' ? this.filter() : undefined,
+      heater: t === 'heater' ? this.heater() : undefined,
+      co2: t === 'co2' ? { ...this.co2(), schedule: full(this.co2().schedule) } : undefined,
       id: this.existing()?.id,
       name: this.name().trim(),
       type: this.type(),

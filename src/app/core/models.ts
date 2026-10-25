@@ -222,6 +222,43 @@ export interface Observation extends Entity {
 // ---------- Matériel et consommables ----------
 export type EquipmentType = 'filter' | 'heater' | 'light' | 'co2' | 'pump' | 'air' | 'thermometer' | 'controller' | 'other';
 
+/** Plage horaire quotidienne « HH:MM ». */
+export interface DailySchedule {
+  on: string;
+  off: string;
+}
+
+export interface LightSpec {
+  channels?: string[]; // Blanc, Rouge, Vert, Bleu…
+  powerW?: number;
+  lumens?: number;
+  kelvin?: number;
+  levels?: number; // nombre de niveaux de puissance
+  intensityPct?: number; // réglage actuel
+  par?: number; // µmol/m²/s au sol, si mesuré
+  schedule?: DailySchedule;
+  rampMinutes?: number; // lever / coucher de soleil
+  siesta?: DailySchedule; // pause en milieu de journée
+}
+
+export interface FilterSpec {
+  flowLh?: number; // débit annoncé
+  media?: string;
+}
+
+export interface HeaterSpec {
+  powerW?: number;
+  setpointC?: number;
+}
+
+export interface Co2Spec {
+  source?: 'cylinder' | 'citric' | 'yeast';
+  cylinderL?: number;
+  diffuser?: string;
+  solenoid?: boolean;
+  schedule?: DailySchedule;
+}
+
 export interface Equipment extends Entity {
   tankId?: string; // vide : en réserve
   type: EquipmentType;
@@ -233,6 +270,10 @@ export interface Equipment extends Entity {
   warrantyMonths?: number;
   specs?: string; // débit, puissance…
   notes?: string;
+  light?: LightSpec;
+  filter?: FilterSpec;
+  heater?: HeaterSpec;
+  co2?: Co2Spec;
 }
 
 export type ConsumableCategory = 'food' | 'fertilizer' | 'conditioner' | 'test_kit' | 'co2' | 'medicine' | 'substrate' | 'other';

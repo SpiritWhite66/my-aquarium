@@ -3,7 +3,9 @@ import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import type { Consumable, EquipmentType, StockLevel } from '../../core/models';
 import { CONSUMABLE_CATEGORIES, EQUIPMENT_TYPES, STOCK_LEVELS, fmtDate } from '../../core/labels';
-import { stockAlerts, warrantyEnd } from '../../core/insights';
+import { gearChecks, photoperiod, stockAlerts, warrantyEnd } from '../../core/insights';
+import type { Equipment } from '../../core/models';
+import { fmt } from '../../core/labels';
 import { daysBetween } from '../../core/dates';
 import { Icon } from '../../shared/icon';
 
@@ -26,6 +28,11 @@ export function equipmentIcon(type: EquipmentType): string {
     .lv button.on.low { background: var(--wn); border-color: var(--wn); }
     .lv button.on.empty { background: var(--dg); border-color: var(--dg); }
     .cons .li { align-items: flex-start; }
+    .check-line { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--mu); }
+    .check-line .dot { margin-top: 5px; color: var(--mu); }
+    .check-line.ok .dot { color: var(--ok); }
+    .check-line.warn { color: var(--wn); }
+    .check-line.warn .dot { color: var(--wn); }
     .alert { padding: 10px 14px; font-size: 14px; display: flex; gap: 10px; align-items: center; }
     .alert.danger { background: var(--dgb); color: var(--dg); }
     .alert.warn { background: var(--wnb); color: var(--wn); }
@@ -44,13 +51,19 @@ export function equipmentIcon(type: EquipmentType): string {
         @for (g of groups(); track g.title) {
           <section class="stack" style="gap: 8px">
             <h2 class="h2">{{ g.title }} <span class="sub" style="margin: 0; font-weight: 500">{{ g.items.length }}</span></h2>
+            @for (c of g.checks; track c.title) {
+              <p class="check-line" [class.warn]="c.level === 'warn'" [class.ok]="c.level === 'ok'">
+                <span class="dot"></span><span><b>{{ c.title }}</b>{{ c.level !== 'ok' ? ' — ' + c.detail : '' }}</span>
+              </p>
+            }
             <div class="card">
               @for (e of g.items; track e.id) {
                 <a class="li" [routerLink]="['/materiel/equipement', e.id]">
                   <span class="ic" [class.p]="e.type === 'light' || e.type === 'co2'"><app-icon [name]="icon(e.type)" [size]="22" /></span>
                   <div class="grow">
                     <p class="nm">{{ e.name }}</p>
-                    <p class="sub">{{ types[e.type] }}{{ e.brand ? ' · ' + e.brand : '' }}{{ e.model ? ' ' + e.model : '' }}{{ e.specs ? ' · ' + e.specs : '' }}</p>
+                    <p class="sub">{{ types[e.type] }}{{ e.brand ? ' · ' + e.brand : '' }}{{ e.model ? ' ' + e.model : '' }}</p>
+                    @if (summary(e); as s) { <p class="sub" style="color: var(--ink)">{{ s }}</p> }
                     @if (warranty(e); as w) {
                       <span class="chip" [class.o]="w.soon" [class.p]="!w.soon && !w.over" style="margin-top: 6px">{{ w.label }}</span>
                     }
@@ -121,9 +134,12 @@ export class GearPage {
   protected readonly groups = computed(() => {
     const tanks = this.store.activeTanks();
     const all = [...this.store.equipment()].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-    const groups = tanks.map((t) => ({ title: t.name, items: all.filter((e) => e.tankId === t.id) }));
+    const groups = tanks.map((t) => {
+      const items = all.filter((e) => e.tankId === t.id);
+      return { title: t.name, items, checks: gearChecks(t, items) };
+    });
     const known = new Set(tanks.map((t) => t.id));
-    groups.push({ title: 'En réserve', items: all.filter((e) => !e.tankId || !known.has(e.tankId)) });
+    groups.push({ title: 'En réserve', items: all.filter((e) => !e.tankId || !known.has(e.tankId)), checks: [] });
     return groups.filter((g) => g.items.length);
   });
 
@@ -140,6 +156,23 @@ export class GearPage {
     const days = daysBetween(this.store.today(), end);
     if (days < 0) return { label: 'Hors garantie', soon: false, over: true };
     return { label: `Garantie jusqu’au ${fmtDate(end)}`, soon: days <= 30, over: false };
+  }
+
+  /** Résumé des caractéristiques utiles, en une ligne. */
+  protected summary(e: Equipment): string {
+    const parts: string[] = [];
+    const l = e.light;
+    if (l) {
+      if (l.schedule) parts.push(`${l.schedule.on}–${l.schedule.off} (${fmt(photoperiod(l))} h)`);
+      if (l.intensityPct != null) parts.push(`${l.intensityPct} %`);
+      if (l.channels?.length) parts.push(l.channels.join('/'));
+      if (l.par) parts.push(`PAR ${l.par}`);
+    }
+    if (e.filter?.flowLh) parts.push(`${e.filter.flowLh} L/h`);
+    if (e.heater?.powerW) parts.push(`${e.heater.powerW} W${e.heater.setpointC ? ' · ' + fmt(e.heater.setpointC) + ' °C' : ''}`);
+    if (e.co2?.schedule) parts.push(`CO2 ${e.co2.schedule.on}–${e.co2.schedule.off}`);
+    if (e.specs) parts.push(e.specs);
+    return parts.join(' · ');
   }
 
   protected setLevel(c: Consumable, level: StockLevel): void {

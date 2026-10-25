@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MaintenanceTask, Tank, WaterTest } from './models';
-import { afterWaterChange, bpmFromTaps, co2Advice, co2FromKhPh, co2Status, latestKhPh, cyclingPhase, percentFromLabel, stockAlerts, tasksToIcs, trendOf, warrantyEnd } from './insights';
+import { gearChecks, photoperiod, scheduleHours, afterWaterChange, bpmFromTaps, co2Advice, co2FromKhPh, co2Status, latestKhPh, cyclingPhase, percentFromLabel, stockAlerts, tasksToIcs, trendOf, warrantyEnd } from './insights';
 import type { Consumable, Equipment } from './models';
 
 const DAY = 86_400_000;
@@ -106,5 +106,36 @@ describe('CO2 estimé par KH et pH', () => {
     const tests = [test(5, { kh: 4 }), test(0, { ph: 6.7 })];
     expect(latestKhPh(tests)).toMatchObject({ kh: 4, ph: 6.7 });
     expect(latestKhPh([test(20, { kh: 4 }), test(0, { ph: 6.7 })])).toBeUndefined();
+  });
+});
+
+describe('contrôles du matériel', () => {
+  const tank = { id: 't', name: 'Bac', type: 'planted', volumeGross: 75, co2: true } as Tank;
+  const eq = (o: Partial<Equipment>): Equipment => ({ id: Math.random().toString(), updatedAt: '', type: 'other', name: 'x', ...o });
+  it('calcule la durée d’éclairage avec sieste', () => {
+    expect(scheduleHours({ on: '10:00', off: '19:30' })).toBe(9.5);
+    expect(scheduleHours({ on: '22:00', off: '06:00' })).toBe(8);
+    expect(photoperiod({ schedule: { on: '10:00', off: '20:00' }, siesta: { on: '14:00', off: '16:00' } })).toBe(8);
+  });
+  it('signale éclairage long, brassage faible et CO2 mal synchronisé', () => {
+    const checks = gearChecks(tank, [
+      eq({ type: 'light', light: { schedule: { on: '10:00', off: '20:30' } } }),
+      eq({ type: 'filter', filter: { flowLh: 250 } }),
+      eq({ type: 'co2', co2: { schedule: { on: '09:50', off: '21:00' } } }),
+    ]);
+    expect(checks.filter((c) => c.level === 'warn').map((c) => c.title)).toEqual([
+      'Éclairage long : 10,5 h par jour',
+      'Brassage faible : 3,3 × le volume par heure',
+      'CO2 démarré trop tard',
+      'CO2 encore actif après l’extinction',
+    ]);
+  });
+  it('valide une configuration correcte', () => {
+    const checks = gearChecks(tank, [
+      eq({ type: 'light', light: { schedule: { on: '12:00', off: '20:00' } } }),
+      eq({ type: 'filter', filter: { flowLh: 700 } }),
+      eq({ type: 'co2', co2: { schedule: { on: '10:30', off: '19:00' } } }),
+    ]);
+    expect(checks.every((c) => c.level === 'ok')).toBe(true);
   });
 });
