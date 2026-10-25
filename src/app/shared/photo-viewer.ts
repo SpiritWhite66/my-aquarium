@@ -3,6 +3,7 @@ import type { Photo } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { fmtShortDate, speciesName } from '../core/labels';
 import { Icon } from './icon';
+import { Router } from '@angular/router';
 import { PhotoUrls } from './photo-urls';
 
 /** Visionneuse plein écran : navigation, légende, photo de couverture, téléchargement, suppression. */
@@ -33,6 +34,7 @@ import { PhotoUrls } from './photo-urls';
         <div class="bar">
           <button class="iconbtn" type="button" aria-label="Fermer" (click)="closed.emit()"><app-icon name="close" /></button>
           <span class="count num">{{ index() + 1 }} / {{ photos().length }}</span>
+          <button class="iconbtn" type="button" aria-label="Analyser avec l’IA" title="Analyser avec l’IA" (click)="toAi(p)"><app-icon name="upload" /></button>
           <a class="iconbtn" [href]="urls.url(p.id, 'full')" [download]="filename(p)" aria-label="Télécharger la photo"><app-icon name="download" /></a>
           <button class="iconbtn" type="button" aria-label="Supprimer la photo" (click)="remove(p)"><app-icon name="trash" /></button>
         </div>
@@ -61,6 +63,7 @@ export class PhotoViewer {
   protected readonly store = inject(AquariumStore);
   protected readonly urls = inject(PhotoUrls);
   protected readonly date = fmtShortDate;
+  private readonly router = inject(Router);
 
   readonly photos = input.required<Photo[]>();
   readonly startId = input.required<string>();
@@ -102,6 +105,32 @@ export class PhotoViewer {
 
   protected filename(p: Photo): string {
     return `${this.subject(p).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${p.date.slice(0, 10)}.jpg`;
+  }
+
+  /**
+   * Envoie la photo à une app d'IA (Claude…) via le partage du téléphone, avec la demande d'analyse,
+   * puis ouvre l'écran d'import pour coller la réponse. Sans partage de fichiers : téléchargement.
+   */
+  protected async toAi(p: Photo): Promise<void> {
+    const file = new File([p.full], this.filename(p), { type: 'image/jpeg' });
+    const text = p.inhabitantId
+      ? 'Avec le skill my-aquarium-json : bilan visuel (sanity) de cette photo.'
+      : 'Avec le skill my-aquarium-json : inventaire (inventory) puis bilan visuel (sanity) de cette photo de mon bac.';
+    try {
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], text });
+      } else {
+        const a = document.createElement('a');
+        a.href = this.urls.url(p.id, 'full')!;
+        a.download = file.name;
+        a.click();
+        await navigator.clipboard?.writeText(text).catch(() => undefined);
+      }
+    } catch {
+      return; // partage annulé
+    }
+    this.closed.emit();
+    this.router.navigate(['/import-ia'], { queryParams: { bac: p.tankId } });
   }
 
   protected isCover(p: Photo): boolean {

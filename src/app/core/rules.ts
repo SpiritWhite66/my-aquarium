@@ -206,6 +206,15 @@ export function compatibilityIssues(tank: Tank, members: { species: Species; qua
       });
     }
   }
+  const fauna = species.filter((s) => s.kind !== 'plant');
+  if (tank.cycling && fauna.length) {
+    issues.push({
+      level: 'danger',
+      title: 'Animaux dans un bac en cyclage',
+      detail: `${list(fauna)} ${fauna.length > 1 ? 'sont exposés' : 'est exposé'} aux pics d’ammonium et de nitrites. Attends la fin du cyclage ou surveille de très près.`,
+      speciesIds: fauna.map((s) => s.id),
+    });
+  }
   if (fryPredators.length) {
     issues.push({
       level: 'warn',

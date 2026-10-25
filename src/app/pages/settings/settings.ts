@@ -5,6 +5,7 @@ import { ThemeService, type ThemeChoice } from '../../core/theme';
 import { TANK_TYPES, fmtShortDate } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { BackupService, fmtBytes } from '../../core/backup';
+import { tasksToIcs } from '../../core/insights';
 
 @Component({
   selector: 'app-settings',
@@ -22,6 +23,7 @@ import { BackupService, fmtBytes } from '../../core/backup';
     .seg { padding: 3px; gap: 3px; }
     .seg button { height: 34px; }
     .msg { font-size: 13px; }
+    .date { height: 40px; border: 1px solid var(--ln); border-radius: 12px; background: var(--sf); padding: 0 8px; font: 600 14px var(--font); }
     .linkbtn { border: 0; background: none; padding: 0; color: var(--pl); font: 600 13px var(--font); text-decoration: underline; cursor: pointer; }
   `,
   template: `
@@ -60,6 +62,25 @@ import { BackupService, fmtBytes } from '../../core/backup';
             <div class="grow"><p style="font-weight: 600">Unités</p><p class="sub">°C · mg/L · °d</p></div>
           </div>
         </div>
+      </section>
+
+      <section>
+        <h2 class="h2">Rappels</h2>
+        <div class="card">
+          <button class="it" type="button" style="width: 100%; border: 0; background: transparent; text-align: left; font: inherit; cursor: pointer" (click)="exportIcs()">
+            <span class="ic w"><app-icon name="bell" [size]="20" /></span>
+            <div class="grow"><p style="font-weight: 600">Ajouter à mon agenda</p><p class="sub">Fichier .ics avec les tâches répétées et une alerte à 9 h (Google Agenda, Outlook…)</p></div>
+          </button>
+          <div class="it" style="flex-wrap: wrap">
+            <span class="ic"><app-icon name="moon" [size]="20" /></span>
+            <div class="grow" style="min-width: 160px"><p style="font-weight: 600">Mode vacances</p><p class="sub">Décale au jour du retour les tâches qui tombent pendant l’absence</p></div>
+            <div class="row" style="gap: 8px">
+              <input type="date" class="date" aria-label="Date de retour" [min]="store.today()" [value]="returnDate()" (input)="returnDate.set($any($event.target).value)" />
+              <button class="btn ton" type="button" [disabled]="!returnDate()" (click)="vacation()">Décaler</button>
+            </div>
+          </div>
+        </div>
+        <p class="sub" style="margin: 0">L’agenda n’est pas mis à jour automatiquement : réimporte le fichier si tu changes les tâches.</p>
       </section>
 
       <section>
@@ -119,6 +140,25 @@ export class SettingsPage {
   protected readonly bytes = fmtBytes;
   protected readonly date = fmtShortDate;
   protected readonly message = signal<{ text: string; error: boolean } | null>(null);
+
+  protected readonly returnDate = signal('');
+
+  protected async vacation(): Promise<void> {
+    const until = this.returnDate();
+    if (!until) return;
+    const n = await this.store.postponeTasks(until);
+    this.message.set({ text: n ? `${n} tâche${n > 1 ? 's' : ''} décalée${n > 1 ? 's' : ''} au ${fmtShortDate(until)} — bonnes vacances !` : 'Aucune tâche à décaler.', error: false });
+  }
+
+  protected exportIcs(): void {
+    const ics = tasksToIcs(this.store.tasks(), this.store.activeTanks());
+    const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'aquariums-rappels.ics';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 
   protected async exportFile(): Promise<void> {
     await this.backup.exportNow();

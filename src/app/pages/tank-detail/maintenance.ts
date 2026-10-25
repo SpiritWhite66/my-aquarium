@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { dueLabel, fmtShortDate, frequencyLabel, speciesName } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { isPlantTask, taskIcon } from '../../shared/visuals';
+import { WaterChangeSheet } from '../../shared/water-change-sheet';
+import type { MaintenanceTask } from '../../core/models';
 
 const EVENT_LABELS: Record<string, string> = {
   added: 'Ajout',
@@ -19,7 +21,7 @@ const EVENT_LABELS: Record<string, string> = {
 
 @Component({
   selector: 'app-maintenance',
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, WaterChangeSheet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; gap: 16px; }
@@ -55,7 +57,7 @@ const EVENT_LABELS: Record<string, string> = {
                     <span [class.today]="t.nextDue === store.today()" [class.late]="t.nextDue < store.today()">{{ due(t.nextDue, store.today()) }}</span>
                   </p>
                 </div>
-                <button class="done" [class.late]="t.nextDue < store.today()" (click)="store.completeTask(t)" [attr.aria-label]="t.label + ' : fait'">
+                <button class="done" [class.late]="t.nextDue < store.today()" (click)="done(t)" [attr.aria-label]="t.label + ' : fait'">
                   <app-icon name="check" [size]="20" [stroke]="2.2" />
                 </button>
               </div>
@@ -81,6 +83,9 @@ const EVENT_LABELS: Record<string, string> = {
           <p class="sub">Rien pour l’instant.</p>
         }
       </section>
+      @if (waterChange(); as t) {
+        <app-water-change-sheet [task]="t" (closed)="waterChange.set(null)" />
+      }
       <a class="fab" [routerLink]="['/bacs', v.tank.id, 'taches', 'nouvelle']"><app-icon name="plus" [size]="20" [stroke]="2.2" />Tâche</a>
     }
   `,
@@ -94,6 +99,13 @@ export class MaintenanceTab {
   protected readonly freq = frequencyLabel;
   protected readonly due = dueLabel;
   protected readonly date = fmtShortDate;
+
+  protected readonly waterChange = signal<MaintenanceTask | null>(null);
+
+  protected done(task: MaintenanceTask): void {
+    if (task.type === 'water_change') this.waterChange.set(task);
+    else this.store.completeTask(task);
+  }
 
   protected readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.id()));
   protected readonly tasks = computed(() => this.view()?.tasks ?? []);

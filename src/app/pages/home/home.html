@@ -87,7 +87,7 @@
                   <span [class.late]="d.task.nextDue < store.today()">{{ dueLabel(d.task.nextDue, store.today()) }}</span>
                 </p>
               </div>
-              <button class="done" [class.late]="d.task.nextDue < store.today()" (click)="store.completeTask(d.task)"
+              <button class="done" [class.late]="d.task.nextDue < store.today()" (click)="done(d.task)"
                 [attr.aria-label]="d.task.label + ' : marquer comme fait'">
                 <app-icon name="check" [size]="20" [stroke]="2.2" />
               </button>
@@ -100,6 +100,10 @@
     </section>
   }
 </div>
+
+@if (waterChange(); as t) {
+  <app-water-change-sheet [task]="t" (closed)="waterChange.set(null)" />
+}
 
 @if (store.tankViews().length) {
   <a class="fab mobile-only" routerLink="/releve" [queryParams]="readingLink()">

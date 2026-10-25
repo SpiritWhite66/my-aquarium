@@ -60,6 +60,7 @@ import { Icon } from '../../shared/icon';
           </div>
         </div>
         <label class="check"><input type="checkbox" [checked]="co2()" (change)="co2.set($any($event.target).checked)" />Injection de CO2</label>
+        <label class="check"><input type="checkbox" [checked]="cycling()" (change)="cycling.set($any($event.target).checked)" />Bac en cours de cyclage (pas encore d’animaux)</label>
         @if (!id()) {
           <label class="check"><input type="checkbox" [checked]="defaults()" (change)="defaults.set($any($event.target).checked)" />Créer les tâches d’entretien habituelles</label>
         }
@@ -91,6 +92,7 @@ export class TankFormPage {
   protected readonly substrate = signal('');
   protected readonly notes = signal('');
   protected readonly co2 = signal(false);
+  protected readonly cycling = signal(false);
   protected readonly defaults = signal(true);
 
   protected readonly existing = computed(() => this.store.tanks().find((t) => t.id === this.id()));
@@ -113,6 +115,7 @@ export class TankFormPage {
       this.substrate.set(t.substrate ?? '');
       this.notes.set(t.notes ?? '');
       this.co2.set(t.co2);
+      this.cycling.set(!!t.cycling);
     });
   }
 
@@ -136,6 +139,7 @@ export class TankFormPage {
         substrate: this.substrate().trim() || undefined,
         notes: this.notes().trim() || undefined,
         co2: this.co2(),
+        cycling: this.cycling() || undefined,
         lighting: photo != null ? { ...prev?.lighting, photoperiodHours: photo } : prev?.lighting,
         archived: prev?.archived ?? false,
       },

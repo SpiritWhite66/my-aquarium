@@ -255,12 +255,19 @@ export class AquariumStore {
     await this.db.tasks.delete(id);
   }
 
-  async completeTask(task: MaintenanceTask, note?: string): Promise<void> {
+  async completeTask(task: MaintenanceTask, note?: string, details?: MaintenanceLog['details']): Promise<void> {
     const today = this.today();
     await this.db.transaction('rw', [this.db.tasks, this.db.logs], async () => {
-      await this.db.logs.put({ id: uuid(), updatedAt: now(), tankId: task.tankId, taskId: task.id, type: task.type, label: task.label, date: now(), note });
+      await this.db.logs.put({ id: uuid(), updatedAt: now(), tankId: task.tankId, taskId: task.id, type: task.type, label: task.label, date: now(), note, details });
       await this.db.tasks.update(task.id, { nextDue: addDays(today, task.everyDays), updatedAt: now() });
     });
+  }
+
+  /** Mode vacances : les tâches dues avant le retour sont décalées au jour du retour. */
+  async postponeTasks(until: string): Promise<number> {
+    const late = this.tasks().filter((t) => t.active && t.nextDue < until);
+    await this.db.tasks.bulkUpdate(late.map((t) => ({ key: t.id, changes: { nextDue: until, updatedAt: now() } })));
+    return late.length;
   }
 
   async addLog(log: New<MaintenanceLog>): Promise<void> {

@@ -22,6 +22,7 @@ export interface Tank extends Entity {
   archived: boolean;
   notes?: string;
   coverPhotoId?: string; // photo affichée sur la carte et en tête du bac
+  cycling?: boolean; // bac en cours de cyclage (pas encore prêt pour les animaux)
 }
 
 // ---------- Catalogue ----------

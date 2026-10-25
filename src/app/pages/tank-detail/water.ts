@@ -5,6 +5,7 @@ import { MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf } from '../../core/rules
 import { agoLabel, fmt, fmtRange, fmtShortDate, speciesName } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { ParamChart } from '../../shared/param-chart';
+import { CYCLING_LABELS, cyclingPhase, trendOf } from '../../core/insights';
 
 @Component({
   selector: 'app-water',
@@ -27,9 +28,35 @@ import { ParamChart } from '../../shared/param-chart';
     .chart .t { font-weight: 700; }
     .chart .r { font-size: 13px; color: var(--mu); }
     .hist .li { font-size: 13px; }
+    .trend { font-size: 13px; font-weight: 600; color: var(--wa); margin-top: 4px; }
+    .trend.bad { color: var(--wn); }
+    .cyc { padding: 14px; display: flex; flex-direction: column; gap: 10px; border-color: var(--wa); }
+    .cyc.ok-card { border-color: var(--ok); }
+    .steps { display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; }
+    .steps li { flex: 1; text-align: center; font-size: 11px; font-weight: 600; padding: 6px 2px; border-radius: 8px; background: var(--sf2); color: var(--mu); }
+    .steps li.past { background: var(--okb); color: var(--ok); }
+    .steps li.on { background: var(--wa); color: var(--on-wa); }
   `,
   template: `
     @if (view(); as v) {
+      @if (v.tank.cycling) {
+        @let phase = cycling();
+        <section class="card cyc" [class.ok-card]="phase === 'done'">
+          <div class="row between">
+            <h2 class="h2"><app-icon name="bubble" [size]="18" />Cyclage du bac</h2>
+            <span class="pill" [class.ok]="phase === 'done'" [class.wn]="phase === 'nitrite' || phase === 'ammonia'">{{ cyclingLabels[phase].title }}</span>
+          </div>
+          <ol class="steps" aria-label="Étapes du cyclage">
+            @for (s of cyclingSteps; track s.key) {
+              <li [class.on]="s.key === phase" [class.past]="stepIndex(s.key) < stepIndex(phase)">{{ s.label }}</li>
+            }
+          </ol>
+          <p class="sub" style="margin: 0">{{ cyclingLabels[phase].detail }}</p>
+          @if (phase === 'done') {
+            <button class="btn fill" type="button" style="align-self: flex-start" (click)="endCycling()">Terminer le cyclage</button>
+          }
+        </section>
+      }
       @if (v.lastTest; as last) {
         <p class="sub" style="margin: 0">Dernier relevé {{ ago(last.date, store.today()) }} ({{ shortDate(last.date) }})</p>
         <section class="grid" aria-label="Dernier relevé">
@@ -58,6 +85,14 @@ import { ParamChart } from '../../shared/param-chart';
                 }
               </div>
               <app-param-chart [key]="c.key" [tests]="v.tests" [range]="c.range" [label]="c.label" />
+              @if (c.trend; as tr) {
+                <p class="trend" [class.bad]="tr.daysToLimit != null && tr.daysToLimit <= 14">
+                  {{ tr.perWeek > 0 ? '↗' : '↘' }} {{ tr.perWeek > 0 ? '+' : '' }}{{ fmtN(tr.perWeek) }} {{ c.unit }} par semaine
+                  @if (tr.daysToLimit != null) {
+                    · {{ tr.limit === 'max' ? 'plafond' : 'plancher' }} {{ tr.daysToLimit === 0 ? 'atteint' : 'dans ~' + tr.daysToLimit + ' j' }}
+                  }
+                </p>
+              }
               @if (c.from) {
                 <p class="sub" style="margin-top: 6px">Plage calculée d’après {{ c.from }}.</p>
               }
@@ -140,9 +175,30 @@ export class WaterTab {
           from: range?.from.length ? range.from.map(speciesName).join(', ') : '',
           conflict: range?.conflict ?? false,
           level: last == null ? 'ok' : levelOf(key, last, range),
+          unit: def.unit,
+          trend: trendOf(v.tests, key, range),
         };
       });
   });
+
+  protected readonly fmtN = fmt;
+  protected readonly cyclingLabels = CYCLING_LABELS;
+  protected readonly cyclingSteps = [
+    { key: 'ammonia', label: 'NH4' },
+    { key: 'nitrite', label: 'NO2' },
+    { key: 'waiting', label: 'NO3' },
+    { key: 'done', label: 'Prêt' },
+  ] as const;
+  protected readonly cycling = computed(() => cyclingPhase(this.view()?.tests ?? []));
+
+  protected stepIndex(phase: string): number {
+    return ['no_data', 'ammonia', 'nitrite', 'waiting', 'done'].indexOf(phase) - 1;
+  }
+
+  protected endCycling(): void {
+    const t = this.view()?.tank;
+    if (t) this.store.saveTank({ ...t, cycling: false });
+  }
 
   protected readonly history = computed(() => [...(this.view()?.tests ?? [])].reverse().slice(0, 20));
 
