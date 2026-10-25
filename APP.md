@@ -1,0 +1,75 @@
+# My Aquarium — Objectif de l'application
+
+## Vision
+
+Une application web personnelle (PWA) pour gérer **plusieurs aquariums d'eau douce** : qualité de l'eau, entretien et population.
+Les **plantes sont aussi importantes que la faune** (poissons, crevettes, escargots) : même place, même richesse d'information, même entretien suivi.
+
+## Contraintes
+
+- **Usage personnel**, interface en **français**, pensée d'abord pour le **mobile**.
+- **PWA** installable, utilisable hors ligne.
+- **Hébergement statique** sur GitLab Pages : pas de serveur en V1.
+- **Données locales** (IndexedDB), avec **export/import JSON** pour la sauvegarde.
+- L'architecture doit permettre d'ajouter plus tard un **backend** et un **serveur MCP** consommable par Claude.ai.
+
+## Stack technique
+
+| Besoin | Choix |
+|---|---|
+| Framework | Angular 22 (composants standalone, signals, zoneless) |
+| Interface | Angular Material 3, thème personnalisé (clair/sombre) |
+| Stockage | Dexie (IndexedDB), derrière une couche « repository » |
+| Graphiques | Chart.js |
+| PWA | `@angular/pwa` (service worker + manifeste) |
+| Données espèces | Catalogue JSON local, enrichi par GBIF et Wikidata (taxonomie, photos) |
+| CI/CD | GitLab CI → GitLab Pages |
+
+## Fonctionnalités V1
+
+### 1. Bacs
+- Création et gestion de plusieurs bacs : nom, type (planté, communautaire, crevettes, quarantaine, nurserie), volume brut et net, dimensions, date de mise en eau, substrat, CO2, éclairage et photopériode.
+- Archivage d'un bac.
+
+### 2. Paramètres de l'eau
+- Saisie rapide d'un relevé : température, pH, GH, KH, NO2, NO3, NH4, PO4, Fe, CO2, conductivité.
+- Graphiques d'évolution par paramètre.
+- **Plages idéales calculées** à partir des espèces présentes dans le bac (intersection de leurs plages).
+- Mise en évidence des valeurs hors plage.
+
+### 3. Entretien
+- Tâches récurrentes par bac : changement d'eau, filtre, vitres, siphonnage, **taille des plantes**, **fertilisation**, recharge CO2, test d'eau, tâche libre.
+- Validation « fait » en un geste : historique enregistré, prochaine échéance recalculée.
+- Tableau de bord des tâches du jour et en retard (alertes dans l'app, pas de notifications push en V1).
+
+### 4. Inventaire et catalogue
+- **Catalogue d'espèces** : poissons, crevettes, escargots, plantes. Fiches intégrées et fiches personnelles.
+  - Faune : taille adulte, banc minimal, volume minimal, tempérament, zone de nage, régime, « mange les plantes ».
+  - Flore : lumière, CO2, croissance, placement (avant-plan, milieu, arrière-plan, épiphyte, flottante), multiplication, hauteur maximale.
+- **Inventaire par bac** : quantité (individus, ou pieds/pots/portions pour les plantes), date d'arrivée, origine, prix, état de santé, emplacement.
+- **Journal** par habitant : naissance, décès, maladie, traitement, taille, bouture, déplacement.
+- **Alertes de compatibilité** à l'ajout : plages d'eau incompatibles, herbivore dans un bac planté, prédation (par ex. Apistogramma et jeunes crevettes).
+
+### 5. Réglages
+- Export et import complets des données en JSON.
+- Choix du thème clair ou sombre.
+
+## Catalogue de départ
+
+Environ 30 espèces courantes, dont celles déjà possédées :
+- *Neritina natalensis* (escargot nérite zèbre)
+- *Neocaridina davidi* « Red Cherry »
+- *Danio margaritatus* (galaxy rasbora)
+- *Apistogramma borellii*
+
+Le reste : poissons, crevettes et escargots courants, plus une large part de **plantes** (Anubias, Cryptocoryne, Microsorum, mousses, Vallisneria, plantes flottantes…).
+
+## Hors périmètre V1 (prévu ensuite)
+
+- **Backend** : synchronisation entre appareils.
+- **Serveur MCP** pour interroger et alimenter les données depuis Claude.ai.
+- **Matériel** (filtre, chauffage, éclairage, garanties) et **stock** de consommables.
+- Notifications push.
+- Journal photo du bac.
+- Alimentation et programmation de l'éclairage.
+- Capteurs connectés.

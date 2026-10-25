@@ -1,0 +1,527 @@
+// Système de design « Aquariums » — repris de la maquette Claude Design.
+// Les couleurs sont des jetons CSS ; le thème se choisit via html[data-theme].
+
+
+@mixin light {
+  --bg: #f3f1ea;
+  --sf: #ffffff;
+  --sf2: #e8ede6;
+  --ln: #d6dbd1;
+  --ink: #17231d;
+  --mu: #4d5d54;
+  --pl: #2d6a43; // végétal
+  --plb: #dcebdd;
+  --wa: #1e4d6b; // eau
+  --wab: #dde8f0;
+  --sa: #eadfc8; // sable
+  --ok: #26734a;
+  --okb: #dcefe2;
+  --wn: #935000;
+  --wnb: #fbe8cf;
+  --dg: #ae2419;
+  --dgb: #f8ddda;
+  --on-wa: #ffffff;
+  --shadow: 0 6px 18px rgba(20, 40, 30, 0.25);
+  color-scheme: light;
+}
+
+@mixin dark {
+  --bg: #0e1613;
+  --sf: #16211d;
+  --sf2: #1e2c27;
+  --ln: #2b3b35;
+  --ink: #e4ece7;
+  --mu: #a2b4a9;
+  --pl: #88d0a2;
+  --plb: #1d3a2a;
+  --wa: #8ec2e2;
+  --wab: #1a3142;
+  --sa: #3a3326;
+  --ok: #88d4a2;
+  --okb: #173325;
+  --wn: #f2b066;
+  --wnb: #3a2a14;
+  --dg: #f5998f;
+  --dgb: #401c19;
+  --on-wa: #0e1613;
+  --shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+:root {
+  @include light;
+  --font: 'Figtree', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --tabs-h: 76px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include dark;
+  }
+}
+:root[data-theme='dark'] {
+  @include dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--pl);
+}
+a:hover {
+  color: var(--wa);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--wa);
+  outline-offset: 2px;
+}
+
+// ---------- Typographie ----------
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.h2 {
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sub {
+  font-size: 13px;
+  color: var(--mu);
+  margin-top: 2px;
+}
+.lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mu);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.sci {
+  font-style: italic;
+  color: var(--mu);
+}
+
+// ---------- Mise en page ----------
+.page {
+  padding: 0 16px calc(var(--tabs-h) + 96px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1240px;
+}
+.top {
+  padding: 20px 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.between {
+  justify-content: space-between;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+// ---------- Composants ----------
+.card {
+  background: var(--sf);
+  border-radius: 20px;
+  border: 1px solid var(--ln);
+}
+.card.danger {
+  border-color: var(--dg);
+}
+.card.warn {
+  border-color: var(--wn);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ok {
+  background: var(--okb);
+  color: var(--ok);
+}
+.wn {
+  background: var(--wnb);
+  color: var(--wn);
+}
+.dg {
+  background: var(--dgb);
+  color: var(--dg);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: currentColor;
+  flex: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--sf2);
+  color: var(--mu);
+  white-space: nowrap;
+}
+.chip.p {
+  background: var(--plb);
+  color: var(--pl);
+}
+.chip.w {
+  background: var(--wab);
+  color: var(--wa);
+}
+.chip.r {
+  background: var(--dgb);
+  color: var(--dg);
+}
+.chip.o {
+  background: var(--wnb);
+  color: var(--wn);
+}
+.chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.ph {
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.ph.pl {
+  background: var(--plb);
+  color: var(--pl);
+}
+.ph.fa {
+  background: var(--wab);
+  color: var(--wa);
+}
+.ph.sa {
+  background: var(--sa);
+  color: var(--mu);
+}
+
+.btn {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  border: 0;
+  font: 600 14px var(--font);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn.fill {
+  background: var(--pl);
+  color: var(--sf);
+}
+.btn.water {
+  background: var(--wa);
+  color: var(--on-wa);
+}
+.btn.ton {
+  background: var(--plb);
+  color: var(--pl);
+}
+.btn.out {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ln);
+}
+.btn.danger {
+  background: var(--dgb);
+  color: var(--dg);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.btn.fill:hover,
+.btn.water:hover {
+  color: var(--sf);
+  filter: brightness(1.08);
+}
+
+.iconbtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: 0;
+  background: var(--sf);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex: none;
+  text-decoration: none;
+}
+.iconbtn:hover {
+  color: var(--ink);
+  background: var(--sf2);
+}
+
+.done {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: 2px solid var(--pl);
+  background: transparent;
+  color: var(--pl);
+  display: grid;
+  place-items: center;
+  flex: none;
+  cursor: pointer;
+}
+.done.late {
+  border-color: var(--dg);
+  color: var(--dg);
+}
+.done:hover {
+  background: var(--plb);
+}
+
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--tabs-h) + 16px);
+  height: 56px;
+  padding: 0 20px 0 16px;
+  border-radius: 18px;
+  border: 0;
+  background: var(--wa);
+  color: var(--on-wa);
+  font: 600 15px var(--font);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  text-decoration: none;
+  z-index: 5;
+}
+.fab:hover {
+  color: var(--on-wa);
+  filter: brightness(1.08);
+}
+@media (min-width: 960px) {
+  .fab {
+    bottom: 24px;
+    right: 32px;
+  }
+}
+
+.seg {
+  display: flex;
+  background: var(--sf2);
+  border-radius: 22px;
+  padding: 4px;
+  gap: 4px;
+}
+.seg a,
+.seg button {
+  flex: 1;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  font: 600 13px var(--font);
+  color: var(--mu);
+  text-decoration: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.seg .on {
+  background: var(--sf);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+// Liste dans une carte
+.li {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+.li + .li {
+  border-top: 1px solid var(--ln);
+}
+a.li:hover {
+  color: inherit;
+  background: var(--sf2);
+}
+.card > .li:first-child {
+  border-radius: 20px 20px 0 0;
+}
+.card > .li:last-child {
+  border-radius: 0 0 20px 20px;
+}
+.card > .li:only-child {
+  border-radius: 20px;
+}
+
+.empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--mu);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+// ---------- Formulaires ----------
+.field {
+  background: var(--sf);
+  border: 1px solid var(--ln);
+  border-radius: 14px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.field:focus-within {
+  border: 2px solid var(--wa);
+  background: var(--wab);
+  padding: 7px 11px;
+}
+.field.warn {
+  border-color: var(--wn);
+}
+.field label,
+.field .flabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mu);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.field input,
+.field select,
+.field textarea {
+  border: 0;
+  background: transparent;
+  font: 600 17px var(--font);
+  padding: 2px 0;
+  width: 100%;
+  outline: none;
+}
+.field input.num {
+  font: 600 20px var(--mono);
+}
+.field textarea {
+  font-weight: 500;
+  font-size: 15px;
+  resize: vertical;
+  min-height: 60px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.form-grid .full {
+  grid-column: 1 / -1;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.check input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--pl);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
