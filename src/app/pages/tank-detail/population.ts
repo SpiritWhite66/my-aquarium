@@ -5,12 +5,13 @@ import { STATUSES, unitLabel } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { SpeciesChips } from '../../shared/species-chips';
 import { ObservationCard } from '../../shared/observation-card';
+import { DiagnosisCard } from '../../shared/diagnosis-card';
 import { speciesIcon } from '../../shared/visuals';
 import { PhotoUrls } from '../../shared/photo-urls';
 
 @Component({
   selector: 'app-population',
-  imports: [RouterLink, Icon, SpeciesChips, ObservationCard],
+  imports: [RouterLink, Icon, SpeciesChips, ObservationCard, DiagnosisCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; gap: 18px; }
@@ -26,12 +27,20 @@ import { PhotoUrls } from '../../shared/photo-urls';
   `,
   template: `
     @if (view(); as v) {
+      @if (lastDiagnosis(); as d) {
+        <app-diagnosis-card [diagnosis]="d" />
+      }
       @if (v.lastObservation; as o) {
         <app-observation-card [observation]="o" />
       }
-      <a class="btn out ai" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">
-        <app-icon name="upload" [size]="18" />Importer un inventaire ou un bilan (IA)
-      </a>
+      <div class="row" style="gap: 8px; flex-wrap: wrap">
+        <a class="btn out ai" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">
+          <app-icon name="upload" [size]="18" />Import IA
+        </a>
+        @if (!lastDiagnosis()) {
+          <a class="btn out ai" routerLink="/diagnostic" [queryParams]="{ bac: v.tank.id }"><app-icon name="search" [size]="18" />Diagnostic IA</a>
+        }
+      </div>
       @for (i of v.issues; track $index) {
         <div class="card issue">
           <app-icon name="warn" [size]="20" />
@@ -90,6 +99,7 @@ export class PopulationTab {
   protected readonly icon = speciesIcon;
   protected readonly unit = unitLabel;
 
+  protected readonly lastDiagnosis = computed(() => this.store.diagnoses().filter((d) => d.tankId === this.id()).at(-1));
   protected readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.id()));
   // La flore passe en premier : les plantes comptent autant que les animaux.
   protected readonly groups = computed(() => {

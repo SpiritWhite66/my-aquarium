@@ -88,6 +88,12 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - Protection des données : stockage persistant, rappel de sauvegarde tous les 14 jours.
 - Fiches espèces personnelles et personnalisation des fiches intégrées ; déplacement d'un habitant entre bacs ; correction des relevés.
 
+### 10. Matériel détaillé et diagnostic IA
+- Fiches techniques saisies à la main : éclairage (canaux, horaires, sieste, intensité, niveaux, PAR…), filtration (débit), chauffage, installation CO2 (horaires, électrovanne). Pas de watts ni lumens par litre (peu pertinents avec les rampes RGB).
+- Contrôles par bac : durée d'éclairage, brassage, synchronisation CO2/lumière.
+- CO2 estimé par KH et pH (3 × KH × 10^(7 − pH)), zone visée 20–30 mg/L, débit de bulles conseillé.
+- Diagnostic IA : l'app exporte le dossier complet d'un bac (JSON + photos) pour le skill `my-aquarium-diagnostic` (`ai/diagnostic/SKILL.md`). La réponse (kind `diagnosis`) s'importe : hypothèses, plan d'action, tâches créées, suivi. Les diagnostics précédents et les actions faites sont renvoyés au diagnostic suivant.
+
 ## Catalogue de départ
 
 Environ 30 espèces courantes, dont celles déjà possédées :

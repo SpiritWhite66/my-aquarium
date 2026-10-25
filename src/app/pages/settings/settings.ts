@@ -91,6 +91,15 @@ import { tasksToIcs } from '../../core/insights';
             <div class="grow"><p style="font-weight: 600">Importer depuis l’IA</p><p class="sub">Inventaire, tests en gouttes ou bilan visuel à partir d’une photo</p></div>
             <app-icon name="chevron" [size]="18" style="color: var(--mu)" />
           </a>
+          <a class="it" routerLink="/diagnostic">
+            <span class="ic w"><app-icon name="search" [size]="20" /></span>
+            <div class="grow"><p style="font-weight: 600">Diagnostic IA</p><p class="sub">Envoie le dossier complet d’un bac (données, matériel, photos) à une IA</p></div>
+            <app-icon name="chevron" [size]="18" style="color: var(--mu)" />
+          </a>
+          <a class="it" href="ai/my-aquarium-diagnostic.zip" download>
+            <span class="ic"><app-icon name="download" [size]="20" /></span>
+            <div class="grow"><p style="font-weight: 600">Skill diagnostic pour Claude</p><p class="sub">my-aquarium-diagnostic</p></div>
+          </a>
           <a class="it" href="ai/my-aquarium-json.zip" download>
             <span class="ic"><app-icon name="download" [size]="20" /></span>
             <div class="grow"><p style="font-weight: 600">Skill pour Claude</p><p class="sub">À ajouter dans Claude › Paramètres › Capacités</p></div>

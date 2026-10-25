@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type {
+  Diagnosis,
   Co2Reading,
   Consumable,
   Equipment,
@@ -28,6 +29,7 @@ export class AquariumDb extends Dexie {
   equipment!: EntityTable<Equipment, 'id'>;
   consumables!: EntityTable<Consumable, 'id'>;
   co2Readings!: EntityTable<Co2Reading, 'id'>;
+  diagnoses!: EntityTable<Diagnosis, 'id'>;
 
   constructor(name = 'my-aquarium') {
     super(name);
@@ -50,6 +52,9 @@ export class AquariumDb extends Dexie {
       equipment: 'id, tankId, type',
       consumables: 'id, category, expiryDate',
       co2Readings: 'id, tankId, date',
+    });
+    this.version(5).stores({
+      diagnoses: 'id, tankId, date',
     });
   }
 }

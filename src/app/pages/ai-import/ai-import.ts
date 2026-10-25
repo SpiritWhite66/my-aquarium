@@ -40,6 +40,12 @@ interface ReadingRow {
   note?: string;
 }
 
+interface DiagnosisPreview {
+  data: Extract<AiPayload, { kind: 'diagnosis' }>['data'];
+  warnings?: string[];
+  createTasks: boolean[];
+}
+
 interface Preview {
   inventory: InventoryRow[];
   readings: ReadingRow[];
@@ -47,6 +53,7 @@ interface Preview {
   readingDate?: string;
   sanity?: { overall: 'good' | 'watch' | 'problem'; summary?: string; findings: AiFinding[]; date?: string; photo?: string; warnings?: string[] };
   warnings: string[];
+  diagnosis?: DiagnosisPreview;
 }
 
 @Component({
@@ -73,6 +80,8 @@ export class AiImportPage {
   protected readonly icon = speciesIcon;
   protected readonly unitLabel = unitLabel;
   protected readonly fmt = fmt;
+  protected readonly probLabels = { high: 'Très probable', medium: 'Possible', low: 'Peu probable' } as const;
+  protected readonly prioLabels = { now: 'Maintenant', soon: 'Bientôt', later: 'Plus tard' } as const;
 
   protected readonly tankId = signal('');
   protected readonly raw = signal('');
@@ -101,7 +110,7 @@ export class AiImportPage {
   protected readonly count = computed(() => {
     const p = this.preview();
     if (!p) return 0;
-    return p.inventory.filter((r) => r.include).length + (p.readings.some((r) => r.include) ? 1 : 0) + (p.sanity ? 1 : 0);
+    return p.inventory.filter((r) => r.include).length + (p.readings.some((r) => r.include) ? 1 : 0) + (p.sanity ? 1 : 0) + (p.diagnosis ? 1 : 0);
   });
 
   constructor() {
@@ -191,6 +200,8 @@ export class AiImportPage {
         for (const [key, r] of Object.entries(p.data.values) as [ParamKey, { value: number; confidence: Confidence; note?: string }][]) {
           preview.readings.push({ include: true, key, value: String(r.value).replace('.', ','), confidence: r.confidence, note: r.note });
         }
+      } else if (p.kind === 'diagnosis') {
+        preview.diagnosis = { data: p.data, warnings: p.warnings, createTasks: p.data.actions.map((a) => !!a.task) };
       } else {
         preview.sanity = { ...p.data, date: p.capturedAt, photo: p.source?.photo, warnings: p.warnings };
       }
@@ -210,6 +221,10 @@ export class AiImportPage {
 
   protected updateReading(i: number, changes: Partial<ReadingRow>): void {
     this.preview.update((p) => p && { ...p, readings: p.readings.map((r, j) => (j === i ? { ...r, ...changes } : r)) });
+  }
+
+  protected toggleTask(i: number, on: boolean): void {
+    this.preview.update((p) => p?.diagnosis ? { ...p, diagnosis: { ...p.diagnosis, createTasks: p.diagnosis.createTasks.map((v, j) => (j === i ? on : v)) } } : p);
   }
 
   protected reset(): void {
@@ -286,6 +301,12 @@ export class AiImportPage {
             speciesId: f.scientificName ? matchSpecies(f.scientificName, undefined, species)?.id : undefined,
           })),
         });
+        target = 'population';
+      }
+
+      if (p.diagnosis) {
+        const d = p.diagnosis;
+        await this.store.addDiagnosis({ tankId, date: new Date().toISOString(), ...d.data, warnings: d.warnings }, d.createTasks);
         target = 'population';
       }
 

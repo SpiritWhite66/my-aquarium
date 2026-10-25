@@ -2,7 +2,7 @@
 // La validation lit le même schéma que celui donné à l'IA : une seule source de vérité.
 
 import schema from '../../../ai/my-aquarium-ai.schema.json';
-import type { FindingCategory, ParamKey, QuantityUnit, Species, SpeciesKind } from './models';
+import type { Diagnosis, FindingCategory, ParamKey, QuantityUnit, Species, SpeciesKind } from './models';
 
 export type Confidence = 'high' | 'medium' | 'low';
 
@@ -47,7 +47,8 @@ interface Envelope<K extends string, D> {
 export type AiPayload =
   | Envelope<'inventory', { items: AiInventoryItem[] }>
   | Envelope<'water_test', { method: 'drops' | 'strips' | 'probe'; testKit?: string; values: Partial<Record<ParamKey, AiReading>> }>
-  | Envelope<'sanity', { overall: 'good' | 'watch' | 'problem'; summary?: string; findings: AiFinding[] }>;
+  | Envelope<'sanity', { overall: 'good' | 'watch' | 'problem'; summary?: string; findings: AiFinding[] }>
+  | Envelope<'diagnosis', Pick<Diagnosis, 'question' | 'summary' | 'hypotheses' | 'actions' | 'followUp'>>;
 
 export type ParseResult = { ok: true; payloads: AiPayload[] } | { ok: false; errors: string[] };
 
@@ -56,7 +57,7 @@ export type ParseResult = { ok: true; payloads: AiPayload[] } | { ok: false; err
 type Schema = Record<string, unknown>;
 const ROOT = schema as unknown as Schema;
 const DEFS = ROOT['$defs'] as Record<string, Schema>;
-const DATA_DEF: Record<string, string> = { inventory: 'InventoryData', water_test: 'WaterTestData', sanity: 'SanityData' };
+const DATA_DEF: Record<string, string> = { inventory: 'InventoryData', water_test: 'WaterTestData', sanity: 'SanityData', diagnosis: 'DiagnosisData' };
 
 function typeOk(type: string, v: unknown): boolean {
   switch (type) {

@@ -192,6 +192,43 @@
       </section>
     }
 
+    @if (p.diagnosis; as dg) {
+      <section class="stack">
+        <h2 class="h2">Diagnostic</h2>
+        @if (dg.data.question) { <p class="sub" style="margin: 0">Question : {{ dg.data.question }}</p> }
+        <p>{{ dg.data.summary }}</p>
+        @for (h of dg.data.hypotheses; track $index) {
+          <article class="card finding" [class.warn]="h.probability === 'high'">
+            <p class="lbl">{{ probLabels[h.probability] }}</p>
+            <p class="nm">{{ h.title }}</p>
+            @if (h.evidence?.length) { <ul>@for (e of h.evidence; track $index) { <li>{{ e }}</li> }</ul> }
+            @if (h.against?.length) { <p class="sub"><b>Contre :</b> {{ h.against.join(' · ') }}</p> }
+          </article>
+        }
+        <h3 class="h2" style="margin-top: 6px">Plan d’action</h3>
+        <div class="card">
+          @for (a of dg.data.actions; track $index; let i = $index) {
+            <div class="li inv">
+              <div class="grow">
+                <p class="lbl">{{ prioLabels[a.priority] }}</p>
+                <p class="nm">{{ a.title }}</p>
+                @if (a.detail) { <p class="sub">{{ a.detail }}</p> }
+                @if (a.task; as t) {
+                  <label class="check small">
+                    <input type="checkbox" [checked]="dg.createTasks[i]" (change)="toggleTask(i, $any($event.target).checked)" />
+                    Créer la tâche « {{ t.label }} » {{ t.everyDays ? '(tous les ' + t.everyDays + ' j)' : t.inDays ? '(dans ' + t.inDays + ' j)' : '(aujourd’hui)' }}
+                  </label>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        @if (dg.data.followUp; as f) {
+          <p class="sub">Suivi dans {{ f.inDays }} jours{{ f.measure?.length ? ' : ' + f.measure!.join(', ') : '' }}.</p>
+        }
+      </section>
+    }
+
     <div class="actions card">
       <button class="btn out" type="button" (click)="reset()">Annuler</button>
       <button class="btn fill" type="button" [disabled]="!count() || saving()" (click)="save()">

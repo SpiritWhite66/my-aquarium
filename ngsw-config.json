@@ -15,7 +15,8 @@
           "/*.js",
           "/media/**",
           "/ai/prompt.md",
-          "/ai/schema.json"
+          "/ai/schema.json",
+          "/ai/diagnostic-prompt.md"
         ]
       }
     },

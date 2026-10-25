@@ -158,6 +158,8 @@ export interface MaintenanceTask extends Entity {
   everyDays: number;
   nextDue: string; // YYYY-MM-DD
   active: boolean;
+  oneOff?: boolean; // tâche ponctuelle : désactivée une fois faite
+  diagnosisId?: string; // proposée par un diagnostic
 }
 
 export interface MaintenanceLog extends Entity {
@@ -216,6 +218,27 @@ export interface Observation extends Entity {
   summary?: string;
   findings: Finding[];
   source?: string; // description de la photo
+  warnings?: string[];
+}
+
+// ---------- Diagnostics (IA) ----------
+export interface DiagnosisAction {
+  title: string;
+  detail?: string;
+  priority: 'now' | 'soon' | 'later';
+  task?: { type: TaskType; label: string; everyDays?: number; inDays?: number };
+  done?: boolean;
+  taskId?: string; // tâche créée dans l'app
+}
+
+export interface Diagnosis extends Entity {
+  tankId: string;
+  date: string; // ISO datetime
+  question?: string;
+  summary: string;
+  hypotheses: { title: string; probability: 'high' | 'medium' | 'low'; evidence?: string[]; against?: string[] }[];
+  actions: DiagnosisAction[];
+  followUp?: { inDays: number; measure?: string[] };
   warnings?: string[];
 }
 
@@ -319,5 +342,6 @@ export interface ExportFile {
     equipment?: Equipment[];
     consumables?: Consumable[];
     co2Readings?: Co2Reading[];
+    diagnoses?: Diagnosis[];
   };
 }

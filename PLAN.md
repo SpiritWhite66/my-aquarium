@@ -83,6 +83,12 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] Matériel (garanties) et consommables (niveau, péremption) avec alertes.
 - [x] CO2 : débit visé, compteur de bulles, drop checker.
 
+## Étape 8 quinquies — Diagnostic
+- [x] CO2 estimé par KH/pH avec conseil de débit.
+- [x] Fiches techniques du matériel et contrôles croisés.
+- [x] Dossier de diagnostic (JSON + photos), skill `my-aquarium-diagnostic`, import du plan d'action en tâches.
+- [ ] Tester le skill de diagnostic sur un vrai cas d'algues et affiner les consignes.
+
 ## Étape 9 — Finitions V1
 - [x] Tests unitaires des règles métier.
 - [ ] Activer GitHub Pages (Settings › Pages › Source : GitHub Actions) et vérifier le déploiement.

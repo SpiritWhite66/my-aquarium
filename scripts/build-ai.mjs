@@ -1,6 +1,7 @@
-// Génère, à partir de ai/SKILL.md, du schéma et du catalogue :
-//  - public/ai/my-aquarium-json.zip : le skill à importer dans Claude.ai
-//  - public/ai/prompt.md : le même contenu en un seul texte, à coller dans n'importe quelle IA
+// Génère, à partir des SKILL.md, du schéma et du catalogue :
+//  - public/ai/my-aquarium-json.zip + prompt.md : analyse d'une photo (inventaire, tests, bilan visuel)
+//  - public/ai/my-aquarium-diagnostic.zip + diagnostic-prompt.md : diagnostic d'un bac à partir de son dossier
+// Chaque zip est un skill à importer dans Claude ; chaque prompt est le même contenu pour n'importe quelle IA.
 // Lancé automatiquement avant `npm start` et `npm run build`.
 
 import { execFileSync } from 'node:child_process';
@@ -29,27 +30,31 @@ for (const [kind, label] of Object.entries(KINDS)) {
   catalogue += `\n## ${label}\n\n` + list.map((e) => `- ${e.sci} — ${e.names.join(', ')}`).join('\n') + '\n';
 }
 
-const skill = read('ai/SKILL.md');
 const schema = read('ai/my-aquarium-ai.schema.json');
-
 const outDir = join(root, 'public/ai');
-const stage = join(root, 'ai/dist/my-aquarium-json');
 rmSync(join(root, 'ai/dist'), { recursive: true, force: true });
-mkdirSync(stage, { recursive: true });
 mkdirSync(outDir, { recursive: true });
 
-// 1. Skill Claude : dossier zippé (SKILL.md + schema.json + catalogue.md).
-writeFileSync(join(stage, 'SKILL.md'), skill);
-writeFileSync(join(stage, 'schema.json'), schema);
-writeFileSync(join(stage, 'catalogue.md'), catalogue);
-const zip = join(outDir, 'my-aquarium-json.zip');
-rmSync(zip, { force: true });
-execFileSync('python3', ['-m', 'zipfile', '-c', zip, 'my-aquarium-json'], { cwd: join(root, 'ai/dist') });
+/**
+ * Un skill = un dossier zippé (SKILL.md + schema.json + catalogue.md) à importer dans Claude,
+ * et le même contenu en un seul texte (prompt) pour n'importe quelle IA.
+ */
+function buildSkill(name, skillPath) {
+  const skill = read(skillPath);
+  const stage = join(root, 'ai/dist', name);
+  mkdirSync(stage, { recursive: true });
+  writeFileSync(join(stage, 'SKILL.md'), skill);
+  writeFileSync(join(stage, 'schema.json'), schema);
+  writeFileSync(join(stage, 'catalogue.md'), catalogue);
+  const zip = join(outDir, `${name}.zip`);
+  rmSync(zip, { force: true });
+  execFileSync('python3', ['-m', 'zipfile', '-c', zip, name], { cwd: join(root, 'ai/dist') });
+  const body = skill.replace(/^---[\s\S]*?---\n/, '');
+  return `${body}\n---\n\n${catalogue.replace(/^# /, '## ')}\n---\n\n## schema.json\n\n\`\`\`json\n${schema.trim()}\n\`\`\`\n`;
+}
 
-// 2. Prompt autonome : le skill sans son en-tête, puis le catalogue et le schéma en ligne.
-const body = skill.replace(/^---[\s\S]*?---\n/, '');
-const prompt = `${body}\n---\n\n${catalogue.replace(/^# /, '## ')}\n---\n\n## schema.json\n\n\`\`\`json\n${schema.trim()}\n\`\`\`\n`;
-writeFileSync(join(outDir, 'prompt.md'), prompt);
+writeFileSync(join(outDir, 'prompt.md'), buildSkill('my-aquarium-json', 'ai/SKILL.md'));
+writeFileSync(join(outDir, 'diagnostic-prompt.md'), buildSkill('my-aquarium-diagnostic', 'ai/diagnostic/SKILL.md'));
 
 cpSync(join(root, 'ai/my-aquarium-ai.schema.json'), join(outDir, 'schema.json'));
 console.log(`IA : skill et prompt générés (${entries.length} espèces).`);
