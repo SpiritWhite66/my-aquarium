@@ -1,0 +1,156 @@
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { Location } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { AquariumStore } from '../../core/store';
+import type { HealthStatus, Inhabitant, InhabitantEventType } from '../../core/models';
+import { STATUSES, fmtShortDate, unitLabel } from '../../core/labels';
+import { Icon } from '../../shared/icon';
+import { speciesIcon } from '../../shared/visuals';
+
+interface QuickEvent {
+  type: InhabitantEventType;
+  label: string;
+  sign: 1 | -1 | 0;
+}
+
+const FAUNA_EVENTS: QuickEvent[] = [
+  { type: 'birth', label: 'Naissance', sign: 1 },
+  { type: 'death', label: 'Décès', sign: -1 },
+  { type: 'disease', label: 'Maladie', sign: 0 },
+  { type: 'treatment', label: 'Traitement', sign: 0 },
+  { type: 'note', label: 'Note', sign: 0 },
+];
+const FLORA_EVENTS: QuickEvent[] = [
+  { type: 'trim', label: 'Taille', sign: 0 },
+  { type: 'propagated', label: 'Bouture', sign: 1 },
+  { type: 'death', label: 'Retrait / fonte', sign: -1 },
+  { type: 'note', label: 'Note', sign: 0 },
+];
+const EVENT_LABELS: Record<InhabitantEventType, string> = {
+  added: 'Ajout', birth: 'Naissance', death: 'Décès ou retrait', disease: 'Maladie', treatment: 'Traitement',
+  trim: 'Taille', propagated: 'Bouture', moved: 'Déplacement', note: 'Note',
+};
+
+/** Fiche d'un habitant d'un bac : quantité, état et journal. */
+@Component({
+  selector: 'app-inhabitant',
+  imports: [RouterLink, Icon],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `
+    .ev { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ev .btn { height: 40px; }
+    .log .li { display: block; }
+  `,
+  template: `
+    @if (data(); as d) {
+      <div class="page" style="max-width: 640px">
+        <header class="top" style="justify-content: flex-start">
+          <button class="iconbtn" type="button" aria-label="Retour" (click)="location.back()"><app-icon name="back" /></button>
+          <div class="ph" [class.pl]="isPlant()" [class.fa]="!isPlant()" style="width: 52px; height: 52px">
+            <app-icon [name]="icon(d.species)" [size]="26" [stroke]="1.6" />
+          </div>
+          <div class="grow">
+            <h1 class="h1" style="font-size: 22px">{{ d.species.commonNames[0] }}</h1>
+            <p class="sci">{{ d.species.scientificName }} · <a [routerLink]="['/catalogue', d.species.id]">fiche</a></p>
+          </div>
+        </header>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="qty">Quantité ({{ unit(d.inhabitant.unit, 2) }})</label>
+            <input id="qty" class="num" inputmode="numeric" [value]="d.inhabitant.quantity" (change)="setQuantity(d.inhabitant, $any($event.target).value)" />
+          </div>
+          <div class="field">
+            <label for="st">État</label>
+            <select id="st" [value]="d.inhabitant.status" (change)="setStatus(d.inhabitant, $any($event.target).value)">
+              @for (s of statusList; track s[0]) {
+                <option [value]="s[0]">{{ s[1] }}</option>
+              }
+            </select>
+          </div>
+          <div class="field full">
+            <label for="pl">Emplacement dans le bac</label>
+            <input id="pl" [value]="d.inhabitant.placementNote ?? ''" placeholder="Arrière gauche…"
+              (change)="store.updateInhabitant(d.inhabitant.id, { placementNote: $any($event.target).value || undefined })" />
+          </div>
+        </div>
+
+        <section class="stack">
+          <h2 class="h2">Noter un événement</h2>
+          <div class="field">
+            <label for="note">Détail (facultatif)</label>
+            <input id="note" [value]="note()" (input)="note.set($any($event.target).value)" placeholder="6 têtes replantées…" />
+          </div>
+          <div class="ev">
+            @for (e of events(); track e.type) {
+              <button class="btn ton" type="button" (click)="record(d.inhabitant, e)">{{ e.label }}{{ e.sign > 0 ? ' +1' : e.sign < 0 ? ' −1' : '' }}</button>
+            }
+          </div>
+        </section>
+
+        <section class="stack log">
+          <h2 class="h2">Journal</h2>
+          <div class="card">
+            @for (e of d.events; track e.id) {
+              <div class="li">
+                <b>{{ eventLabels[e.type] }}</b>
+                @if (e.quantityDelta) { <span class="num"> ({{ e.quantityDelta > 0 ? '+' : '' }}{{ e.quantityDelta }})</span> }
+                <p class="sub">{{ date(e.date) }}{{ e.note ? ' · ' + e.note : '' }}</p>
+              </div>
+            } @empty {
+              <p class="empty">Aucun événement.</p>
+            }
+          </div>
+        </section>
+
+        <button class="btn danger" type="button" style="align-self: flex-start" (click)="remove(d.inhabitant)">
+          <app-icon name="trash" [size]="18" />Supprimer de l’inventaire
+        </button>
+      </div>
+    }
+  `,
+})
+export class InhabitantPage {
+  protected readonly store = inject(AquariumStore);
+  protected readonly location = inject(Location);
+
+  readonly id = input.required<string>();
+  readonly hid = input.required<string>();
+
+  protected readonly statusList = Object.entries(STATUSES) as [HealthStatus, string][];
+  protected readonly eventLabels = EVENT_LABELS;
+  protected readonly icon = speciesIcon;
+  protected readonly unit = unitLabel;
+  protected readonly date = fmtShortDate;
+  protected readonly note = signal('');
+
+  protected readonly data = computed(() => {
+    const inhabitant = this.store.inhabitants().find((i) => i.id === this.hid());
+    const species = inhabitant && this.store.speciesById().get(inhabitant.speciesId);
+    if (!inhabitant || !species) return undefined;
+    const events = this.store.inhabitantEvents().filter((e) => e.inhabitantId === inhabitant.id);
+    return { inhabitant, species, events };
+  });
+  protected readonly isPlant = computed(() => this.data()?.species.kind === 'plant');
+  protected readonly events = computed(() => (this.isPlant() ? FLORA_EVENTS : FAUNA_EVENTS));
+
+  protected setQuantity(i: Inhabitant, raw: string): void {
+    const q = Math.max(0, Math.round(Number(raw.replace(',', '.'))));
+    if (Number.isFinite(q)) this.store.updateInhabitant(i.id, { quantity: q, approximate: false });
+  }
+
+  protected setStatus(i: Inhabitant, status: HealthStatus): void {
+    this.store.updateInhabitant(i.id, { status });
+  }
+
+  protected async record(i: Inhabitant, e: QuickEvent): Promise<void> {
+    await this.store.recordEvent(i, e.type, e.sign, this.note().trim() || undefined);
+    this.note.set('');
+  }
+
+  protected async remove(i: Inhabitant): Promise<void> {
+    if (!confirm('Supprimer cet habitant et son journal ? (Pour un décès, préfère l’état « Mort ».)')) return;
+    await this.store.deleteInhabitant(i.id);
+    this.location.back();
+  }
+}

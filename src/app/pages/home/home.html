@@ -1,0 +1,91 @@
+<div class="page">
+  <header class="top">
+    <div>
+      <p class="sub">{{ dateLabel() }}</p>
+      <h1 class="h1">Mes bacs</h1>
+    </div>
+    @if (store.tankViews().length) {
+      <a class="btn water desktop-only" routerLink="/releve" [queryParams]="readingLink()">
+        <app-icon name="plus" [size]="20" [stroke]="2.2" />Nouveau relevé
+      </a>
+    }
+  </header>
+
+  @if (store.ready() && !store.tankViews().length) {
+    <section class="card empty">
+      <span class="ph pl" style="width: 64px; height: 64px"><app-icon name="landscape" [size]="34" [stroke]="1.4" /></span>
+      <p><b>Bienvenue !</b><br />Commence par créer ton premier bac.</p>
+      <a class="btn fill" routerLink="/bacs/nouveau"><app-icon name="plus" [size]="20" />Nouveau bac</a>
+    </section>
+  }
+
+  @if (alerts().length) {
+    <section class="stack alerts" aria-labelledby="alerts-title">
+      <h2 class="h2" id="alerts-title">Alertes <span class="pill dg">{{ alerts().length }}</span></h2>
+      @for (a of alerts(); track $index) {
+        <a class="card alert" [class.danger]="a.level === 'danger'" [routerLink]="['/bacs', a.tankId, a.link]">
+          <span class="pill" [class.dg]="a.level === 'danger'" [class.wn]="a.level !== 'danger'" style="padding: 0 8px">
+            <span class="dot"></span>
+          </span>
+          <div class="grow">
+            <p class="atitle">{{ a.title }}</p>
+            <p class="sub">{{ a.detail }}</p>
+          </div>
+        </a>
+      }
+    </section>
+  }
+
+  @if (store.tankViews().length) {
+    <section class="stack">
+      <div class="row between">
+        <h2 class="h2">Bacs</h2>
+        <a routerLink="/bacs" class="more">Tout voir</a>
+      </div>
+      <div class="tanks">
+        @for (v of store.tankViews(); track v.tank.id) {
+          <app-tank-card [view]="v" />
+        }
+      </div>
+    </section>
+
+    <section class="stack">
+      <div class="row between">
+        <h2 class="h2">Entretien du jour</h2>
+        <span class="sub" style="margin: 0">
+          {{ store.dueTasks().length }} tâche{{ store.dueTasks().length > 1 ? 's' : '' }}
+          @if (lateCount()) {
+            · {{ lateCount() }} en retard
+          }
+        </span>
+      </div>
+      @if (store.dueTasks().length) {
+        <div class="card tasks">
+          @for (d of store.dueTasks(); track d.task.id) {
+            <div class="row task">
+              <div class="grow">
+                <p class="tname">{{ d.task.label }}</p>
+                <p class="sub">
+                  {{ d.tank.name }} ·
+                  <span [class.late]="d.task.nextDue < store.today()">{{ dueLabel(d.task.nextDue, store.today()) }}</span>
+                </p>
+              </div>
+              <button class="done" [class.late]="d.task.nextDue < store.today()" (click)="store.completeTask(d.task)"
+                [attr.aria-label]="d.task.label + ' : marquer comme fait'">
+                <app-icon name="check" [size]="20" [stroke]="2.2" />
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="card empty">Rien à faire aujourd’hui.</p>
+      }
+    </section>
+  }
+</div>
+
+@if (store.tankViews().length) {
+  <a class="fab mobile-only" routerLink="/releve" [queryParams]="readingLink()">
+    <app-icon name="plus" [size]="20" [stroke]="2.2" />Relevé
+  </a>
+}

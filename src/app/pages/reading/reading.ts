@@ -1,0 +1,149 @@
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Location } from '@angular/common';
+import { AquariumStore } from '../../core/store';
+import type { ParamKey } from '../../core/models';
+import { MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf } from '../../core/rules';
+import { fmt, fmtRange, fmtShortDate, parseNumber } from '../../core/labels';
+import { Icon } from '../../shared/icon';
+
+/** Saisie rapide d'un relevé : valeurs précédentes en indication, contrôle immédiat de la plage. */
+@Component({
+  selector: 'app-reading',
+  imports: [Icon],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `
+    .head { padding: 14px 0 8px; position: sticky; top: 0; background: var(--bg); z-index: 2; }
+    .prev { font-size: 11px; color: var(--mu); font-family: var(--mono); }
+    .field.danger { border-color: var(--dg); }
+    .checks { display: flex; flex-wrap: wrap; gap: 8px; }
+    .checks .pill { height: 32px; padding: 0 12px; font-size: 13px; border-radius: 16px; }
+    .tank select { font: 700 15px var(--font); border: 0; background: transparent; padding: 0; }
+  `,
+  template: `
+    <div class="page" style="max-width: 640px; gap: 12px">
+      <header class="row head">
+        <button class="iconbtn" type="button" aria-label="Fermer" (click)="location.back()"><app-icon name="close" /></button>
+        <div class="grow">
+          <h1 style="font-size: 20px; font-weight: 700">Nouveau relevé</h1>
+          <label class="sub tank">
+            <span class="sr-only">Bac</span>
+            <select [value]="tankId()" (change)="tankId.set($any($event.target).value)">
+              @for (v of store.tankViews(); track v.tank.id) {
+                <option [value]="v.tank.id">{{ v.tank.name }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <button class="btn fill" type="button" [disabled]="!hasValue()" (click)="save()">Enregistrer</button>
+      </header>
+
+      @if (prevDate()) {
+        <p class="sub">En gris : valeur du relevé précédent ({{ prevDate() }}). Les champs vides sont ignorés.</p>
+      }
+
+      <form class="form-grid" (submit)="$event.preventDefault(); save()">
+        @for (f of fields(); track f.key) {
+          <div class="field" [class.warn]="f.level === 'warn'" [class.danger]="f.level === 'danger'">
+            <label [for]="'p-' + f.key">
+              <span>{{ f.label }}</span>
+              @if (f.prev !== undefined) { <span class="prev">{{ f.prev }}</span> }
+            </label>
+            <input [id]="'p-' + f.key" class="num" inputmode="decimal" autocomplete="off" [placeholder]="f.prev ?? ''"
+              [value]="raw()[f.key] ?? ''" (input)="set(f.key, $any($event.target).value)" />
+          </div>
+        }
+        <button type="submit" hidden></button>
+      </form>
+
+      @if (checks().length) {
+        <div class="checks" aria-live="polite">
+          @for (c of checks(); track c.key) {
+            <span class="pill" [class.ok]="c.level === 'ok'" [class.wn]="c.level === 'warn'" [class.dg]="c.level === 'danger'">{{ c.text }}</span>
+          }
+        </div>
+      }
+
+      <div class="field">
+        <label for="note">Note</label>
+        <input id="note" [value]="note()" (input)="note.set($any($event.target).value)" placeholder="Bandelettes, après changement d’eau…" />
+      </div>
+    </div>
+  `,
+})
+export class ReadingPage {
+  protected readonly store = inject(AquariumStore);
+  protected readonly location = inject(Location);
+
+  /** `?bac=` dans l'URL. */
+  readonly bac = input<string>();
+
+  protected readonly tankId = signal('');
+  protected readonly raw = signal<Partial<Record<ParamKey, string>>>({});
+  protected readonly note = signal('');
+
+  private readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.tankId()));
+  private readonly species = computed(() => this.view()?.members.map((m) => m.species) ?? []);
+  protected readonly prevDate = computed(() => {
+    const d = this.view()?.lastTest?.date;
+    return d ? fmtShortDate(d) : '';
+  });
+
+  protected readonly fields = computed(() => {
+    const last = this.view()?.lastTest?.values ?? {};
+    return MAIN_PARAMS.map((key) => {
+      const def = PARAM_BY_KEY[key];
+      const value = parseNumber(this.raw()[key] ?? '');
+      return {
+        key,
+        label: `${def.short}${def.unit ? ' ' + def.unit : ''}`,
+        prev: last[key] != null ? fmt(last[key]) : undefined,
+        level: value == null ? 'ok' : levelOf(key, value, idealRange(key, this.species(), this.view()?.tank)),
+      };
+    });
+  });
+
+  protected readonly checks = computed(() => {
+    const out: { key: ParamKey; level: string; text: string }[] = [];
+    for (const [key, raw] of Object.entries(this.raw()) as [ParamKey, string][]) {
+      const value = parseNumber(raw);
+      const range = idealRange(key, this.species(), this.view()?.tank);
+      if (value == null || !range) continue;
+      const def = PARAM_BY_KEY[key];
+      const level = levelOf(key, value, range);
+      out.push({
+        key,
+        level,
+        text: `${def.short} ${fmt(value)} · ${level === 'ok' ? 'dans la plage' : 'hors plage'} ${fmtRange(range.min, range.max)}`,
+      });
+    }
+    return out;
+  });
+
+  protected readonly hasValue = computed(() => Object.values(this.raw()).some((v) => parseNumber(v ?? '') != null));
+
+  constructor() {
+    // Bac choisi : celui de l'URL, sinon le premier.
+    effect(() => {
+      if (this.tankId()) return;
+      const fromUrl = this.bac();
+      const tanks = this.store.tankViews();
+      const id = tanks.find((v) => v.tank.id === fromUrl)?.tank.id ?? tanks[0]?.tank.id;
+      if (id) this.tankId.set(id);
+    });
+  }
+
+  protected set(key: ParamKey, value: string): void {
+    this.raw.update((r) => ({ ...r, [key]: value }));
+  }
+
+  protected async save(): Promise<void> {
+    if (!this.hasValue() || !this.tankId()) return;
+    const values: Partial<Record<ParamKey, number>> = {};
+    for (const [k, v] of Object.entries(this.raw()) as [ParamKey, string][]) {
+      const n = parseNumber(v);
+      if (n != null) values[k] = n;
+    }
+    await this.store.addWaterTest({ tankId: this.tankId(), date: new Date().toISOString(), values, note: this.note().trim() || undefined });
+    this.location.back();
+  }
+}

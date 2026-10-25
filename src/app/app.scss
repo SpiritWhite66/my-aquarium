@@ -1,0 +1,136 @@
+.shell {
+  min-height: 100dvh;
+  display: flex;
+}
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+// ---------- Mobile : onglets en bas ----------
+.tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--tabs-h);
+  background: var(--sf);
+  border-top: 1px solid var(--ln);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 8px 8px 14px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 10;
+}
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mu);
+  text-decoration: none;
+}
+.tab .ic {
+  width: 56px;
+  height: 30px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+}
+.tab.on {
+  color: var(--ink);
+}
+.tab.on .ic {
+  background: var(--plb);
+  color: var(--pl);
+}
+
+// ---------- Ordinateur : barre latérale ----------
+.side {
+  display: none;
+}
+@media (min-width: 960px) {
+  :host {
+    --tabs-h: 0px;
+  }
+  .tabs {
+    display: none;
+  }
+  .side {
+    width: 248px;
+    flex: none;
+    background: var(--sf);
+    border-right: 1px solid var(--ln);
+    padding: 24px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    overflow-y: auto;
+  }
+  .content {
+    padding: 8px 16px 0;
+  }
+}
+.brand {
+  padding: 0 14px 20px;
+  gap: 10px;
+  font-size: 17px;
+}
+.logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--plb);
+  color: var(--pl);
+  display: grid;
+  place-items: center;
+}
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 24px;
+  color: var(--mu);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+}
+.nav:hover {
+  background: var(--sf2);
+  color: var(--ink);
+}
+.nav.on {
+  background: var(--plb);
+  color: var(--pl);
+}
+.sb {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mu);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 20px 14px 6px;
+}
+.tk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 14px;
+}
+.tk:hover,
+.tk.on {
+  background: var(--sf2);
+  color: var(--ink);
+}
