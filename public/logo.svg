@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mes aquariums">
+  <defs>
+    <path id="leaf" d="M0 0 C18 -26 52 -36 84 -28 C62 -6 30 4 0 0 Z"/>
+  </defs>
+  <!-- Eau -->
+  <rect width="512" height="512" rx="112" fill="#1E4D6B"/>
+  <!-- Plante à tige (gauche) -->
+  <path d="M136 400 C128 320 132 230 150 132" fill="none" stroke="#5DAE7E" stroke-width="12" stroke-linecap="round"/>
+  <g fill="#88D0A2">
+    <use href="#leaf" transform="translate(134 340) rotate(-20)"/>
+    <use href="#leaf" transform="translate(132 310) scale(-1 1) rotate(-20)"/>
+    <use href="#leaf" transform="translate(134 262) rotate(-30) scale(.9)"/>
+    <use href="#leaf" transform="translate(136 230) scale(-1 1) rotate(-30) scale(.9)"/>
+    <use href="#leaf" transform="translate(142 184) rotate(-40) scale(.75)"/>
+    <use href="#leaf" transform="translate(145 160) scale(-1 1) rotate(-40) scale(.7)"/>
+  </g>
+  <!-- Rosette (droite) -->
+  <g fill="#5DAE7E">
+    <use href="#leaf" transform="translate(400 392) rotate(-62) scale(1.35)"/>
+    <use href="#leaf" transform="translate(400 392) scale(-1 1) rotate(-62) scale(1.2)"/>
+  </g>
+  <g fill="#88D0A2">
+    <use href="#leaf" transform="translate(402 392) rotate(-88) scale(1.5)"/>
+  </g>
+  <!-- Sable -->
+  <path d="M0 384 C120 350 220 354 300 370 C380 386 440 382 512 360 V400 C512 462 462 512 400 512 H112 C50 512 0 462 0 400 Z" fill="#EADFC8"/>
+  <!-- Poisson -->
+  <path d="M190 250 C226 208 290 204 328 246 L368 216 V294 L328 264 C290 304 226 300 190 250 Z" fill="#F3F1EA"/>
+  <circle cx="226" cy="245" r="10" fill="#1E4D6B"/>
+  <!-- Bulles -->
+  <circle cx="262" cy="166" r="13" fill="none" stroke="#F3F1EA" stroke-width="8"/>
+  <circle cx="290" cy="120" r="8" fill="none" stroke="#F3F1EA" stroke-width="7"/>
+</svg>

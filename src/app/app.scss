@@ -84,11 +84,7 @@
 .logo {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
-  background: var(--plb);
-  color: var(--pl);
-  display: grid;
-  place-items: center;
+  flex: none;
 }
 .nav {
   display: flex;
