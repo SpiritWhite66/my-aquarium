@@ -15,7 +15,8 @@ import { PhotoUrls } from '../../shared/photo-urls';
     .hero .iconbtn { position: absolute; top: 14px; }
     .head { display: flex; flex-direction: column; gap: 12px; padding-top: 14px; }
     .title { font-size: 24px; font-weight: 700; }
-    @media (min-width: 960px) { .hero { margin: 16px 0 0; border-radius: 20px; } }
+    @media (min-width: 960px) { .hero { margin: 16px 0 0; border-radius: 8px; } }
+    .hero:not(:has(img)) { height: 96px; background: var(--sf2) !important; color: var(--mu) !important; }
   `,
   template: `
     @if (view(); as v) {

@@ -24,7 +24,7 @@ import { PhotoUrls } from './photo-urls';
     .lab { position: absolute; top: 8px; padding: 3px 9px; border-radius: 10px; background: rgba(8, 14, 11, .75); font-size: 12px; font-weight: 700; pointer-events: none; }
     .lab.l { left: 8px; } .lab.r { right: 8px; }
     .line { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: #f3f1ea; pointer-events: none; box-shadow: 0 0 8px rgba(0, 0, 0, .5); }
-    .grip { position: absolute; top: 50%; left: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 18px; background: #f3f1ea; color: #17231d; display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+    .grip { position: absolute; top: 50%; left: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 8px; background: #f3f1ea; color: #17231d; display: grid; place-items: center; font-size: 14px; font-weight: 700; }
     .range { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
     .cmp:has(.range:focus-visible) { outline: 2px solid #8ec2e2; outline-offset: 2px; }
     .side { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

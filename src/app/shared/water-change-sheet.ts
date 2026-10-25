@@ -13,12 +13,12 @@ import { Icon } from './icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(8, 14, 11, .5); display: flex; align-items: flex-end; justify-content: center; }
-    .sheet { width: 100%; max-width: 520px; background: var(--bg); border-radius: 24px 24px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; outline: none; }
-    @media (min-width: 640px) { .backdrop { align-items: center; } .sheet { border-radius: 24px; } }
+    .sheet { width: 100%; max-width: 520px; background: var(--bg); border-radius: 14px 14px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; outline: none; }
+    @media (min-width: 640px) { .backdrop { align-items: center; } .sheet { border-radius: 14px; } }
     .est { padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-size: 15px; }
     .est b { font-family: var(--mono); }
     .pcts { display: flex; gap: 6px; flex-wrap: wrap; }
-    .pcts button { height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid var(--ln); background: var(--sf); font: 600 13px var(--font); cursor: pointer; }
+    .pcts button { height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--ln); background: var(--sf); font: 600 13px var(--font); cursor: pointer; }
     .pcts .on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
   `,
   template: `

@@ -13,15 +13,15 @@ export function speciesChips(s: Species): Chip[] {
   const fl = s.flora;
   if (fl) {
     chips.push({ text: PLACEMENTS[fl.placement], tone: '' });
-    if (fl.co2 === 'required') chips.push({ text: 'CO2 requis', tone: 'w' });
-    else if (fl.co2 === 'beneficial') chips.push({ text: 'CO2 conseillé', tone: 'w' });
-    chips.push({ text: `Lumière ${LIGHTS[fl.light].toLowerCase()}`, tone: fl.light === 'high' ? 'o' : '' });
+    if (fl.co2 === 'required') chips.push({ text: 'CO2 requis', tone: '' });
+    else if (fl.co2 === 'beneficial') chips.push({ text: 'CO2 conseillé', tone: '' });
+    chips.push({ text: `Lumière ${LIGHTS[fl.light].toLowerCase()}`, tone: '' });
   }
   const fa = s.fauna;
   if (fa) {
     if (fa.minGroup && fa.minGroup > 1) chips.push({ text: `Groupe ≥ ${fa.minGroup}`, tone: '' });
     chips.push({ text: ZONES[fa.zone], tone: '' });
-    if (fa.role) chips.push({ text: fa.role, tone: 'p' });
+    if (fa.role) chips.push({ text: fa.role, tone: '' });
     if (fa.eatsPlants) chips.push({ text: 'Mange les plantes', tone: 'r' });
     if (fa.predation?.includes('shrimp')) chips.push({ text: 'Chasse les crevettes', tone: 'r' });
     else if (fa.predation?.includes('shrimp_fry')) chips.push({ text: 'Mange les jeunes crevettes', tone: 'o' });

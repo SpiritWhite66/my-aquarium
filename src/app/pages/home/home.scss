@@ -1,5 +1,21 @@
+.alist {
+  overflow: hidden;
+}
+.alert + .alert {
+  border-top: 1px solid var(--ln);
+}
+.mark {
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  background: var(--wn);
+  flex: none;
+}
+.mark.dg {
+  background: var(--dg);
+}
 .alert {
-  padding: 14px;
+  padding: 12px 14px;
   display: flex;
   gap: 12px;
   align-items: flex-start;
@@ -73,8 +89,6 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  background: var(--wab);
-  border-color: var(--wa);
   color: var(--ink);
 }
 .backup > app-icon {

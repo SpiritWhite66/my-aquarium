@@ -23,17 +23,17 @@ const norm = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').to
   imports: [RouterLink, Icon, SpeciesChips],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    .search { height: 48px; border-radius: 24px; background: var(--sf); border: 1px solid var(--ln); display: flex; align-items: center; gap: 10px; padding: 0 16px; color: var(--mu); }
+    .search { height: 48px; border-radius: 8px; background: var(--sf); border: 1px solid var(--ln); display: flex; align-items: center; gap: 10px; padding: 0 16px; color: var(--mu); }
     .search:focus-within { border-color: var(--wa); }
     .search input { flex: 1; border: 0; background: transparent; outline: none; font-size: 15px; color: var(--ink); min-width: 0; }
     .filters { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 2px; }
-    .fc { height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--ln); background: var(--sf); color: var(--ink); font: 600 13px var(--font); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer; }
+    .fc { height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--ln); background: var(--sf); color: var(--ink); font: 600 13px var(--font); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer; }
     .fc.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; }
-    .sp { background: var(--sf); border: 1px solid var(--ln); border-radius: 18px; overflow: hidden; text-decoration: none; color: var(--ink); display: block; }
+    .sp { background: var(--sf); border: 1px solid var(--ln); border-radius: 8px; overflow: hidden; text-decoration: none; color: var(--ink); display: block; }
     .sp:hover { border-color: var(--mu); color: var(--ink); }
     .img { height: 96px; display: grid; place-items: center; position: relative; border-radius: 0; }
-    .tag { position: absolute; left: 8px; top: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; background: var(--sf); color: var(--ink); padding: 2px 6px; border-radius: 5px; }
+    .tag { position: absolute; left: 8px; top: 8px; font-size: 10px; font-weight: 700; background: var(--sf); color: var(--ink); padding: 2px 6px; border-radius: 5px; }
     .b { padding: 10px 12px 12px; }
     .n { font-weight: 700; font-size: 14px; }
     .s { font-style: italic; font-size: 12px; color: var(--mu); margin: 1px 0 6px; }

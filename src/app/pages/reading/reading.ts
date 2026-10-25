@@ -16,7 +16,7 @@ import { Icon } from '../../shared/icon';
     .prev { font-size: 11px; color: var(--mu); font-family: var(--mono); }
     .field.danger { border-color: var(--dg); }
     .checks { display: flex; flex-wrap: wrap; gap: 8px; }
-    .checks .pill { height: 32px; padding: 0 12px; font-size: 13px; border-radius: 16px; }
+    .checks .pill { height: 32px; padding: 0 12px; font-size: 13px; border-radius: 8px; }
     .tank select { font: 700 15px var(--font); border: 0; background: transparent; padding: 0; }
   `,
   template: `

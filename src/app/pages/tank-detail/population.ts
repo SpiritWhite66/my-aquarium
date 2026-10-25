@@ -21,9 +21,10 @@ import { PhotoUrls } from '../../shared/photo-urls';
     .qty b { display: block; font: 600 20px var(--mono); }
     .qty > span { font-size: 11px; color: var(--mu); }
     .qty .pill { height: 20px; margin-top: 4px; }
-    .issue { padding: 12px 14px; display: flex; gap: 10px; background: var(--wnb); color: var(--wn); border-color: var(--wn); }
+    .issue { padding: 12px 14px; display: flex; gap: 10px; }
+    .issue app-icon { color: var(--wn); }
     .issue p { font-size: 13px; line-height: 1.4; }
-    .ai { align-self: flex-start; }
+    .links { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; font-weight: 600; }
   `,
   template: `
     @if (view(); as v) {
@@ -33,16 +34,14 @@ import { PhotoUrls } from '../../shared/photo-urls';
       @if (v.lastObservation; as o) {
         <app-observation-card [observation]="o" />
       }
-      <div class="row" style="gap: 8px; flex-wrap: wrap">
-        <a class="btn out ai" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">
-          <app-icon name="upload" [size]="18" />Import IA
-        </a>
+      <p class="links">
+        <a routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">Importer un inventaire</a>
         @if (!lastDiagnosis()) {
-          <a class="btn out ai" routerLink="/diagnostic" [queryParams]="{ bac: v.tank.id }"><app-icon name="search" [size]="18" />Diagnostic IA</a>
+          <a routerLink="/diagnostic" [queryParams]="{ bac: v.tank.id }">Demander un diagnostic</a>
         }
-      </div>
+      </p>
       @for (i of v.issues; track $index) {
-        <div class="card issue">
+        <div class="card warn issue">
           <app-icon name="warn" [size]="20" />
           <p><b>{{ i.title }}.</b> {{ i.detail }}</p>
         </div>

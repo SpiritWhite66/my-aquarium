@@ -35,7 +35,6 @@
 .tab .ic {
   width: 52px;
   height: 30px;
-  border-radius: 15px;
   display: grid;
   place-items: center;
 }
@@ -43,7 +42,6 @@
   color: var(--ink);
 }
 .tab.on .ic {
-  background: var(--plb);
   color: var(--pl);
 }
 
@@ -90,9 +88,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 48px;
-  padding: 0 14px;
-  border-radius: 24px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 6px;
   color: var(--mu);
   text-decoration: none;
   font-weight: 600;
@@ -103,16 +101,14 @@
   color: var(--ink);
 }
 .nav.on {
-  background: var(--plb);
-  color: var(--pl);
+  background: var(--sf2);
+  color: var(--ink);
 }
 .sb {
   font-size: 12px;
   font-weight: 700;
   color: var(--mu);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin: 20px 14px 6px;
+  margin: 20px 12px 6px;
 }
 .tk {
   display: flex;
@@ -120,7 +116,7 @@
   gap: 10px;
   min-height: 40px;
   padding: 0 14px;
-  border-radius: 20px;
+  border-radius: 8px;
   color: var(--ink);
   text-decoration: none;
   font-size: 14px;

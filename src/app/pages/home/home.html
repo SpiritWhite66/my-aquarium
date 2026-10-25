@@ -6,7 +6,6 @@
     </div>
     @if (store.tankViews().length) {
       <div class="row" style="gap: 8px">
-      <a class="btn out" routerLink="/import-ia" [queryParams]="readingLink()"><app-icon name="upload" [size]="18" />Import IA</a>
       <a class="btn water desktop-only" routerLink="/releve" [queryParams]="readingLink()">
         <app-icon name="plus" [size]="20" [stroke]="2.2" />Nouveau relevé
       </a>
@@ -30,20 +29,18 @@
 
   @if (store.ready() && !store.tankViews().length) {
     <section class="card empty">
-      <span class="ph pl" style="width: 64px; height: 64px"><app-icon name="landscape" [size]="34" [stroke]="1.4" /></span>
-      <p><b>Bienvenue !</b><br />Commence par créer ton premier bac.</p>
+            <p>Aucun bac pour l’instant.</p>
       <a class="btn fill" routerLink="/bacs/nouveau"><app-icon name="plus" [size]="20" />Nouveau bac</a>
     </section>
   }
 
   @if (alerts().length || stock().length) {
     <section class="stack alerts" aria-labelledby="alerts-title">
-      <h2 class="h2" id="alerts-title">Alertes <span class="pill dg">{{ alerts().length + stock().length }}</span></h2>
+      <h2 class="h2" id="alerts-title">À surveiller <span class="sub" style="margin: 0; font-weight: 500">{{ alerts().length + stock().length }}</span></h2>
+      <div class="card alist">
       @for (a of alerts(); track $index) {
-        <a class="card alert" [class.danger]="a.level === 'danger'" [routerLink]="['/bacs', a.tankId, a.link]">
-          <span class="pill" [class.dg]="a.level === 'danger'" [class.wn]="a.level !== 'danger'" style="padding: 0 8px">
-            <span class="dot"></span>
-          </span>
+        <a class="alert" [class.danger]="a.level === 'danger'" [routerLink]="['/bacs', a.tankId, a.link]">
+          <span class="mark" [class.dg]="a.level === 'danger'"></span>
           <div class="grow">
             <p class="atitle">{{ a.title }}</p>
             <p class="sub">{{ a.detail }}</p>
@@ -51,11 +48,12 @@
         </a>
       }
       @for (s of stock(); track s.id + s.title) {
-        <a class="card alert" [class.danger]="s.level === 'danger'" routerLink="/materiel" [queryParams]="{ vue: s.kind === 'consumable' ? 'consommables' : 'equipements' }">
-          <span class="pill" [class.dg]="s.level === 'danger'" [class.wn]="s.level !== 'danger'" style="padding: 0 8px"><span class="dot"></span></span>
+        <a class="alert" [class.danger]="s.level === 'danger'" routerLink="/materiel" [queryParams]="{ vue: s.kind === 'consumable' ? 'consommables' : 'equipements' }">
+          <span class="mark" [class.dg]="s.level === 'danger'"></span>
           <div class="grow"><p class="atitle">{{ s.title }}</p><p class="sub">{{ s.detail }}</p></div>
         </a>
       }
+      </div>
     </section>
   }
 

@@ -118,7 +118,7 @@ const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
     </div>
   `,
   styles: `
-    .chipbtn { height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--ln); background: var(--sf); font: 600 13px var(--font); cursor: pointer; }
+    .chipbtn { height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--ln); background: var(--sf); font: 600 13px var(--font); cursor: pointer; }
     .chipbtn.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
   `,
 })

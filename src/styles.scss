@@ -51,7 +51,8 @@
 :root {
   @include light;
   --font: 'Figtree', system-ui, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  // Les nombres gardent la police du texte, avec des chiffres de largeur fixe.
+  --mono: var(--font);
   --tabs-h: 76px;
 }
 @media (prefers-color-scheme: dark) {
@@ -76,6 +77,7 @@ body {
   color: var(--ink);
   font-family: var(--font);
   font-size: 15px;
+  font-feature-settings: 'tnum';
   -webkit-font-smoothing: antialiased;
 }
 
@@ -112,7 +114,7 @@ textarea {
   font-variant-numeric: tabular-nums;
 }
 .h1 {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -129,11 +131,9 @@ textarea {
   margin-top: 2px;
 }
 .lbl {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--mu);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 .sci {
   font-style: italic;
@@ -177,23 +177,23 @@ textarea {
 // ---------- Composants ----------
 .card {
   background: var(--sf);
-  border-radius: 20px;
+  border-radius: 10px;
   border: 1px solid var(--ln);
 }
 .card.danger {
-  border-color: var(--dg);
+  box-shadow: inset 3px 0 0 var(--dg);
 }
 .card.warn {
-  border-color: var(--wn);
+  box-shadow: inset 3px 0 0 var(--wn);
 }
 
 .pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 24px;
-  padding: 0 10px;
-  border-radius: 12px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -223,11 +223,12 @@ textarea {
   align-items: center;
   gap: 4px;
   height: 22px;
-  padding: 0 8px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  background: var(--sf2);
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--ln);
   color: var(--mu);
   white-space: nowrap;
 }
@@ -254,7 +255,7 @@ textarea {
 }
 
 .ph {
-  border-radius: 14px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
   flex: none;
@@ -283,9 +284,9 @@ textarea {
 }
 
 .btn {
-  height: 44px;
-  padding: 0 18px;
-  border-radius: 22px;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 8px;
   border: 0;
   font: 600 14px var(--font);
   cursor: pointer;
@@ -305,8 +306,8 @@ textarea {
   color: var(--on-wa);
 }
 .btn.ton {
-  background: var(--plb);
-  color: var(--pl);
+  background: var(--sf2);
+  color: var(--ink);
 }
 .btn.out {
   background: transparent;
@@ -336,7 +337,7 @@ label.fab:focus-within {
 .iconbtn {
   width: 44px;
   height: 44px;
-  border-radius: 22px;
+  border-radius: 8px;
   border: 0;
   background: var(--sf);
   color: var(--ink);
@@ -352,12 +353,12 @@ label.fab:focus-within {
 }
 
 .done {
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
-  border: 2px solid var(--pl);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1.5px solid var(--ln);
   background: transparent;
-  color: var(--pl);
+  color: var(--mu);
   display: grid;
   place-items: center;
   flex: none;
@@ -368,16 +369,17 @@ label.fab:focus-within {
   color: var(--dg);
 }
 .done:hover {
-  background: var(--plb);
+  border-color: var(--pl);
+  color: var(--pl);
 }
 
 .fab {
   position: fixed;
   right: 16px;
   bottom: calc(var(--tabs-h) + 16px);
-  height: 56px;
-  padding: 0 20px 0 16px;
-  border-radius: 18px;
+  height: 52px;
+  padding: 0 18px 0 14px;
+  border-radius: 12px;
   border: 0;
   background: var(--wa);
   color: var(--on-wa);
@@ -403,17 +405,16 @@ label.fab:focus-within {
 
 .seg {
   display: flex;
-  background: var(--sf2);
-  border-radius: 22px;
-  padding: 4px;
+  border-bottom: 1px solid var(--ln);
   gap: 4px;
 }
 .seg a,
 .seg button {
   flex: 1;
-  height: 36px;
+  height: 40px;
   padding: 0 4px;
-  border-radius: 18px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
   display: grid;
   place-items: center;
   font: 600 13px var(--font);
@@ -424,9 +425,8 @@ label.fab:focus-within {
   cursor: pointer;
 }
 .seg .on {
-  background: var(--sf);
   color: var(--ink);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  border-bottom-color: var(--ink);
 }
 
 // Liste dans une carte
@@ -446,13 +446,13 @@ a.li:hover {
   background: var(--sf2);
 }
 .card > .li:first-child {
-  border-radius: 20px 20px 0 0;
+  border-radius: 10px 10px 0 0;
 }
 .card > .li:last-child {
-  border-radius: 0 0 20px 20px;
+  border-radius: 0 0 10px 10px;
 }
 .card > .li:only-child {
-  border-radius: 20px;
+  border-radius: 10px;
 }
 
 .empty {
@@ -470,16 +470,15 @@ a.li:hover {
 .field {
   background: var(--sf);
   border: 1px solid var(--ln);
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 .field:focus-within {
-  border: 2px solid var(--wa);
-  background: var(--wab);
-  padding: 7px 11px;
+  border-color: var(--wa);
+  box-shadow: 0 0 0 1px var(--wa);
 }
 .field.warn {
   border-color: var(--wn);

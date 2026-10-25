@@ -14,13 +14,13 @@ import { Co2Counter } from '../../shared/co2-counter';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; gap: 14px; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .v { background: var(--sf); border: 1px solid var(--ln); border-radius: 14px; padding: 8px 10px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--ln); border: 1px solid var(--ln); border-radius: 10px; overflow: hidden; }
+    .v { background: var(--sf); padding: 8px 10px; }
     .v .k { font-size: 11px; font-weight: 600; color: var(--mu); }
     .v .n { font: 600 18px var(--mono); }
-    .v.warn { border-color: var(--wn); background: var(--wnb); }
+    
     .v.warn .n, .v.warn .k { color: var(--wn); }
-    .v.danger { border-color: var(--dg); background: var(--dgb); }
+    
     .v.danger .n, .v.danger .k { color: var(--dg); }
     .legend { gap: 6px; font-size: 11px; color: var(--mu); }
     .legend i { width: 14px; height: 10px; border-radius: 3px; background: var(--okb); }
@@ -31,9 +31,9 @@ import { Co2Counter } from '../../shared/co2-counter';
     .hist .li { font-size: 13px; }
     .co2 { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
     .big { font: 600 24px var(--mono); }
-    .est { padding: 10px 12px; border-radius: 14px; background: var(--okb); display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
-    .est.warn { background: var(--wnb); }
-    .est.danger { background: var(--dgb); }
+    .est { padding: 2px 0 2px 12px; border-left: 3px solid var(--ok); display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+    .est.warn { border-left-color: var(--wn); }
+    .est.danger { border-left-color: var(--dg); }
     .big small { font-size: 12px; }
     .dcv { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-top: 4px; }
     .dcv i { width: 14px; height: 14px; border-radius: 7px; }
@@ -121,9 +121,7 @@ import { Co2Counter } from '../../shared/co2-counter';
           }
         </section>
 
-        <a class="btn out" style="align-self: flex-start" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">
-          <app-icon name="upload" [size]="18" />Lire une photo de tests (IA)
-        </a>
+        <a style="align-self: flex-start; font-size: 13px; font-weight: 600" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">Lire une photo des tests</a>
         <div class="row between">
           <h2 class="h2">Évolution</h2>
           <div class="row legend"><i></i>Plage idéale du bac</div>
@@ -175,7 +173,7 @@ import { Co2Counter } from '../../shared/co2-counter';
         <div class="card empty">
           <p>Aucun relevé pour ce bac.</p>
           <a class="btn water" routerLink="/releve" [queryParams]="{ bac: v.tank.id }"><app-icon name="plus" [size]="20" />Premier relevé</a>
-          <a class="btn out" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }"><app-icon name="upload" [size]="18" />Lire une photo de tests (IA)</a>
+          <a class="btn out" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }"><app-icon name="upload" [size]="18" />Lire une photo des tests</a>
         </div>
       }
       <a class="fab" routerLink="/releve" [queryParams]="{ bac: v.tank.id }"><app-icon name="plus" [size]="20" [stroke]="2.2" />Relevé</a>

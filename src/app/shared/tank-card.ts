@@ -14,12 +14,13 @@ import { PhotoUrls } from './photo-urls';
     :host { display: block; }
     a { display: block; overflow: hidden; text-decoration: none; color: inherit; height: 100%; }
     a:hover { color: inherit; border-color: var(--mu); }
-    .ph { height: 112px; border-radius: 0; position: relative; }
+    .ph { height: 96px; border-radius: 0; position: relative; background: var(--sf2) !important; color: var(--mu) !important; }
+    .ph app-icon { opacity: .5; }
     .state { position: absolute; top: 10px; right: 10px; }
     .body { padding: 12px 14px 14px; }
     .name { font-weight: 700; font-size: 16px; }
     .vals { margin-top: 10px; gap: 18px; }
-    .big { font: 600 22px var(--mono); }
+    .big { font: 600 22px var(--mono); letter-spacing: -0.01em; }
     .big small { font-size: 13px; }
   `,
   template: `
@@ -29,7 +30,7 @@ import { PhotoUrls } from './photo-urls';
         @if (urls.url(v.tank.coverPhotoId); as cover) {
           <img class="img-abs" [src]="cover" alt="" />
         } @else {
-          <app-icon [name]="isPlanted() ? 'landscape' : 'fish'" [size]="44" [stroke]="1.4" />
+          <app-icon [name]="isPlanted() ? 'landscape' : 'fish'" [size]="30" [stroke]="1.4" />
         }
         <span class="pill state" [class.ok]="v.level === 'ok'" [class.wn]="v.level === 'warn'" [class.dg]="v.level === 'danger'">
           <span class="dot"></span>{{ v.level === 'danger' && v.statusLabel === 'OK' ? 'Danger' : v.statusLabel }}

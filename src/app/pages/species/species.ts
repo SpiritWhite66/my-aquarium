@@ -26,9 +26,9 @@ const SCALES = {
   styles: `
     .hero { height: 200px; position: relative; display: grid; place-items: center; margin: 0 -16px; border-radius: 0; }
     .hero .iconbtn { position: absolute; top: 14px; left: 14px; }
-    @media (min-width: 960px) { .hero { margin: 16px 0 0; border-radius: 20px; } }
+    @media (min-width: 960px) { .hero { margin: 16px 0 0; border-radius: 8px; } }
     .kind { font-weight: 600; color: var(--pl); font-size: 13px; }
-    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--ln); border-radius: 16px; overflow: hidden; border: 1px solid var(--ln); }
+    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--ln); border-radius: 8px; overflow: hidden; border: 1px solid var(--ln); }
     .facts > div { background: var(--sf); padding: 10px 12px; }
     .facts .k { font-size: 11px; font-weight: 600; color: var(--mu); }
     .facts .v { font-weight: 700; font-size: 14px; margin-top: 2px; }

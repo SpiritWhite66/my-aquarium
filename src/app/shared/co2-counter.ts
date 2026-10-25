@@ -16,8 +16,8 @@ import { Icon } from './icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(8, 14, 11, .5); display: flex; align-items: flex-end; justify-content: center; }
-    .sheet { width: 100%; max-width: 520px; max-height: 100dvh; overflow-y: auto; background: var(--bg); border-radius: 24px 24px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; outline: none; }
-    @media (min-width: 640px) { .backdrop { align-items: center; } .sheet { border-radius: 24px; } }
+    .sheet { width: 100%; max-width: 520px; max-height: 100dvh; overflow-y: auto; background: var(--bg); border-radius: 14px 14px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; outline: none; }
+    @media (min-width: 640px) { .backdrop { align-items: center; } .sheet { border-radius: 14px; } }
     .tap { width: 190px; height: 190px; border-radius: 95px; border: 0; margin: 4px auto; background: var(--wa); color: var(--on-wa); font: 700 20px var(--font); cursor: pointer; display: grid; place-items: center; box-shadow: var(--shadow); touch-action: manipulation; user-select: none; transition: transform .06s; }
     .tap:active { transform: scale(.96); }
     .tap small { display: block; font-size: 13px; font-weight: 600; opacity: .8; }
