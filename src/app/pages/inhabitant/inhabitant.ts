@@ -7,6 +7,7 @@ import { STATUSES, fmtShortDate, unitLabel } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { speciesIcon } from '../../shared/visuals';
 import { PhotoAdd } from '../../shared/photo-add';
+import { PhotoCompare } from '../../shared/photo-compare';
 import { PhotoUrls } from '../../shared/photo-urls';
 import { PhotoViewer } from '../../shared/photo-viewer';
 
@@ -37,7 +38,7 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
 /** Fiche d'un habitant d'un bac : quantité, état et journal. */
 @Component({
   selector: 'app-inhabitant',
-  imports: [RouterLink, Icon, PhotoAdd, PhotoViewer],
+  imports: [RouterLink, Icon, PhotoAdd, PhotoViewer, PhotoCompare],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .ev { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -109,8 +110,16 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
               }
             </div>
           }
-          <div class="row"><app-photo-add [tankId]="d.inhabitant.tankId" [inhabitantId]="d.inhabitant.id" /></div>
+          <div class="row" style="flex-wrap: wrap; gap: 8px">
+            <app-photo-add [tankId]="d.inhabitant.tankId" [inhabitantId]="d.inhabitant.id" />
+            @if (photos().length > 1) {
+              <button class="btn out" type="button" (click)="comparing.set(true)"><app-icon name="eye" [size]="18" />Comparer</button>
+            }
+          </div>
         </section>
+        @if (comparing()) {
+          <app-photo-compare [photos]="photos()" [tankId]="d.inhabitant.tankId" [showAdditions]="false" (closed)="comparing.set(false)" />
+        }
         @if (viewing(); as id) {
           <app-photo-viewer [photos]="photos()" [startId]="id" (closed)="viewing.set(null)" />
         }
@@ -152,6 +161,7 @@ export class InhabitantPage {
   protected readonly note = signal('');
   protected readonly urls = inject(PhotoUrls);
   protected readonly viewing = signal<string | null>(null);
+  protected readonly comparing = signal(false);
   protected readonly photos = computed(() => this.store.photos().filter((p) => p.inhabitantId === this.hid()));
 
   protected readonly data = computed(() => {

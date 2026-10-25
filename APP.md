@@ -64,6 +64,7 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - Photos d'un bac (onglet Photos) et de chaque habitant (animal ou plante), prises avec l'appareil photo ou choisies dans la galerie.
 - Réduites à ~1600 px avant stockage (une photo de 1 Mo pèse environ 160 Ko), avec une vignette pour la galerie.
 - Photo de couverture d'un bac affichée sur sa carte et en tête de sa page ; dernière photo d'un habitant affichée dans la population.
+- Comparaison avant / après de deux photos (curseur ou côte à côte) avec l'écart de temps et les espèces ajoutées entre-temps.
 - Visionneuse plein écran : navigation, légende, téléchargement (pour l'envoyer à une IA), suppression.
 - Incluses dans l'export/import JSON.
 

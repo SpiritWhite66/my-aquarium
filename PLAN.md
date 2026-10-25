@@ -62,7 +62,7 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] Table `photos` (Blob réduits + vignettes), ajout depuis l'appareil photo ou la galerie, légendes.
 - [x] Onglet Photos d'un bac, photos par habitant, visionneuse, photo de couverture.
 - [x] Export/import JSON des photos.
-- [ ] Comparaison avant/après d'un même bac dans le temps.
+- [x] Comparaison avant/après (curseur ou côte à côte), écart en jours, espèces ajoutées entre-temps ; aussi pour un habitant (croissance d'une plante).
 - [ ] Envoyer une photo directement à l'import IA.
 
 ## Étape 8 bis — Assistant IA (photo → JSON)

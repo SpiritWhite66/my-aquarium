@@ -3,7 +3,7 @@ import { BUILTIN_SPECIES } from './catalog';
 import type { Species, Tank } from './models';
 import { compatibilityIssues, idealRange, issuesIfAdded, levelOf, testAlerts } from './rules';
 import { addDays, daysBetween } from './dates';
-import { dueLabel, parseNumber } from './labels';
+import { dueLabel, elapsedLabel, parseNumber } from './labels';
 
 const sp = (id: string): Species => BUILTIN_SPECIES.find((s) => s.id === id)!;
 
@@ -104,5 +104,16 @@ describe('utilitaires', () => {
     expect(parseNumber('6,8')).toBe(6.8);
     expect(parseNumber(' ')).toBeUndefined();
     expect(parseNumber('abc')).toBeUndefined();
+  });
+});
+
+describe('écart entre deux photos', () => {
+  it('formule la durée en jours, mois ou années', () => {
+    expect(elapsedLabel(0)).toBe('Le même jour');
+    expect(elapsedLabel(1)).toBe('1 jour');
+    expect(elapsedLabel(12)).toBe('12 jours');
+    expect(elapsedLabel(87)).toBe('87 jours (environ 3 mois)');
+    expect(elapsedLabel(-87)).toBe('87 jours (environ 3 mois)');
+    expect(elapsedLabel(800)).toBe('800 jours (environ 2,2 ans)');
   });
 });

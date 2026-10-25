@@ -145,6 +145,23 @@ export function dueLabel(nextDue: string, today: string): string {
   return `en retard de ${-d} j`;
 }
 
+const fullDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+export function fmtDate(iso: string): string {
+  return fullDate.format(iso.length > 10 ? new Date(iso) : parseIsoDate(iso));
+}
+
+/** « 87 jours (environ 3 mois) » pour un écart entre deux photos. */
+export function elapsedLabel(days: number): string {
+  const d = Math.abs(days);
+  if (d === 0) return 'Le même jour';
+  const plural = (n: number, w: string) => `${n} ${w}${n > 1 && !w.endsWith('s') ? 's' : ''}`;
+  const base = plural(d, 'jour');
+  if (d < 45) return base;
+  if (d < 700) return `${base} (environ ${Math.round(d / 30.4)} mois)`;
+  const years = Math.round((d / 365.25) * 10) / 10;
+  return `${base} (environ ${String(years).replace('.', ',')} ans)`;
+}
+
 /** « il y a 2 j » pour un relevé. */
 export function agoLabel(iso: string, today: string): string {
   const d = daysBetween(iso.slice(0, 10), today);

@@ -4,13 +4,14 @@ import type { Photo } from '../../core/models';
 import { fmtShortDate, speciesName } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { PhotoAdd } from '../../shared/photo-add';
+import { PhotoCompare } from '../../shared/photo-compare';
 import { PhotoUrls } from '../../shared/photo-urls';
 import { PhotoViewer } from '../../shared/photo-viewer';
 
 /** Galerie des photos d'un bac (le bac lui-même et ses habitants). */
 @Component({
   selector: 'app-photos',
-  imports: [Icon, PhotoAdd, PhotoViewer],
+  imports: [Icon, PhotoAdd, PhotoViewer, PhotoCompare],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; gap: 14px; }
@@ -24,6 +25,9 @@ import { PhotoViewer } from '../../shared/photo-viewer';
     @if (tank(); as t) {
       <div class="row between">
         <h2 class="h2"><app-icon name="camera" [size]="18" />Photos <span class="sub" style="margin: 0; font-weight: 500">{{ list().length }}</span></h2>
+        @if (tankPhotos().length > 1) {
+          <button class="btn ton" type="button" style="height: 38px" (click)="comparing.set(true)"><app-icon name="eye" [size]="18" />Comparer</button>
+        }
       </div>
       @if (list().length) {
         <div class="grid">
@@ -44,6 +48,9 @@ import { PhotoViewer } from '../../shared/photo-viewer';
         </div>
       }
       <app-photo-add cls="fab" label="Photo" [tankId]="t.id" />
+      @if (comparing()) {
+        <app-photo-compare [photos]="tankPhotos()" [tankId]="t.id" (closed)="comparing.set(false)" />
+      }
       @if (viewing(); as id) {
         <app-photo-viewer [photos]="list()" [startId]="id" (closed)="viewing.set(null)" />
       }
@@ -57,9 +64,13 @@ export class PhotosTab {
 
   readonly id = input.required<string>();
   protected readonly viewing = signal<string | null>(null);
+  protected readonly comparing = signal(false);
 
   protected readonly tank = computed(() => this.store.tanks().find((t) => t.id === this.id()));
   protected readonly list = computed(() => this.store.photos().filter((p) => p.tankId === this.id()));
+
+  /** Photos du bac lui-même (pas celles des habitants), seules comparables entre elles. */
+  protected readonly tankPhotos = computed(() => this.list().filter((p) => !p.inhabitantId));
 
   protected label(p: Photo): string {
     const inh = p.inhabitantId && this.store.inhabitants().find((i) => i.id === p.inhabitantId);
