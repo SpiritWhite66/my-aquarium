@@ -36,6 +36,7 @@ import {
 import { PARAM_BY_KEY } from './rules';
 import { DOSE_UNITS, TASK_TYPES } from './labels';
 import { diffSettings } from './settings-history';
+import { DEFAULT_PREFS, type NotificationPrefs } from './reminders';
 
 export interface TankView {
   tank: Tank;
@@ -93,6 +94,8 @@ export class AquariumStore {
   /** Diagnostics IA, du plus ancien au plus récent. */
   readonly diagnoses = this.live(() => this.db.diagnoses.orderBy('date').toArray(), []);
   /** Changements de réglages du matériel, du plus ancien au plus récent. */
+  /** Préférences de notification de cet appareil (non incluses dans les sauvegardes). */
+  readonly notificationPrefs = this.live(async () => (await this.db.prefs.get('notifications')) ?? DEFAULT_PREFS, DEFAULT_PREFS);
   readonly settingChanges = this.live(() => this.db.settingChanges.orderBy('date').toArray(), []);
 
   /** Dernière photo de chaque habitant (id habitant → id photo). */
@@ -408,6 +411,12 @@ export class AquariumStore {
   }
   async deleteEquipment(id: string): Promise<void> {
     await this.db.equipment.delete(id);
+  }
+  async saveNotificationPrefs(patch: Partial<NotificationPrefs>): Promise<void> {
+    await this.db.transaction('rw', this.db.prefs, async () => {
+      const cur = (await this.db.prefs.get('notifications')) ?? DEFAULT_PREFS;
+      await this.db.prefs.put({ ...cur, ...patch, id: 'notifications' });
+    });
   }
   async updateSettingChange(id: string, patch: Partial<Pick<SettingChange, 'date' | 'note'>>): Promise<void> {
     await this.db.settingChanges.update(id, { ...patch, updatedAt: now() });

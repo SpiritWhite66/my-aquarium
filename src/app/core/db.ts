@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
+import type { NotificationPrefs } from './reminders';
 import type {
   SettingChange,
   Diagnosis,
@@ -32,6 +33,8 @@ export class AquariumDb extends Dexie {
   co2Readings!: EntityTable<Co2Reading, 'id'>;
   diagnoses!: EntityTable<Diagnosis, 'id'>;
   settingChanges!: EntityTable<SettingChange, 'id'>;
+  /** Préférences de l'appareil lisibles par le service worker (notifications). */
+  prefs!: EntityTable<NotificationPrefs, 'id'>;
 
   constructor(name = 'my-aquarium') {
     super(name);
@@ -60,6 +63,9 @@ export class AquariumDb extends Dexie {
     });
     this.version(6).stores({
       settingChanges: 'id, tankId, equipmentId, date',
+    });
+    this.version(7).stores({
+      prefs: 'id',
     });
   }
 }

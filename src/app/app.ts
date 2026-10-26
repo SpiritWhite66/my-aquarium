@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AquariumStore } from './core/store';
 import { ThemeService } from './core/theme';
 import { BackupService } from './core/backup';
+import { NotificationService } from './core/notifications';
 import { Icon } from './shared/icon';
 
 /** Coquille : barre latérale sur ordinateur, barre d'onglets en bas sur mobile. */
@@ -19,6 +20,8 @@ export class App {
   private readonly theme = inject(ThemeService);
   // Demande la persistance du stockage dès le démarrage.
   private readonly backup = inject(BackupService);
+  // Vérifie les rappels du jour à l'ouverture.
+  private readonly notifications = inject(NotificationService);
 
   protected readonly nav = [
     { path: '/', label: 'Accueil', icon: 'home', exact: true },

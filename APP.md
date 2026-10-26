@@ -94,6 +94,10 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - CO2 estimé par KH et pH (3 × KH × 10^(7 − pH)), zone visée 20–30 mg/L, débit de bulles conseillé.
 - Diagnostic IA : l'app exporte le dossier complet d'un bac (JSON + photos) pour le skill `my-aquarium-diagnostic` (`ai/diagnostic/SKILL.md`). La réponse (kind `diagnosis`) s'importe : hypothèses, plan d'action, tâches créées, suivi. Les diagnostics précédents et les actions faites sont renvoyés au diagnostic suivant.
 - Paramètres secondaires : Fe, K, Mg et conductivité se saisissent via « Autres paramètres » du relevé ; ils apparaissent ensuite dans l'onglet Eau et le dossier de diagnostic (`water.measured`). Repères pour un bac planté : Fe 0,05–0,5, K 5–30, Mg 5–20 mg/L.
+- Journal d'engrais : doses par produit (stock d'engrais ou saisie libre), préremplies avec la dernière fertilisation ; valider une tâche « Fertilisation » ouvre la saisie. Doses en traits sur les courbes NO3/PO4/K/Fe/Mg et dans le dossier (`fertilization`).
+- Note rapide des algues au relevé (aucune / un peu / moyen / beaucoup + types), enregistrée comme observation manuelle ; courbe des algues dans l'onglet Eau, utilisée par la comparaison avant/après des réglages.
+- CO2 par baisse de pH sur la journée (pH avant injection → fin d'éclairage, ~3 × 10^baisse mg/L), prioritaire sur l'estimation KH/pH pendant 14 jours.
+- Notifications quotidiennes (Réglages) : tâches dues et suivis de diagnostic, à l'heure choisie. Texte préparé 14 jours à l'avance dans IndexedDB (table `prefs`) ; affiché par l'appli ouverte, ou par `public/sw.js` (synchronisation périodique, Chrome Android appli installée).
 - Historique des réglages : toute modification de l'intensité, des horaires d'éclairage ou de CO2, de la sieste, de la consigne de chauffage ou du débit est notée (date d'effet modifiable, raison facultative). L'onglet Entretien compare les algues signalées 30 jours avant et après, propose la comparaison des photos, et les courbes de l'onglet Eau marquent chaque changement. L'historique part dans le dossier de diagnostic (`settingsHistory`).
 
 ## Catalogue de départ

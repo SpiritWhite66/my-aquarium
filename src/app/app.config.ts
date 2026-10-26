@@ -17,7 +17,8 @@ export const appConfig: ApplicationConfig = {
       withRouterConfig({ paramsInheritanceStrategy: 'always' }),
       withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
     ),
-    provideServiceWorker('ngsw-worker.js', {
+    // sw.js importe le service worker d'Angular et ajoute les rappels en arrière-plan.
+    provideServiceWorker('sw.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
     }),

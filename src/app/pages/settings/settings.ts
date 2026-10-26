@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { ThemeService, type ThemeChoice } from '../../core/theme';
@@ -6,6 +6,8 @@ import { TANK_TYPES, fmtShortDate } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { BackupService, fmtBytes } from '../../core/backup';
 import { tasksToIcs } from '../../core/insights';
+import { NotificationService } from '../../core/notifications';
+import type { NotificationPrefs } from '../../core/reminders';
 
 @Component({
   selector: 'app-settings',
@@ -24,6 +26,12 @@ import { tasksToIcs } from '../../core/insights';
     .seg button { height: 34px; }
     .msg { font-size: 13px; }
     .date { height: 40px; border: 1px solid var(--ln); border-radius: 12px; background: var(--sf); padding: 0 8px; font: 600 14px var(--font); }
+    .switch input { appearance: none; width: 44px; height: 26px; border-radius: 13px; background: var(--ln); position: relative; cursor: pointer; margin: 0; transition: background .15s; }
+    .switch input::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--sf); transition: transform .15s; }
+    .switch input:checked { background: var(--pl); }
+    .switch input:checked::after { transform: translateX(18px); }
+    .switch input:disabled { opacity: .5; cursor: default; }
+    .check.small { min-height: 32px; font-weight: 500; font-size: 14px; }
     .linkbtn { border: 0; background: none; padding: 0; color: var(--pl); font: 600 13px var(--font); text-decoration: underline; cursor: pointer; }
   `,
   template: `
@@ -67,6 +75,27 @@ import { tasksToIcs } from '../../core/insights';
       <section>
         <h2 class="h2">Rappels</h2>
         <div class="card">
+          <div class="it" style="flex-wrap: wrap">
+            <span class="ic w"><app-icon name="bell" [size]="20" /></span>
+            <div class="grow" style="min-width: 160px">
+              <p style="font-weight: 600">Notifications</p>
+              <p class="sub">{{ notifStatus() }}</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" role="switch" [checked]="prefs().enabled" [disabled]="!notif.supported || notif.permission() === 'denied'" (change)="toggleNotif($any($event.target).checked)" />
+              <span class="sr-only">Activer les notifications</span>
+            </label>
+          </div>
+          @if (prefs().enabled) {
+            <div class="it" style="flex-wrap: wrap; gap: 10px 16px">
+              <label class="row" style="gap: 8px; font-weight: 600">Heure
+                <input type="time" class="date" [value]="prefs().time" (change)="setPref({ time: $any($event.target).value || '09:00' })" />
+              </label>
+              <label class="check small"><input type="checkbox" [checked]="prefs().tasks" (change)="setPref({ tasks: $any($event.target).checked })" />Tâches dues</label>
+              <label class="check small"><input type="checkbox" [checked]="prefs().followUps" (change)="setPref({ followUps: $any($event.target).checked })" />Suivis de diagnostic</label>
+              <button class="linkbtn" type="button" (click)="notif.test()">Tester</button>
+            </div>
+          }
           <button class="it" type="button" style="width: 100%; border: 0; background: transparent; text-align: left; font: inherit; cursor: pointer" (click)="exportIcs()">
             <span class="ic w"><app-icon name="bell" [size]="20" /></span>
             <div class="grow"><p style="font-weight: 600">Ajouter à mon agenda</p><p class="sub">Fichier .ics avec les tâches répétées et une alerte à 9 h (Google Agenda, Outlook…)</p></div>
@@ -140,6 +169,24 @@ import { tasksToIcs } from '../../core/insights';
   `,
 })
 export class SettingsPage {
+  protected readonly notif = inject(NotificationService);
+  protected readonly prefs = inject(AquariumStore).notificationPrefs;
+  protected readonly notifStatus = computed(() => {
+    if (!this.notif.supported) return 'Ce navigateur ne gère pas les notifications.';
+    if (this.notif.permission() === 'denied') return 'Bloquées dans les réglages du navigateur pour ce site.';
+    if (!this.prefs().enabled) return 'Un rappel par jour quand une tâche est due ou un suivi de diagnostic arrive.';
+    return this.notif.background()
+      ? `Chaque jour à ${this.prefs().time}, même appli fermée.`
+      : `Chaque jour à partir de ${this.prefs().time}, à l’ouverture de l’appli. Installe-la sur Android (Chrome) pour les recevoir appli fermée.`;
+  });
+  protected async toggleNotif(on: boolean): Promise<void> {
+    if (on) await this.notif.enable();
+    else await this.notif.disable();
+  }
+  protected setPref(patch: Partial<NotificationPrefs>): void {
+    this.store.saveNotificationPrefs(patch);
+  }
+
   protected readonly store = inject(AquariumStore);
   protected readonly theme = inject(ThemeService);
   protected readonly types = TANK_TYPES;
