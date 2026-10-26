@@ -195,6 +195,8 @@ export class EquipmentFormPage {
   protected readonly location = inject(Location);
   protected readonly v = v;
   readonly id = input<string>();
+  /** Bac présélectionné (?bac=…) pour un nouvel équipement. */
+  readonly bac = input<string>();
 
   protected readonly types = Object.entries(EQUIPMENT_TYPES) as [EquipmentType, string][];
   protected readonly name = signal('');
@@ -212,6 +214,10 @@ export class EquipmentFormPage {
   private loaded = false;
 
   constructor() {
+    effect(() => {
+      const b = this.bac();
+      if (b && !this.id() && !this.tankId()) this.tankId.set(b);
+    });
     effect(() => {
       const e = this.existing();
       if (!e || this.loaded) return;

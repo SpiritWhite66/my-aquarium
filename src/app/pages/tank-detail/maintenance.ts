@@ -8,6 +8,9 @@ import { WaterChangeSheet } from '../../shared/water-change-sheet';
 import type { MaintenanceTask, SettingChange } from '../../core/models';
 import { changeEffect, describeChange, effectVerdict } from '../../core/settings-history';
 import { PhotoCompare } from '../../shared/photo-compare';
+import { equipmentIcon, equipmentSummary } from '../gear/gear';
+import { EQUIPMENT_TYPES } from '../../core/labels';
+import { gearChecks } from '../../core/insights';
 
 const EVENT_LABELS: Record<string, string> = {
   added: 'Ajout',
@@ -49,6 +52,8 @@ const EVENT_LABELS: Record<string, string> = {
     .sc .acts { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; font-weight: 600; }
     .linkbtn { border: 0; background: none; padding: 0; font: inherit; color: var(--pl); cursor: pointer; text-decoration: underline; }
     .linkbtn.mu { color: var(--mu); }
+    .more { font-size: 13px; font-weight: 600; }
+    .gc { font-size: 13px; padding-left: 10px; border-left: 3px solid var(--wn); }
   `,
   template: `
     @if (view(); as v) {
@@ -76,6 +81,32 @@ const EVENT_LABELS: Record<string, string> = {
           </div>
         } @else {
           <p class="card empty">Aucune tâche récurrente.</p>
+        }
+      </section>
+
+      <section class="stack" style="gap: 8px">
+        <div class="row between">
+          <h2 class="h2">Matériel</h2>
+          <a class="more" routerLink="/materiel/equipement/nouveau" [queryParams]="{ bac: v.tank.id }">Ajouter</a>
+        </div>
+        @for (c of checks(); track c.title) {
+          <p class="gc"><b>{{ c.title }}</b> — {{ c.detail }}</p>
+        }
+        @if (gear().length) {
+          <div class="card">
+            @for (e of gear(); track e.id) {
+              <a class="li" [routerLink]="['/materiel/equipement', e.id]">
+                <app-icon [name]="gearIcon(e.type)" [size]="20" style="color: var(--mu)" />
+                <div class="grow">
+                  <p style="font-weight: 600">{{ e.name }}</p>
+                  <p class="sub">{{ gearTypes[e.type] }}{{ gearSummary(e) ? ' · ' + gearSummary(e) : '' }}</p>
+                </div>
+                <app-icon name="chevron" [size]="18" style="color: var(--mu)" />
+              </a>
+            }
+          </div>
+        } @else {
+          <p class="sub" style="margin: 0">Aucun équipement rattaché à ce bac.</p>
         }
       </section>
 
@@ -145,6 +176,16 @@ export class MaintenanceTab {
   protected readonly waterChange = signal<MaintenanceTask | null>(null);
   protected readonly compare = signal<[string, string] | null>(null);
   protected readonly describe = describeChange;
+  protected readonly gearIcon = equipmentIcon;
+  protected readonly gearSummary = equipmentSummary;
+  protected readonly gearTypes = EQUIPMENT_TYPES;
+
+  protected readonly gear = computed(() => this.store.equipment().filter((e) => e.tankId === this.id()));
+  /** Points d'attention sur le matériel du bac (éclairage long, brassage faible…). */
+  protected readonly checks = computed(() => {
+    const t = this.view()?.tank;
+    return t ? gearChecks(t, this.gear()).filter((c) => c.level === 'warn') : [];
+  });
 
   protected readonly tankPhotos = computed(() => this.store.photos().filter((p) => p.tankId === this.id() && !p.inhabitantId));
 

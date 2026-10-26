@@ -13,6 +13,24 @@ export function equipmentIcon(type: EquipmentType): string {
   return ({ filter: 'filter', heater: 'heater', light: 'bulb', co2: 'bubble', pump: 'filter', air: 'bubble', thermometer: 'thermo', controller: 'timer', other: 'tool' } as Record<EquipmentType, string>)[type];
 }
 
+/** Résumé des caractéristiques utiles, en une ligne. */
+export function equipmentSummary(e: Equipment): string {
+  const parts: string[] = [];
+  const l = e.light;
+  if (l) {
+    if (l.schedule) parts.push(`${l.schedule.on}–${l.schedule.off} (${fmt(photoperiod(l))} h)`);
+    if (l.intensityPct != null) parts.push(`${l.intensityPct} %`);
+    if (l.channels?.length) parts.push(l.channels.join('/'));
+    if (l.par) parts.push(`PAR ${l.par}`);
+  }
+  if (e.filter?.flowLh) parts.push(`${e.filter.flowLh} L/h`);
+  if (e.heater?.powerW) parts.push(`${e.heater.powerW} W${e.heater.setpointC ? ' · ' + fmt(e.heater.setpointC) + ' °C' : ''}`);
+  if (e.co2?.schedule) parts.push(`CO2 ${e.co2.schedule.on}–${e.co2.schedule.off}`);
+  if (e.specs) parts.push(e.specs);
+  return parts.join(' · ');
+}
+
+
 /** Matériel (par bac) et consommables (stock, péremption). */
 @Component({
   selector: 'app-gear',
@@ -158,22 +176,7 @@ export class GearPage {
     return { label: `Garantie jusqu’au ${fmtDate(end)}`, soon: days <= 30, over: false };
   }
 
-  /** Résumé des caractéristiques utiles, en une ligne. */
-  protected summary(e: Equipment): string {
-    const parts: string[] = [];
-    const l = e.light;
-    if (l) {
-      if (l.schedule) parts.push(`${l.schedule.on}–${l.schedule.off} (${fmt(photoperiod(l))} h)`);
-      if (l.intensityPct != null) parts.push(`${l.intensityPct} %`);
-      if (l.channels?.length) parts.push(l.channels.join('/'));
-      if (l.par) parts.push(`PAR ${l.par}`);
-    }
-    if (e.filter?.flowLh) parts.push(`${e.filter.flowLh} L/h`);
-    if (e.heater?.powerW) parts.push(`${e.heater.powerW} W${e.heater.setpointC ? ' · ' + fmt(e.heater.setpointC) + ' °C' : ''}`);
-    if (e.co2?.schedule) parts.push(`CO2 ${e.co2.schedule.on}–${e.co2.schedule.off}`);
-    if (e.specs) parts.push(e.specs);
-    return parts.join(' · ');
-  }
+  protected readonly summary = equipmentSummary;
 
   protected setLevel(c: Consumable, level: StockLevel): void {
     this.store.setConsumableLevel(c.id, level);
