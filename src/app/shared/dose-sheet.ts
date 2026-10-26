@@ -90,7 +90,8 @@ export class DoseSheet {
   private readonly lastSession = computed(() => {
     const logs = this.doseLogs();
     const day = logs[0] && localDay(logs[0].date);
-    return day ? logs.filter((l) => localDay(l.date) === day) : [];
+    // `logs` va du plus récent au plus ancien : on remet les produits dans l'ordre de saisie.
+    return day ? logs.filter((l) => localDay(l.date) === day).reverse() : [];
   });
   protected readonly lastLabel = computed(() => {
     const d = this.lastSession()[0]?.date;

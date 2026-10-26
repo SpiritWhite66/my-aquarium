@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { AQUARIUM_DB } from '../db';
 import { Clock } from '../clock';
-import { newId, now, type New } from './util';
+import { newId, now, nowPlus, type New } from './util';
 import { addDays } from '../dates';
 import { DOSE_UNITS } from '../labels';
 import type {
@@ -80,13 +80,13 @@ export class CareRepo {
     }));
     if (task) return this.completeTaskWith(task, entries, 'fertilize');
     await this.db.logs.bulkPut(
-      entries.map((e) => ({
+      entries.map((e, i) => ({
         ...e,
         id: newId(),
         updatedAt: now(),
         tankId,
         type: 'fertilize' as const,
-        date: now(),
+        date: nowPlus(i),
       })),
     );
   }
@@ -99,14 +99,14 @@ export class CareRepo {
     const today = this.clock.today();
     await this.db.transaction('rw', [this.db.tasks, this.db.logs, this.db.diagnoses], async () => {
       await this.db.logs.bulkPut(
-        entries.map((e) => ({
+        entries.map((e, i) => ({
           ...e,
           id: newId(),
           updatedAt: now(),
           tankId: task.tankId,
           taskId: task.id,
           type,
-          date: now(),
+          date: nowPlus(i),
         })),
       );
       await this.db.tasks.update(

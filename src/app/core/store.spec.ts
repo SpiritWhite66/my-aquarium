@@ -1,10 +1,10 @@
-import 'fake-indexeddb/auto';
 // @ts-expect-error -- module Node sans types dans la config de test
 import { Blob as NodeBlob } from 'node:buffer';
 import { TestBed } from '@angular/core/testing';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { useFakeIndexedDb, waitFor } from './fake-db.testing';
 import { AQUARIUM_DB, AquariumDb } from './db';
-import { AquariumStore } from './store';
+import { AquariumStore, groupByTank } from './store';
 import { BackupRepo } from './data/backup.repo';
 import { CareRepo } from './data/care.repo';
 import { LivestockRepo } from './data/livestock.repo';
@@ -12,8 +12,15 @@ import { PhotoRepo } from './data/photo.repo';
 import { TankRepo } from './data/tank.repo';
 import type { Diagnosis, Inhabitant, Tank } from './models';
 
-// Le Blob de jsdom ne sait pas se lire (text, arrayBuffer, stream) : on prend celui de Node.
-globalThis.Blob = NodeBlob;
+// Le Blob de jsdom ne sait pas se lire (text, arrayBuffer, stream) : on prend celui de Node,
+// le temps de ce fichier seulement (les autres tests ont besoin de celui de jsdom).
+const jsdomBlob = globalThis.Blob;
+beforeAll(() => {
+  globalThis.Blob = NodeBlob;
+});
+afterAll(() => {
+  globalThis.Blob = jsdomBlob;
+});
 
 let db: AquariumDb;
 let store: AquariumStore;
@@ -21,6 +28,7 @@ let repo: { backup: BackupRepo; care: CareRepo; livestock: LivestockRepo; photo:
 let n = 0;
 
 beforeEach(() => {
+  useFakeIndexedDb();
   db = new AquariumDb(`test-${n++}`);
   TestBed.configureTestingModule({ providers: [{ provide: AQUARIUM_DB, useValue: db }] });
   store = TestBed.inject(AquariumStore);
@@ -161,5 +169,28 @@ describe('reprise des photos (base v7 → v8)', () => {
     expect(meta && 'full' in meta).toBe(false);
     expect(await (await upgraded.photoFiles.get('a'))!.thumb.text()).toBe('T');
     await upgraded.delete();
+  });
+});
+
+describe('vues des bacs', () => {
+  it('chaque bac ne voit que ses propres données', async () => {
+    const a = await repo.tank.saveTank(tank('Salon'));
+    const b = await repo.tank.saveTank(tank('Nano'));
+    await db.waterTests.bulkPut([
+      { id: 'w1', updatedAt: '', tankId: a, date: '2026-10-01', values: { no3: 10 } },
+      { id: 'w2', updatedAt: '', tankId: b, date: '2026-10-02', values: { no3: 99 } },
+      { id: 'w3', updatedAt: '', tankId: a, date: '2026-10-03', values: { no3: 20 } },
+    ]);
+    await waitFor(() => store.waterTests().length === 3);
+    const views = new Map(store.tankViews().map((v) => [v.tank.id, v]));
+    expect(views.get(a)!.tests.map((t) => t.id)).toEqual(['w1', 'w3']);
+    expect(views.get(a)!.lastTest?.values.no3).toBe(20);
+    expect(views.get(b)!.tests.map((t) => t.id)).toEqual(['w2']);
+  });
+
+  it('groupByTank garde l’ordre d’origine', () => {
+    const g = groupByTank([{ tankId: 'a', n: 1 }, { tankId: 'b', n: 2 }, { tankId: 'a', n: 3 }]);
+    expect(g.get('a')!.map((x) => x.n)).toEqual([1, 3]);
+    expect(g.get('b')!.map((x) => x.n)).toEqual([2]);
   });
 });

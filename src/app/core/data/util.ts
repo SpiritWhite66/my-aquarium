@@ -5,3 +5,6 @@ export type New<T extends Entity> = Omit<T, 'id' | 'updatedAt'> & Partial<Pick<T
 
 export const now = () => new Date().toISOString();
 export const newId = () => crypto.randomUUID();
+
+/** Maintenant + `i` ms : garde l'ordre de saisie de plusieurs lignes enregistrées ensemble. */
+export const nowPlus = (i: number) => new Date(Date.now() + i).toISOString();
