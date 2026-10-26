@@ -79,14 +79,18 @@ export class NotificationService {
 
   /** Évite deux vérifications simultanées (minuteur + retour sur l'onglet) qui afficheraient deux fois. */
   private checking = false;
+  /** Jour déjà notifié : les préférences relues de la base peuvent avoir un instant de retard. */
+  private shownOn = '';
 
   async check(): Promise<void> {
     if (this.permission() !== 'granted' || this.checking) return;
     this.checking = true;
     try {
       const today = this.store.today();
+      if (this.shownOn === today) return;
       const digest = shouldNotify({ ...this.prefs(), digests: this.digests(), digestsUntil: addDays(today, DIGEST_DAYS - 1) }, new Date(), today);
       if (!digest) return;
+      this.shownOn = today;
       await this.prefsRepo.saveNotificationPrefs({ lastShown: today });
       await this.show(digest);
     } finally {
