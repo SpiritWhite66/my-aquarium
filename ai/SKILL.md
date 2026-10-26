@@ -42,7 +42,7 @@ Si la demande est ambiguë et la photo montre un bac entier, fais `sanity`. Une 
 - Compare la couleur de chaque tube au **nuancier visible sur la photo**. Si le nuancier n'est pas visible, utilise le nuancier standard de la marque reconnue et baisse la confiance d'un cran.
 - Valeur entre deux cases du nuancier : prends la plus proche, `confidence: "low"` ou `"medium"`, et écris l'encadrement dans `note` (ex. « entre 10 et 25 »).
 - GH et KH en gouttes se lisent au **nombre de gouttes** jusqu'au virage : si l'utilisateur donne le nombre de gouttes, utilise-le (1 goutte ≈ 1 °d pour la plupart des marques, à préciser dans `note`).
-- Unités attendues : `temp` en °C, `gh`/`kh` en °d, `no2`/`no3`/`nh4`/`po4`/`fe`/`co2` en mg/L, `conductivity` en µS/cm.
+- Unités attendues : `temp` en °C, `gh`/`kh` en °d, `no2`/`no3`/`nh4`/`po4`/`fe`/`k`/`mg`/`co2` en mg/L, `conductivity` en µS/cm.
 - Éclairage jaune, reflets, tube incliné : signale-le dans `warnings`.
 - Identifie chaque tube par son étiquette ou sa position annoncée par l'utilisateur. En cas de doute sur quel tube correspond à quel test, ne devine pas : omets la valeur et explique.
 

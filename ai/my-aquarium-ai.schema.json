@@ -180,6 +180,12 @@
             "fe": {
               "$ref": "#/$defs/reading"
             },
+            "k": {
+              "$ref": "#/$defs/reading"
+            },
+            "mg": {
+              "$ref": "#/$defs/reading"
+            },
             "co2": {
               "$ref": "#/$defs/reading"
             },

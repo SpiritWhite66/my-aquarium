@@ -28,6 +28,8 @@ export const PARAMS: ParamDef[] = [
   { key: 'nh4', label: 'Ammonium NH4', short: 'NH4', unit: 'mg/L', fallback: { min: 0, max: 0.2 }, toxic: true },
   { key: 'po4', label: 'Phosphates PO4', short: 'PO4', unit: 'mg/L', fallback: { min: 0, max: 1.5 } },
   { key: 'fe', label: 'Fer', short: 'Fe', unit: 'mg/L', fallback: { min: 0, max: 0.5 } },
+  { key: 'k', label: 'Potassium K', short: 'K', unit: 'mg/L' },
+  { key: 'mg', label: 'Magnésium Mg', short: 'Mg', unit: 'mg/L' },
   { key: 'co2', label: 'CO2', short: 'CO2', unit: 'mg/L', fallback: { min: 0, max: 30 } },
   { key: 'conductivity', label: 'Conductivité', short: 'Cond.', unit: 'µS/cm' },
 ];
@@ -36,6 +38,14 @@ export const PARAM_BY_KEY = Object.fromEntries(PARAMS.map((p) => [p.key, p])) as
 
 /** Paramètres affichés par défaut (relevé et onglet Eau). */
 export const MAIN_PARAMS: ParamKey[] = ['temp', 'ph', 'gh', 'kh', 'no2', 'no3', 'nh4', 'po4'];
+
+/** Paramètres secondaires (engrais, conductivité) : saisis à la demande, affichés dès qu'ils ont été mesurés. */
+export const EXTRA_PARAMS: ParamKey[] = ['fe', 'k', 'mg', 'conductivity'];
+
+/** Paramètres principaux, plus les secondaires présents dans au moins un relevé. */
+export function measuredParams(tests: { values: Partial<Record<ParamKey, number>> }[]): ParamKey[] {
+  return [...MAIN_PARAMS, ...EXTRA_PARAMS.filter((k) => tests.some((t) => t.values[k] != null))];
+}
 
 export interface IdealRange extends Range {
   /** Espèces qui ont contribué à la plage (vide = plage par défaut). */
@@ -50,6 +60,10 @@ export function idealRange(key: ParamKey, species: Species[], tank?: Tank): Idea
   let fallback = def.fallback;
   if (key === 'no3' && tank?.type === 'planted') fallback = { min: 5, max: 25 };
   if (key === 'po4' && tank?.type === 'planted') fallback = { min: 0.1, max: 1.5 };
+  // Repères usuels pour un bac planté fertilisé.
+  if (key === 'fe' && tank?.type === 'planted') fallback = { min: 0.05, max: 0.5 };
+  if (key === 'k' && tank?.type === 'planted') fallback = { min: 5, max: 30 };
+  if (key === 'mg' && tank?.type === 'planted') fallback = { min: 5, max: 20 };
 
   if (!def.fromSpecies) return fallback ? { ...fallback, from: [], conflict: false } : undefined;
 

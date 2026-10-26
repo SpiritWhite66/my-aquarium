@@ -126,6 +126,8 @@ export const PARAM_KEYS = [
   'nh4',
   'po4',
   'fe',
+  'k',
+  'mg',
   'co2',
   'conductivity',
 ] as const;

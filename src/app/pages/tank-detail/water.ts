@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
-import { MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf } from '../../core/rules';
+import { MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf, measuredParams } from '../../core/rules';
 import { agoLabel, fmt, fmtRange, fmtShortDate, speciesName } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { ParamChart } from '../../shared/param-chart';
@@ -15,8 +15,8 @@ import { describeChange } from '../../core/settings-history';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; gap: 14px; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--ln); border: 1px solid var(--ln); border-radius: 10px; overflow: hidden; }
-    .v { background: var(--sf); padding: 8px 10px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--sf); border: 1px solid var(--ln); border-radius: 10px; overflow: hidden; }
+    .v { padding: 8px 10px; box-shadow: 1px 1px 0 var(--ln); }
     .v .k { font-size: 11px; font-weight: 600; color: var(--mu); }
     .v .n { font: 600 18px var(--mono); }
     
@@ -201,7 +201,7 @@ export class WaterTab {
   protected readonly cells = computed(() => {
     const v = this.view();
     const values = v?.lastTest?.values ?? {};
-    return MAIN_PARAMS.map((key) => {
+    return measuredParams(v?.tests ?? []).map((key) => {
       const value = values[key];
       const range = idealRange(key, this.species(), v?.tank);
       return {
@@ -219,7 +219,7 @@ export class WaterTab {
     if (!v) return [];
     const keys = [...new Set(v.tests.flatMap((t) => Object.keys(t.values)))] as (keyof typeof PARAM_BY_KEY)[];
     // Les paramètres hors plage d'abord, puis l'ordre habituel.
-    const order = (k: string) => (v.alerts.some((a) => a.key === k) ? -1 : 0) * 100 + MAIN_PARAMS.indexOf(k as never);
+    const order = (k: string) => (v.alerts.some((a) => a.key === k) ? -1 : 0) * 100 + measuredParams(v.tests).indexOf(k as never);
     return keys
       .sort((a, b) => order(a) - order(b))
       .map((key) => {

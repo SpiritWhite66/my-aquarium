@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
 import type { ParamKey } from '../../core/models';
-import { MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf } from '../../core/rules';
+import { EXTRA_PARAMS, MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf, measuredParams } from '../../core/rules';
 import { fmt, fmtRange, fmtShortDate, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 
@@ -54,6 +54,11 @@ import { Icon } from '../../shared/icon';
         }
         <button type="submit" hidden></button>
       </form>
+      @if (hiddenExtra().length) {
+        <button class="btn out" type="button" style="align-self: flex-start" (click)="showExtra.set(true)">
+          <app-icon name="plus" [size]="18" />Autres paramètres ({{ hiddenExtra().join(', ') }})
+        </button>
+      }
 
       @if (checks().length) {
         <div class="checks" aria-live="polite">
@@ -92,6 +97,12 @@ export class ReadingPage {
   protected readonly tankId = signal('');
   protected readonly raw = signal<Partial<Record<ParamKey, string>>>({});
   protected readonly note = signal('');
+  /** Affiche aussi Fe, K, Mg et conductivité, même jamais mesurés. */
+  protected readonly showExtra = signal(false);
+  protected readonly hiddenExtra = computed(() => {
+    const shown = new Set(this.fields().map((f) => f.key));
+    return EXTRA_PARAMS.filter((k) => !shown.has(k)).map((k) => PARAM_BY_KEY[k].short);
+  });
 
   private readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.tankId()));
   private readonly species = computed(() => this.view()?.members.map((m) => m.species) ?? []);
@@ -102,7 +113,8 @@ export class ReadingPage {
 
   protected readonly fields = computed(() => {
     const last = this.view()?.lastTest?.values ?? {};
-    return MAIN_PARAMS.map((key) => {
+    const keys = this.showExtra() ? [...MAIN_PARAMS, ...EXTRA_PARAMS] : measuredParams(this.view()?.tests ?? []);
+    return keys.map((key) => {
       const def = PARAM_BY_KEY[key];
       const value = parseNumber(this.raw()[key] ?? '');
       return {

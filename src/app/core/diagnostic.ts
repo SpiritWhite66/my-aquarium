@@ -17,7 +17,7 @@ import type {
   Tank,
   WaterTest,
 } from './models';
-import { MAIN_PARAMS, PARAM_BY_KEY, compatibilityIssues, idealRange, isAlive, testAlerts } from './rules';
+import { PARAM_BY_KEY, measuredParams, compatibilityIssues, idealRange, isAlive, testAlerts } from './rules';
 import { co2FromKhPh, gearChecks, latestKhPh, photoperiod, trendOf } from './insights';
 import { daysBetween } from './dates';
 
@@ -50,6 +50,7 @@ export function buildDossier(i: DossierInput) {
     .map((h) => ({ h, s: byId.get(h.speciesId)! }));
   const species = members.map((m) => m.s);
   const tests = i.tests.filter((t) => t.tankId === tank.id).sort((a, b) => a.date.localeCompare(b.date));
+  const params = measuredParams(tests);
   const gear = i.equipment.filter((e) => e.tankId === tank.id);
   const kp = latestKhPh(tests);
 
@@ -87,9 +88,10 @@ export function buildDossier(i: DossierInput) {
       .slice(0, 20)
       .map((e) => ({ date: e.date.slice(0, 10), type: e.type, quantityDelta: e.quantityDelta, note: e.note, species: byId.get(i.inhabitants.find((h) => h.id === e.inhabitantId)?.speciesId ?? '')?.scientificName })),
     water: {
-      units: Object.fromEntries(MAIN_PARAMS.map((k) => [k, PARAM_BY_KEY[k].unit])),
+      measured: params,
+      units: Object.fromEntries(params.map((k) => [k, PARAM_BY_KEY[k].unit])),
       idealRanges: Object.fromEntries(
-        MAIN_PARAMS.map((k) => {
+        params.map((k) => {
           const r = idealRange(k, species, tank);
           return [k, r ? { min: r.min, max: r.max, fromSpecies: r.from.length > 0, conflict: r.conflict || undefined } : undefined];
         }),
@@ -97,7 +99,7 @@ export function buildDossier(i: DossierInput) {
       tests: tests.slice(-15).map((t) => ({ date: t.date, values: t.values, method: t.method, note: t.note })),
       outOfRange: testAlerts(tests.at(-1), species, tank).map((a) => ({ param: a.key, value: a.value, level: a.level })),
       trends: Object.fromEntries(
-        (MAIN_PARAMS as ParamKey[])
+        params
           .map((k) => [k, trendOf(tests, k, idealRange(k, species, tank))] as const)
           .filter(([, t]) => t)
           .map(([k, t]) => [k, { perWeek: t!.perWeek, daysToLimit: t!.daysToLimit, limit: t!.limit }]),

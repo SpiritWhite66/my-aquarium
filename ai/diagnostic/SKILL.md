@@ -19,7 +19,7 @@ Tu produis : une **explication lisible** puis **un bloc JSON** conforme à `sche
 3. **Croise avec les données** — c'est là que tu apportes de la valeur :
    - **Lumière** : `equipment[].light` (horaires, `photoperiodHours`, sieste, intensité %, canaux, PAR). Une photopériode > 8–9 h ou une intensité forte sans CO2 est un facteur d'algues majeur. Ne raisonne pas en watts ou lumens par litre : ces chiffres ne reflètent pas la lumière utile des rampes RGB ; préfère durée × intensité réglée, et le PAR s'il est fourni.
    - **CO2** : `co2.estimatedMgL` (calculé par KH/pH, fiable seulement si le KH vient des carbonates), lectures de bulles et drop checker, horaires du CO2 vs ceux de la lumière. Le CO2 instable ou trop bas est la première cause d'algues barbe noire (BBA).
-   - **Nutriments** : NO3, PO4, Fe et leurs `trends`. Les ratios comptent (NO3:PO4 autour de 10:1 dans un bac planté). Un NO3 à 0 avec beaucoup de plantes signifie une carence, pas un bac sain.
+   - **Nutriments** : NO3, PO4, Fe, K, Mg (si mesurés, voir `water.measured`) et leurs `trends`. Un paramètre absent de `water.measured` n’a jamais été testé : signale-le comme inconnu, pas comme nul. Les ratios comptent (NO3:PO4 autour de 10:1 dans un bac planté). Un NO3 à 0 avec beaucoup de plantes signifie une carence, pas un bac sain.
    - **Brassage et entretien** : `equipmentChecks`, débit des filtres, fréquence réelle des changements d'eau (`maintenance.recent`), retards.
    - **Population** : charge en poissons, plantes à croissance rapide (concurrentes des algues), mangeurs d'algues présents, incompatibilités (`compatibilityIssues`).
    - **Âge du bac** (`tank.ageDays`) : diatomées brunes normales les premières semaines, `cycling` en cours.
