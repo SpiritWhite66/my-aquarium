@@ -8,13 +8,14 @@ import { Icon } from '../../shared/icon';
 import { TankCard } from '../../shared/tank-card';
 import { BackupService } from '../../core/backup';
 import { WaterChangeSheet } from '../../shared/water-change-sheet';
+import { DoseSheet } from '../../shared/dose-sheet';
 import type { MaintenanceTask } from '../../core/models';
 import { idealRange } from '../../core/rules';
 import { stockAlerts, trendOf } from '../../core/insights';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, Icon, TankCard, WaterChangeSheet],
+  imports: [RouterLink, Icon, TankCard, WaterChangeSheet, DoseSheet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './home.html',
   styleUrl: './home.scss',
@@ -72,9 +73,12 @@ export class HomePage {
   );
 
   protected readonly waterChange = signal<MaintenanceTask | null>(null);
+  /** Saisie des doses d'engrais : tâche à valider, ou `true` pour une dose hors tâche. */
+  protected readonly dosing = signal<MaintenanceTask | true | null>(null);
 
   protected done(task: MaintenanceTask): void {
     if (task.type === 'water_change') this.waterChange.set(task);
+    else if (task.type === 'fertilize') this.dosing.set(task);
     else this.store.completeTask(task);
   }
 

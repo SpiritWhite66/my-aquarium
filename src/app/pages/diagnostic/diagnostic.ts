@@ -139,6 +139,7 @@ export class DiagnosticPage {
       observations: this.store.observations(),
       diagnoses: this.store.diagnoses(),
       settingChanges: this.store.settingChanges(),
+      consumables: this.store.consumables(),
       photos: this.chosenPhotos(),
       question: this.question(),
       today: this.store.today(),

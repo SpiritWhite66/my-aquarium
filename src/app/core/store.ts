@@ -5,6 +5,7 @@ import { BUILTIN_SPECIES } from './catalog';
 import { addDays, todayIso } from './dates';
 import { blobToDataUrl, dataUrlToBlob, processPhoto } from './photos';
 import type {
+  DoseUnit,
   SettingChange,
   Entity,
   ExportFile,
@@ -33,7 +34,7 @@ import {
   type ParamAlert,
 } from './rules';
 import { PARAM_BY_KEY } from './rules';
-import { TASK_TYPES } from './labels';
+import { DOSE_UNITS, TASK_TYPES } from './labels';
 import { diffSettings } from './settings-history';
 
 export interface TankView {
@@ -273,9 +274,24 @@ export class AquariumStore {
   }
 
   async completeTask(task: MaintenanceTask, note?: string, details?: MaintenanceLog['details']): Promise<void> {
+    await this.completeTaskWith(task, [{ label: task.label, note, details }]);
+  }
+
+  /** Doses d'engrais (une ligne par produit), en validant la tâche si elle est fournie. */
+  async logDoses(tankId: string, doses: { product: string; amount?: number; unit?: DoseUnit; consumableId?: string }[], task?: MaintenanceTask, note?: string): Promise<void> {
+    const entries = doses.map((d) => ({
+      label: `Engrais — ${d.product}${d.amount != null ? ` ${String(d.amount).replace('.', ',')} ${DOSE_UNITS[d.unit ?? 'ml']}` : ''}`,
+      note,
+      details: { product: d.product, amount: d.amount, unit: d.unit, consumableId: d.consumableId },
+    }));
+    if (task) return this.completeTaskWith(task, entries, 'fertilize');
+    await this.db.logs.bulkPut(entries.map((e) => ({ ...e, id: uuid(), updatedAt: now(), tankId, type: 'fertilize' as const, date: now() })));
+  }
+
+  private async completeTaskWith(task: MaintenanceTask, entries: Pick<MaintenanceLog, 'label' | 'note' | 'details'>[], type = task.type): Promise<void> {
     const today = this.today();
     await this.db.transaction('rw', [this.db.tasks, this.db.logs], async () => {
-      await this.db.logs.put({ id: uuid(), updatedAt: now(), tankId: task.tankId, taskId: task.id, type: task.type, label: task.label, date: now(), note, details });
+      await this.db.logs.bulkPut(entries.map((e) => ({ ...e, id: uuid(), updatedAt: now(), tankId: task.tankId, taskId: task.id, type, date: now() })));
       await this.db.tasks.update(task.id, task.oneOff ? { active: false, updatedAt: now() } : { nextDue: addDays(today, task.everyDays), updatedAt: now() });
     });
     // Tâche issue d'un diagnostic : l'action correspondante est marquée faite.

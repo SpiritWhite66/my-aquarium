@@ -105,6 +105,10 @@
   }
 </div>
 
+@if (dosing(); as d) {
+  <app-dose-sheet [tankId]="$any(d).tankId" [task]="d === true ? undefined : d" (closed)="dosing.set(null)" />
+}
+
 @if (waterChange(); as t) {
   <app-water-change-sheet [task]="t" (closed)="waterChange.set(null)" />
 }

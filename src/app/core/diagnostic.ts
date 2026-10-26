@@ -2,6 +2,7 @@
 // Lu par le skill « my-aquarium-diagnostic » (ai/diagnostic/SKILL.md).
 
 import type {
+  Consumable,
   SettingChange,
   Co2Reading,
   Diagnosis,
@@ -35,6 +36,7 @@ export interface DossierInput {
   diagnoses: Diagnosis[];
   photos: Photo[]; // photos jointes, déjà choisies
   settingChanges?: SettingChange[];
+  consumables?: Consumable[];
   question?: string;
   today: string;
 }
@@ -138,6 +140,12 @@ export function buildDossier(i: DossierInput) {
       .filter((o) => o.tankId === tank.id)
       .slice(-3)
       .map((o) => ({ date: o.date.slice(0, 10), overall: o.overall, summary: o.summary, findings: o.findings.map((f) => ({ category: f.category, severity: f.severity, title: f.title, resolved: f.resolved || undefined })) })),
+    fertilization: {
+      productsInStock: (i.consumables ?? []).filter((c) => c.category === 'fertilizer').map((c) => ({ name: c.name, brand: c.brand, level: c.level })),
+      doses: i.logs
+        .filter((l) => l.tankId === tank.id && l.type === 'fertilize' && daysBetween(l.date.slice(0, 10), i.today) <= 30)
+        .map((l) => ({ date: l.date.slice(0, 10), product: l.details?.product ?? l.label, amount: l.details?.amount, unit: l.details?.unit })),
+    },
     settingsHistory: (i.settingChanges ?? [])
       .filter((c) => c.tankId === tank.id)
       .slice(-15)

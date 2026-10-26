@@ -164,13 +164,16 @@ export interface MaintenanceTask extends Entity {
   diagnosisId?: string; // proposée par un diagnostic
 }
 
+/** Unité d'une dose d'engrais. */
+export type DoseUnit = 'ml' | 'g' | 'pump' | 'drop' | 'tab';
+
 export interface MaintenanceLog extends Entity {
   tankId: string;
   taskId?: string;
   type: TaskType;
   label: string;
   date: string; // ISO datetime
-  details?: { waterChangedLiters?: number; product?: string; dose?: string };
+  details?: { waterChangedLiters?: number; product?: string; dose?: string; amount?: number; unit?: DoseUnit; consumableId?: string };
   note?: string;
 }
 

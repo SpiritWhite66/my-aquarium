@@ -218,3 +218,5 @@ export function parseNumber(raw: string): number | undefined {
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
 }
+
+export const DOSE_UNITS: Record<import('./models').DoseUnit, string> = { ml: 'ml', g: 'g', pump: 'pression(s)', drop: 'goutte(s)', tab: 'comprimé(s)' };

@@ -5,6 +5,7 @@ import { dueLabel, fmtShortDate, frequencyLabel, speciesName } from '../../core/
 import { Icon } from '../../shared/icon';
 import { isPlantTask, taskIcon } from '../../shared/visuals';
 import { WaterChangeSheet } from '../../shared/water-change-sheet';
+import { DoseSheet } from '../../shared/dose-sheet';
 import type { MaintenanceTask, SettingChange } from '../../core/models';
 import { changeEffect, describeChange, effectVerdict } from '../../core/settings-history';
 import { PhotoCompare } from '../../shared/photo-compare';
@@ -26,7 +27,7 @@ const EVENT_LABELS: Record<string, string> = {
 
 @Component({
   selector: 'app-maintenance',
-  imports: [RouterLink, Icon, WaterChangeSheet, PhotoCompare],
+  imports: [RouterLink, Icon, WaterChangeSheet, PhotoCompare, DoseSheet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; gap: 16px; }
@@ -139,7 +140,10 @@ const EVENT_LABELS: Record<string, string> = {
       }
 
       <section class="stack">
-        <h2 class="h2">Historique</h2>
+        <div class="row between">
+          <h2 class="h2">Historique</h2>
+          <button class="linkbtn" type="button" style="font-size: 13px; font-weight: 600" (click)="dosing.set(true)">Noter une dose d’engrais</button>
+        </div>
         @if (history().length) {
           <div class="tl">
             @for (h of history(); track h.id) {
@@ -155,6 +159,9 @@ const EVENT_LABELS: Record<string, string> = {
       </section>
       @if (compare(); as pair) {
         <app-photo-compare [photos]="tankPhotos()" [tankId]="v.tank.id" [initialFirst]="pair[0]" [initialSecond]="pair[1]" (closed)="compare.set(null)" />
+      }
+      @if (dosing(); as d) {
+        <app-dose-sheet [tankId]="d === true ? id() : d.tankId" [task]="d === true ? undefined : d" (closed)="dosing.set(null)" />
       }
       @if (waterChange(); as t) {
         <app-water-change-sheet [task]="t" (closed)="waterChange.set(null)" />
@@ -174,6 +181,8 @@ export class MaintenanceTab {
   protected readonly date = fmtShortDate;
 
   protected readonly waterChange = signal<MaintenanceTask | null>(null);
+  /** Saisie des doses d'engrais : tâche à valider, ou `true` pour une dose hors tâche. */
+  protected readonly dosing = signal<MaintenanceTask | true | null>(null);
   protected readonly compare = signal<[string, string] | null>(null);
   protected readonly describe = describeChange;
   protected readonly gearIcon = equipmentIcon;
@@ -214,6 +223,7 @@ export class MaintenanceTab {
 
   protected done(task: MaintenanceTask): void {
     if (task.type === 'water_change') this.waterChange.set(task);
+    else if (task.type === 'fertilize') this.dosing.set(task);
     else this.store.completeTask(task);
   }
 

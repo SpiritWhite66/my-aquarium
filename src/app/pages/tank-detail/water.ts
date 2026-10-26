@@ -26,6 +26,7 @@ import { describeChange } from '../../core/settings-history';
     .v.danger .n, .v.danger .k { color: var(--dg); }
     .legend { gap: 6px; font-size: 11px; color: var(--mu); }
     .legend i { width: 14px; height: 10px; border-radius: 3px; background: var(--okb); }
+    .legend .dtick { width: 0; height: 8px; border-left: 2px solid var(--pl); margin-left: 8px; align-self: flex-end; }
     .legend .dash { width: 0; height: 12px; border-left: 1px dashed var(--mu); margin-left: 8px; }
     .charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
     .chart { padding: 12px 14px; }
@@ -142,7 +143,7 @@ import { describeChange } from '../../core/settings-history';
         <a style="align-self: flex-start; font-size: 13px; font-weight: 600" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">Lire une photo des tests</a>
         <div class="row between">
           <h2 class="h2">Évolution</h2>
-          <div class="row legend"><i></i>Plage idéale du bac @if (marks().length) { <b class="dash"></b>Réglage modifié }</div>
+          <div class="row legend"><i></i>Plage idéale du bac @if (marks().length) { <b class="dash"></b>Réglage modifié } @if (doses().length) { <b class="dtick"></b>Engrais }</div>
         </div>
         <div class="charts">
           @for (c of charts(); track c.key) {
@@ -153,7 +154,7 @@ import { describeChange } from '../../core/settings-history';
                   <p class="num r">idéal {{ c.rangeLabel }}</p>
                 }
               </div>
-              <app-param-chart [key]="c.key" [tests]="v.tests" [range]="c.range" [label]="c.label" [marks]="marks()" />
+              <app-param-chart [key]="c.key" [tests]="v.tests" [range]="c.range" [label]="c.label" [marks]="marks()" [ticks]="nutrient.has(c.key) ? doses() : []" />
               @if (c.trend; as tr) {
                 <p class="trend" [class.bad]="tr.daysToLimit != null && tr.daysToLimit <= 14">
                   {{ tr.perWeek > 0 ? '↗' : '↘' }} {{ tr.perWeek > 0 ? '+' : '' }}{{ fmtN(tr.perWeek) }} {{ c.unit }} par semaine
@@ -199,6 +200,13 @@ import { describeChange } from '../../core/settings-history';
   `,
 })
 export class WaterTab {
+  protected readonly nutrient = new Set<string>(['no3', 'po4', 'k', 'fe', 'mg']);
+  /** Doses d'engrais du bac, repérées sur les courbes des nutriments. */
+  protected readonly doses = computed(() =>
+    this.store.logs()
+      .filter((l) => l.tankId === this.id() && l.type === 'fertilize')
+      .map((l) => ({ date: l.date, label: l.label })),
+  );
   /** Changements de réglages du matériel, repérés sur les courbes. */
   protected readonly marks = computed(() =>
     this.store.settingChanges()

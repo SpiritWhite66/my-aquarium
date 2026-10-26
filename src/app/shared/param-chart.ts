@@ -19,6 +19,7 @@ const PAD_Y = 8;
     .pt { fill: var(--sf); stroke: var(--wa); stroke-width: 2; }
     .pt.bad { fill: var(--dg); stroke: var(--dg); }
     .ax { font: 500 10px var(--mono); fill: var(--mu); }
+    .tick { stroke: var(--pl); stroke-width: 2; vector-effect: non-scaling-stroke; }
     .mark { stroke: var(--mu); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
   `,
   template: `
@@ -31,6 +32,9 @@ const PAD_Y = 8;
       }
       @for (m of c.marks; track $index) {
         <line class="mark" [attr.x1]="m.x" [attr.x2]="m.x" y1="0" [attr.y2]="H"><title>{{ m.label }}</title></line>
+      }
+      @for (t of c.ticks; track $index) {
+        <line class="tick" [attr.x1]="t.x" [attr.x2]="t.x" [attr.y1]="H - 6" [attr.y2]="H"><title>{{ t.label }}</title></line>
       }
       @if (c.points.length > 1) {
         <polyline class="line" [attr.points]="c.polyline" />
@@ -51,6 +55,8 @@ export class ParamChart {
   readonly label = input('');
   /** Changements de réglage à repérer sur la courbe (trait vertical). */
   readonly marks = input<{ date: string; label: string }[]>([]);
+  /** Doses d'engrais : petits traits en bas de la courbe. */
+  readonly ticks = input<{ date: string; label: string }[]>([]);
 
   protected readonly chart = computed(() => {
     const key = this.key();
@@ -93,7 +99,14 @@ export class ParamChart {
           .filter((m) => m.t > t0 && m.t <= t1)
           .map((m) => ({ x: +x(m.t, 0).toFixed(1), label: m.label }))
       : [];
+    const ticks = data.length > 1
+      ? this.ticks()
+          .map((m) => ({ t: new Date(m.date).getTime(), label: m.label }))
+          .filter((m) => m.t > t0 && m.t <= t1)
+          .map((m) => ({ x: +x(m.t, 0).toFixed(1), label: m.label }))
+      : [];
     return {
+      ticks,
       marks,
       points,
       polyline: points.map((p) => `${p.x},${p.y}`).join(' '),
