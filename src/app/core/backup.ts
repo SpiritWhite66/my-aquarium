@@ -64,16 +64,15 @@ export class BackupService {
 
   /** Télécharge la sauvegarde complète (photos comprises). */
   async exportNow(): Promise<void> {
-    const data = await this.store.exportData();
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const { blob, exportedAt } = await this.store.exportArchive();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `my-aquarium-${this.store.today()}.json`;
+    a.download = `my-aquarium-${this.store.today()}.zip`;
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    write('lastBackup', data.exportedAt);
-    this.lastBackup.set(data.exportedAt);
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    write('lastBackup', exportedAt);
+    this.lastBackup.set(exportedAt);
   }
 
   /** « Plus tard » : on ne rappelle pas avant 3 jours. */

@@ -55,13 +55,13 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 
 ## Étape 8 — Tableau de bord et réglages
 - [x] Tableau de bord : alertes, état des bacs, tâches du jour et en retard.
-- [x] Export et import JSON versionnés.
+- [x] Sauvegarde ZIP versionnée (v2), anciennes sauvegardes JSON (v1) acceptées, vérification avant restauration.
 - [x] Choix du thème.
 
 ## Étape 8 ter — Photos
 - [x] Table `photos` (Blob réduits + vignettes), ajout depuis l'appareil photo ou la galerie, légendes.
 - [x] Onglet Photos d'un bac, photos par habitant, visionneuse, photo de couverture.
-- [x] Export/import JSON des photos.
+- [x] Images des photos dans une table à part (base v8, reprise automatique), chargées à la demande.
 - [x] Comparaison avant/après (curseur ou côte à côte), écart en jours, espèces ajoutées entre-temps ; aussi pour un habitant (croissance d'une plante).
 - [ ] Envoyer une photo directement à l'import IA.
 

@@ -113,7 +113,9 @@ export class PhotoViewer {
    * puis ouvre l'écran d'import pour coller la réponse. Sans partage de fichiers : téléchargement.
    */
   protected async toAi(p: Photo): Promise<void> {
-    const file = new File([p.full], this.filename(p), { type: 'image/jpeg' });
+    const img = await this.store.photoFile(p.id);
+    if (!img) return;
+    const file = new File([img.full], this.filename(p), { type: 'image/jpeg' });
     const text = p.inhabitantId
       ? 'Avec le skill my-aquarium-json : bilan visuel (sanity) de cette photo.'
       : 'Avec le skill my-aquarium-json : inventaire (inventory) puis bilan visuel (sanity) de cette photo de mon bac.';
@@ -122,7 +124,8 @@ export class PhotoViewer {
         await navigator.share({ files: [file], text });
       } else {
         const a = document.createElement('a');
-        a.href = this.urls.url(p.id, 'full')!;
+        a.href = URL.createObjectURL(img.full);
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         a.download = file.name;
         a.click();
         await navigator.clipboard?.writeText(text).catch(() => undefined);

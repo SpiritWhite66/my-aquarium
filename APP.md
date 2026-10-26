@@ -10,7 +10,7 @@ Les **plantes sont aussi importantes que la faune** (poissons, crevettes, escarg
 - **Usage personnel**, interface en **français**, pensée d'abord pour le **mobile**.
 - **PWA** installable, utilisable hors ligne.
 - **Hébergement statique** sur GitHub Pages : pas de serveur en V1.
-- **Données locales** (IndexedDB), avec **export/import JSON** pour la sauvegarde.
+- **Données locales** (IndexedDB), avec **sauvegarde ZIP** (data.json + photos) ; les anciennes sauvegardes JSON restent lisibles.
 - L'architecture doit permettre d'ajouter plus tard un **backend** et un **serveur MCP** consommable par Claude.ai.
 
 ## Stack technique
@@ -57,7 +57,7 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - **Alertes de compatibilité** à l'ajout : plages d'eau incompatibles, herbivore dans un bac planté, prédation (par ex. Apistogramma et jeunes crevettes).
 
 ### 5. Réglages
-- Export et import complets des données en JSON.
+- Sauvegarde complète en ZIP (fflate, écrite et lue en flux), vérifiée avant restauration : un fichier abîmé est refusé sans rien effacer.
 - Choix du thème clair ou sombre.
 
 ### 6. Photos
@@ -66,7 +66,7 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - Photo de couverture d'un bac affichée sur sa carte et en tête de sa page ; dernière photo d'un habitant affichée dans la population.
 - Comparaison avant / après de deux photos (curseur ou côte à côte) avec l'écart de temps et les espèces ajoutées entre-temps.
 - Visionneuse plein écran : navigation, légende, téléchargement (pour l'envoyer à une IA), suppression.
-- Incluses dans l'export/import JSON.
+- Incluses dans l'sauvegarde ZIP (dossier photos/).
 
 ### 7. Assistant IA (photo → JSON)
 - Une IA (Claude avec le skill `my-aquarium-json`, ou n'importe quelle IA avec le prompt fourni) analyse une photo et renvoie un JSON strict.

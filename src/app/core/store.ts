@@ -3,7 +3,9 @@ import { liveQuery } from 'dexie';
 import { AquariumDb } from './db';
 import { BUILTIN_SPECIES } from './catalog';
 import { addDays, todayIso } from './dates';
-import { blobToDataUrl, dataUrlToBlob, processPhoto } from './photos';
+import { processPhoto } from './photos';
+import { isZip, readZip, writeZip, type ArchiveEntry } from './archive';
+import { BACKUP_TABLES, BACKUP_VERSION, checkBackup } from './backup-format';
 import type {
   DoseUnit,
   SettingChange,
@@ -15,6 +17,7 @@ import type {
   MaintenanceTask,
   Observation,
   Photo,
+  PhotoFile,
   Co2Reading,
   Diagnosis,
   Consumable,
@@ -204,8 +207,9 @@ export class AquariumStore {
   async deleteTank(id: string): Promise<void> {
     await this.db.transaction(
       'rw',
-      [this.db.tanks, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.co2Readings, this.db.equipment, this.db.diagnoses, this.db.settingChanges],
+      [this.db.tanks, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.photoFiles, this.db.co2Readings, this.db.equipment, this.db.diagnoses, this.db.settingChanges],
       async () => {
+        await this.db.photoFiles.bulkDelete((await this.db.photos.where('tankId').equals(id).primaryKeys()) as string[]);
         // Le matériel du bac est conservé, en réserve.
         await this.db.equipment.where('tankId').equals(id).modify({ tankId: undefined });
         await this.db.settingChanges.where('tankId').equals(id).delete();
@@ -260,7 +264,8 @@ export class AquariumStore {
   }
 
   async deleteInhabitant(id: string): Promise<void> {
-    await this.db.transaction('rw', [this.db.inhabitants, this.db.photos, this.db.inhabitantEvents], async () => {
+    await this.db.transaction('rw', [this.db.inhabitants, this.db.photos, this.db.photoFiles, this.db.inhabitantEvents], async () => {
+      await this.db.photoFiles.bulkDelete((await this.db.photos.where('inhabitantId').equals(id).primaryKeys()) as string[]);
       await this.db.inhabitants.delete(id);
       await this.db.photos.where('inhabitantId').equals(id).delete();
       await this.db.inhabitantEvents.where('inhabitantId').equals(id).delete();
@@ -340,16 +345,17 @@ export class AquariumStore {
   async addPhotos(files: File[], target: { tankId: string; inhabitantId?: string }, caption?: string): Promise<string[]> {
     // Réduction des images d'abord : une transaction IndexedDB ne survit pas à un traitement asynchrone externe.
     const processed: Photo[] = [];
+    const images: PhotoFile[] = [];
     for (const file of files) {
       const p = await processPhoto(file);
       // La date de la photo est celle du fichier quand elle est fiable, sinon maintenant.
       const taken = file.lastModified && file.lastModified < Date.now() ? new Date(file.lastModified) : new Date();
-      processed.push({
-        id: uuid(), updatedAt: now(), ...target, date: taken.toISOString(), caption: caption || undefined,
-        full: p.full, thumb: p.thumb, width: p.width, height: p.height,
-      });
+      const id = uuid();
+      processed.push({ id, updatedAt: now(), ...target, date: taken.toISOString(), caption: caption || undefined, width: p.width, height: p.height });
+      images.push({ id, full: p.full, thumb: p.thumb });
     }
-    await this.db.transaction('rw', [this.db.photos, this.db.tanks], async () => {
+    await this.db.transaction('rw', [this.db.photos, this.db.photoFiles, this.db.tanks], async () => {
+      await this.db.photoFiles.bulkPut(images);
       await this.db.photos.bulkPut(processed);
       // Première photo d'un bac : elle devient sa photo de couverture.
       const tank = await this.db.tanks.get(target.tankId);
@@ -358,6 +364,11 @@ export class AquariumStore {
       }
     });
     return processed.map((p) => p.id);
+  }
+
+  /** Images d'une photo, lues à la demande. */
+  photoFile(id: string): Promise<PhotoFile | undefined> {
+    return this.db.photoFiles.get(id);
   }
 
   async setCaption(id: string, caption: string): Promise<void> {
@@ -369,8 +380,9 @@ export class AquariumStore {
   }
 
   async deletePhoto(photo: Photo): Promise<void> {
-    await this.db.transaction('rw', [this.db.photos, this.db.tanks], async () => {
+    await this.db.transaction('rw', [this.db.photos, this.db.photoFiles, this.db.tanks], async () => {
       await this.db.photos.delete(photo.id);
+      await this.db.photoFiles.delete(photo.id);
       const tank = await this.db.tanks.get(photo.tankId);
       if (tank?.coverPhotoId !== photo.id) return;
       // La couverture passe à la photo de bac la plus récente restante.
@@ -541,58 +553,65 @@ export class AquariumStore {
 
   // ---------- Export / import ----------
 
-  async exportData(): Promise<ExportFile> {
-    return {
-      format: 'my-aquarium',
-      version: 1,
-      exportedAt: now(),
-      data: {
-        tanks: await this.db.tanks.toArray(),
-        species: await this.db.species.where('source').equals('custom').toArray(),
-        inhabitants: await this.db.inhabitants.toArray(),
-        inhabitantEvents: await this.db.inhabitantEvents.toArray(),
-        waterTests: await this.db.waterTests.toArray(),
-        tasks: await this.db.tasks.toArray(),
-        logs: await this.db.logs.toArray(),
-        observations: await this.db.observations.toArray(),
-        equipment: await this.db.equipment.toArray(),
-        consumables: await this.db.consumables.toArray(),
-        co2Readings: await this.db.co2Readings.toArray(),
-        settingChanges: await this.db.settingChanges.toArray(),
-        diagnoses: await this.db.diagnoses.toArray(),
-        photos: await Promise.all(
-          (await this.db.photos.toArray()).map(async (p) => ({ ...p, full: await blobToDataUrl(p.full), thumb: await blobToDataUrl(p.thumb) })),
-        ),
-      },
-    };
+  /**
+   * Sauvegarde complète en ZIP : data.json (toutes les tables sauf les préférences de l'appareil)
+   * et les images dans photos/. Les images sont lues une par une.
+   */
+  async exportArchive(): Promise<{ blob: Blob; exportedAt: string }> {
+    const exportedAt = now();
+    const data: Record<string, unknown> = {};
+    for (const table of BACKUP_TABLES) {
+      data[table] = table === 'species' ? await this.db.species.where('source').equals('custom').toArray() : await this.db.table(table).toArray();
+    }
+    const file: ExportFile = { format: 'my-aquarium', version: BACKUP_VERSION, exportedAt, data: data as ExportFile['data'] };
+    const ids = (await this.db.photos.toCollection().primaryKeys()) as string[];
+    const db = this.db;
+    async function* entries(): AsyncGenerator<ArchiveEntry> {
+      yield { name: 'data.json', data: new Blob([JSON.stringify(file)], { type: 'application/json' }) };
+      for (const id of ids) {
+        const img = await db.photoFiles.get(id);
+        if (!img) continue;
+        yield { name: `photos/${id}-full.jpg`, data: img.full };
+        yield { name: `photos/${id}-thumb.jpg`, data: img.thumb };
+      }
+    }
+    return { blob: await writeZip(entries()), exportedAt };
   }
 
-  /** Remplace toutes les données par celles du fichier. */
-  async importData(file: unknown): Promise<void> {
-    const f = file as ExportFile;
-    if (f?.format !== 'my-aquarium' || f.version !== 1 || !f.data) {
-      throw new Error('Ce fichier n’est pas une sauvegarde My Aquarium valide.');
+  /**
+   * Remplace toutes les données par celles d'une sauvegarde (ZIP, ou ancien JSON).
+   * Le fichier est entièrement vérifié avant d'effacer quoi que ce soit.
+   * Renvoie les remarques sans gravité (lignes écartées…).
+   */
+  async importBackup(file: Blob): Promise<string[]> {
+    let raw: unknown;
+    let images: Map<string, Blob> | undefined;
+    try {
+      if (await isZip(file)) {
+        images = await readZip(file);
+        const json = images.get('data.json');
+        if (!json) throw new Error('data.json absent');
+        raw = JSON.parse(await json.text());
+      } else raw = JSON.parse(await file.text());
+    } catch {
+      throw new Error('Fichier illisible : ce n’est pas une sauvegarde Mes aquariums.');
     }
-    const d = f.data;
-    const tables = [this.db.tanks, this.db.species, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.equipment, this.db.consumables, this.db.co2Readings, this.db.diagnoses, this.db.settingChanges];
+    const { data, files, warnings } = checkBackup(raw, images);
+    const d = data as unknown as Record<string, Entity[]>;
+    const tables = [...BACKUP_TABLES.map((t) => this.db.table(t)), this.db.photoFiles];
     await this.db.transaction('rw', tables, async () => {
-      for (const t of tables) if (t !== this.db.species) await t.clear();
-      await this.db.species.where('source').equals('custom').delete();
-      await this.db.tanks.bulkPut(d.tanks ?? []);
-      await this.db.species.bulkPut((d.species ?? []).map((s) => ({ ...s, source: 'custom' as const })));
-      await this.db.inhabitants.bulkPut(d.inhabitants ?? []);
-      await this.db.inhabitantEvents.bulkPut(d.inhabitantEvents ?? []);
-      await this.db.waterTests.bulkPut(d.waterTests ?? []);
-      await this.db.tasks.bulkPut(d.tasks ?? []);
-      await this.db.logs.bulkPut(d.logs ?? []);
-      await this.db.observations.bulkPut(d.observations ?? []);
-      await this.db.equipment.bulkPut(d.equipment ?? []);
-      await this.db.consumables.bulkPut(d.consumables ?? []);
-      await this.db.co2Readings.bulkPut(d.co2Readings ?? []);
-      await this.db.settingChanges.bulkPut(d.settingChanges ?? []);
-      await this.db.diagnoses.bulkPut(d.diagnoses ?? []);
-      await this.db.photos.bulkPut((d.photos ?? []).map((p) => ({ ...p, full: dataUrlToBlob(p.full), thumb: dataUrlToBlob(p.thumb) })));
+      for (const table of BACKUP_TABLES) {
+        if (table === 'species') await this.db.species.where('source').equals('custom').delete();
+        else await this.db.table(table).clear();
+      }
+      await this.db.photoFiles.clear();
+      for (const table of BACKUP_TABLES) {
+        const rows = table === 'species' ? d[table].map((s) => ({ ...s, source: 'custom' })) : d[table];
+        await this.db.table(table).bulkPut(rows);
+      }
+      await this.db.photoFiles.bulkPut([...files].map(([id, f]) => ({ id, ...f })));
     });
+    return warnings;
   }
 
   // ---------- Interne ----------

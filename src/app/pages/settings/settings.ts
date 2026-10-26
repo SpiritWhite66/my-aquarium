@@ -154,10 +154,10 @@ import type { NotificationPrefs } from '../../core/reminders';
             @if (backup.usage(); as u) { Espace utilisé : {{ bytes(u.used) }}. }
           </p>
           <div class="row" style="flex-wrap: wrap; gap: 8px">
-            <button class="btn fill" type="button" (click)="exportFile()"><app-icon name="download" [size]="20" />Exporter</button>
+            <button class="btn fill" type="button" [disabled]="exporting()" (click)="exportFile()"><app-icon name="download" [size]="20" />{{ exporting() ? 'Export en cours…' : 'Exporter' }}</button>
             <label class="btn ton" style="cursor: pointer">
               <app-icon name="upload" [size]="20" />Importer
-              <input type="file" accept="application/json,.json" class="sr-only" (change)="importFile($event)" />
+              <input type="file" accept=".zip,application/zip,.json,application/json" class="sr-only" (change)="importFile($event)" />
             </label>
           </div>
           @if (message(); as m) {
@@ -216,9 +216,18 @@ export class SettingsPage {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  protected readonly exporting = signal(false);
+
   protected async exportFile(): Promise<void> {
-    await this.backup.exportNow();
-    this.message.set({ text: 'Sauvegarde téléchargée.', error: false });
+    this.exporting.set(true);
+    try {
+      await this.backup.exportNow();
+      this.message.set({ text: 'Sauvegarde téléchargée.', error: false });
+    } catch (err) {
+      this.message.set({ text: err instanceof Error ? err.message : 'Export impossible.', error: true });
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   protected async importFile(e: Event): Promise<void> {
@@ -228,8 +237,9 @@ export class SettingsPage {
     if (!file) return;
     if (!confirm('L’import remplace toutes les données de cet appareil. Continuer ?')) return;
     try {
-      await this.store.importData(JSON.parse(await file.text()));
-      this.message.set({ text: 'Données importées.', error: false });
+      const warnings = await this.store.importBackup(file);
+      const note = warnings.length ? ` Remarques : ${warnings.join(' ; ')}.` : '';
+      this.message.set({ text: `Données importées.${note}`, error: false });
     } catch (err) {
       this.message.set({ text: err instanceof Error ? err.message : 'Import impossible.', error: true });
     }

@@ -1,9 +1,14 @@
 import 'fake-indexeddb/auto';
+// @ts-expect-error -- module Node sans types dans la config de test
+import { Blob as NodeBlob } from 'node:buffer';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AquariumDb } from './db';
 import { AQUARIUM_DB, AquariumStore } from './store';
 import type { Diagnosis, Inhabitant, Tank } from './models';
+
+// Le Blob de jsdom ne sait pas se lire (text, arrayBuffer, stream) : on prend celui de Node.
+globalThis.Blob = NodeBlob;
 
 let db: AquariumDb;
 let store: AquariumStore;
@@ -76,5 +81,79 @@ describe('store', () => {
     await store.deleteInhabitant(id);
     expect(await db.inhabitants.count()).toBe(0);
     expect(await db.inhabitantEvents.count()).toBe(0);
+  });
+});
+
+const jpg = (s: string) => new Blob([s], { type: 'image/jpeg' });
+
+async function seedPhoto(tankId: string, id = 'p1') {
+  await db.photos.put({ id, updatedAt: '', tankId, date: '2026-10-01T10:00:00Z', width: 10, height: 10 });
+  await db.photoFiles.put({ id, full: jpg('FULL-' + id), thumb: jpg('THUMB-' + id) });
+  await db.tanks.update(tankId, { coverPhotoId: id });
+}
+
+describe('sauvegarde', () => {
+  it('exporte en ZIP puis restaure tout, images comprises', async () => {
+    const t = await store.saveTank(tank('Salon'));
+    await store.addInhabitant(fish(t, 5));
+    await seedPhoto(t);
+    const { blob } = await store.exportArchive();
+    await store.deleteTank(t);
+    expect(await db.photoFiles.count()).toBe(0);
+
+    const warnings = await store.importBackup(blob);
+    expect(warnings).toEqual([]);
+    expect((await db.tanks.get(t))?.coverPhotoId).toBe('p1');
+    expect(await db.inhabitants.count()).toBe(1);
+    expect(await (await store.photoFile('p1'))!.full.text()).toBe('FULL-p1');
+  });
+
+  it('accepte encore les anciennes sauvegardes JSON (photos en data URL)', async () => {
+    const old = {
+      format: 'my-aquarium', version: 1, exportedAt: '2026-01-01T00:00:00Z',
+      data: {
+        tanks: [{ id: 't', updatedAt: '', ...tank('Ancien') }],
+        species: [], inhabitants: [], inhabitantEvents: [], waterTests: [], tasks: [], logs: [],
+        photos: [{ id: 'p', updatedAt: '', tankId: 't', date: '2026-01-01T00:00:00Z', width: 1, height: 1, full: 'data:image/jpeg;base64,QUJD', thumb: 'data:image/jpeg;base64,QUI=' }],
+      },
+    };
+    await store.importBackup(new Blob([JSON.stringify(old)]));
+    expect((await db.tanks.get('t'))?.name).toBe('Ancien');
+    expect(await (await store.photoFile('p'))!.full.text()).toBe('ABC');
+    expect(Object.keys((await db.photos.get('p'))!)).not.toContain('full');
+  });
+
+  it('refuse un fichier abîmé sans rien effacer', async () => {
+    await store.saveTank(tank('Salon'));
+    const bad = { format: 'my-aquarium', version: 2, exportedAt: '', data: { tanks: [{ id: 'x', name: 3 }] } };
+    await expect(store.importBackup(new Blob([JSON.stringify(bad)]))).rejects.toThrow(/abîmée/);
+    expect(await db.tanks.count()).toBe(1);
+  });
+
+  it('écarte les lignes dont le bac n’existe pas', async () => {
+    const file = {
+      format: 'my-aquarium', version: 2, exportedAt: '',
+      data: { tanks: [], waterTests: [{ id: 'w', updatedAt: '', tankId: 'absent', date: '2026-01-01', values: {} }] },
+    };
+    const warnings = await store.importBackup(new Blob([JSON.stringify(file)]));
+    expect(warnings[0]).toMatch(/relevés sans bac/);
+    expect(await db.waterTests.count()).toBe(0);
+  });
+});
+
+describe('reprise des photos (base v7 → v8)', () => {
+  it('sort les images de la table des photos sans rien perdre', async () => {
+    const name = `migr-${n++}`;
+    const { default: Dexie } = await import('dexie');
+    const old = new Dexie(name);
+    old.version(7).stores({ tanks: 'id, archived', photos: 'id, tankId, inhabitantId, date' });
+    await old.table('photos').put({ id: 'a', tankId: 't', date: '2026-01-01', width: 1, height: 1, full: jpg('F'), thumb: jpg('T') });
+    old.close();
+
+    const upgraded = new AquariumDb(name);
+    const meta = await upgraded.photos.get('a');
+    expect(meta && 'full' in meta).toBe(false);
+    expect(await (await upgraded.photoFiles.get('a'))!.thumb.text()).toBe('T');
+    await upgraded.delete();
   });
 });

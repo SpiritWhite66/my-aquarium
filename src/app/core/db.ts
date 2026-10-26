@@ -12,6 +12,7 @@ import type {
   MaintenanceTask,
   Observation,
   Photo,
+  PhotoFile,
   Species,
   Tank,
   WaterTest,
@@ -28,6 +29,7 @@ export class AquariumDb extends Dexie {
   logs!: EntityTable<MaintenanceLog, 'id'>;
   observations!: EntityTable<Observation, 'id'>;
   photos!: EntityTable<Photo, 'id'>;
+  photoFiles!: EntityTable<PhotoFile, 'id'>;
   equipment!: EntityTable<Equipment, 'id'>;
   consumables!: EntityTable<Consumable, 'id'>;
   co2Readings!: EntityTable<Co2Reading, 'id'>;
@@ -67,5 +69,25 @@ export class AquariumDb extends Dexie {
     this.version(7).stores({
       prefs: 'id',
     });
+    // Les images quittent la table des photos : la liste des photos ne pèse plus que quelques Ko.
+    // Reprise automatique des photos existantes, par paquets pour ne pas tout charger d'un coup.
+    this.version(8)
+      .stores({ photoFiles: 'id' })
+      .upgrade(async (tx) => {
+        const ids = (await tx.table('photos').toCollection().primaryKeys()) as string[];
+        for (let i = 0; i < ids.length; i += 20) {
+          const batch = (await tx.table('photos').bulkGet(ids.slice(i, i + 20))) as (Photo & Partial<Omit<PhotoFile, 'id'>>)[];
+          const files: PhotoFile[] = [];
+          const metas: Photo[] = [];
+          for (const p of batch) {
+            if (!p) continue;
+            const { full, thumb, ...meta } = p;
+            if (full && thumb) files.push({ id: p.id, full, thumb });
+            metas.push(meta);
+          }
+          await tx.table('photoFiles').bulkPut(files);
+          await tx.table('photos').bulkPut(metas);
+        }
+      });
   }
 }

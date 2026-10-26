@@ -264,18 +264,22 @@ export class DiagnosticPage {
     });
   }
 
-  private files(): File[] {
+  private async files(): Promise<File[]> {
     const d = this.dossier()!;
     const slug = this.view()!.tank.name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-');
     const json = new File([JSON.stringify(d, null, 2)], `dossier-${slug}-${this.store.today()}.json`, { type: 'application/json' });
-    const photos = this.chosenPhotos().map((p, i) => new File([p.full], photoFileName(p, i), { type: 'image/jpeg' }));
+    const photos: File[] = [];
+    for (const [i, p] of this.chosenPhotos().entries()) {
+      const img = await this.store.photoFile(p.id);
+      if (img) photos.push(new File([img.full], photoFileName(p, i), { type: 'image/jpeg' }));
+    }
     return [json, ...photos];
   }
 
   /** Partage vers l'app d'IA (mobile) ; sinon téléchargement + demande copiée. */
   protected async send(): Promise<void> {
     if (!this.dossier()) return;
-    const files = this.files();
+    const files = await this.files();
     const prev = this.followUp() ? this.previous() : undefined;
     const text = diagnosticRequest(this.view()!.tank.name, this.question(), prev ? this.date(prev.date) : undefined);
     this.busy.set(true);
@@ -297,7 +301,7 @@ export class DiagnosticPage {
 
   protected async download(): Promise<void> {
     if (!this.dossier()) return;
-    await this.downloadFiles(this.files());
+    await this.downloadFiles(await this.files());
     this.message.set('Dossier et photos téléchargés.');
   }
 

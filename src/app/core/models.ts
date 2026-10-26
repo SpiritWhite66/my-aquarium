@@ -183,14 +183,22 @@ export interface Photo extends Entity {
   inhabitantId?: string; // vide : photo du bac
   date: string; // ISO datetime de la prise (ou de l'ajout)
   caption?: string;
-  full: Blob; // ~1600 px
-  thumb: Blob; // ~400 px
   width: number;
   height: number;
 }
 
-/** Photo telle qu'écrite dans une sauvegarde JSON (images en data URL). */
-export type ExportedPhoto = Omit<Photo, 'full' | 'thumb'> & { full: string; thumb: string };
+/**
+ * Images d'une photo, rangées à part : les listes ne chargent que les informations
+ * de `Photo`, les images sont lues à la demande.
+ */
+export interface PhotoFile {
+  id: string; // même id que la photo
+  full: Blob; // ~1600 px
+  thumb: Blob; // ~400 px
+}
+
+/** Photo telle qu'écrite dans une ancienne sauvegarde JSON (images en data URL). */
+export type ExportedPhoto = Photo & { full: string; thumb: string };
 
 // ---------- Bilans visuels (analyse « sanity » d'une photo par une IA) ----------
 export type FindingCategory =
@@ -362,9 +370,10 @@ export interface Co2Reading extends Entity {
 }
 
 // ---------- Export ----------
+/** Contenu de data.json dans une sauvegarde ZIP (version 2) ; la version 1 était un JSON seul. */
 export interface ExportFile {
   format: 'my-aquarium';
-  version: 1;
+  version: 1 | 2;
   exportedAt: string;
   data: {
     tanks: Tank[];
@@ -375,7 +384,7 @@ export interface ExportFile {
     tasks: MaintenanceTask[];
     logs: MaintenanceLog[];
     observations?: Observation[]; // ajouté après la v1 du format, facultatif
-    photos?: ExportedPhoto[]; // idem
+    photos?: (Photo | ExportedPhoto)[]; // v1 : images en data URL ; v2 : images dans le ZIP
     equipment?: Equipment[];
     consumables?: Consumable[];
     co2Readings?: Co2Reading[];
