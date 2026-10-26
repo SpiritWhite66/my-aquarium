@@ -85,6 +85,7 @@ export function checkBackup(raw: unknown, images?: Map<string, Blob>): CheckedBa
       for (const [k, kind] of Object.entries(shape)) {
         if (kindOf(r[k]) !== kind) errors.push(`${LABELS[table]} n°${i + 1} : « ${k} » invalide`);
       }
+      if (table === 'tasks' && !(Number.isInteger(r['everyDays']) && (r['everyDays'] as number) >= 1)) errors.push(`${LABELS[table]} n°${i + 1} : « everyDays » doit être un entier ≥ 1`);
       if (ids.has(r['id'] as string)) warnings.push(`${LABELS[table]} : doublon ${r['id']} ignoré`);
       ids.add(r['id'] as string);
     });

@@ -55,6 +55,14 @@ describe('agenda', () => {
     expect(ics).toContain('TRIGGER:PT9H');
     expect(ics.split('BEGIN:VEVENT')).toHaveLength(2);
   });
+
+  it('un libellé ne peut pas ajouter de lignes au calendrier', () => {
+    const tank = { id: 't', name: 'Bac' } as Tank;
+    const task: MaintenanceTask = { id: 'x', updatedAt: '', tankId: 't', type: 'water_change', label: 'A\rEND:VEVENT\r\nBEGIN:VEVENT\nX', everyDays: 7, nextDue: '2026-10-27', active: true };
+    const ics = tasksToIcs([task], [tank], new Date(NOW));
+    expect(ics.split('\r\n').filter((l) => l.startsWith('END:VEVENT'))).toHaveLength(1);
+    expect(ics).not.toMatch(/\r(?!\n)/);
+  });
 });
 
 describe('CO2', () => {

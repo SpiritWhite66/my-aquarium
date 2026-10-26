@@ -155,6 +155,14 @@ describe('sauvegarde', () => {
     expect(await db.tanks.count()).toBe(1);
   });
 
+  it('refuse une tâche dont la fréquence est nulle', async () => {
+    const file = {
+      format: 'my-aquarium', version: 2, exportedAt: '',
+      data: { tanks: [{ id: 't', ...tank('A') }], tasks: [{ id: 'k', tankId: 't', type: 'water_change', label: 'x', everyDays: 0, nextDue: '2026-01-01', active: true }] },
+    };
+    await expect(repo.backup.importBackup(new Blob([JSON.stringify(file)]))).rejects.toThrow(/everyDays/);
+  });
+
   it('écarte les lignes dont le bac n’existe pas', async () => {
     const file = {
       format: 'my-aquarium', version: 2, exportedAt: '',

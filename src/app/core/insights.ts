@@ -98,7 +98,7 @@ export function cyclingPhase(tests: WaterTest[]): CyclingPhase {
 // ---------- Agenda (.ics) ----------
 
 const icsDate = (iso: string) => localDay(iso).replaceAll('-', '');
-const icsEscape = (s: string) => s.replace(/[\\;,]/g, (c) => '\\' + c).replace(/\n/g, '\\n');
+const icsEscape = (s: string) => s.replace(/[\\;,]/g, (c) => '\\' + c).replace(/\r?\n|\r/g, '\\n');
 
 /** Rappels d'entretien au format iCalendar, avec répétition et alarme à 9 h. */
 export function tasksToIcs(tasks: MaintenanceTask[], tanks: Tank[], now = new Date()): string {
@@ -114,7 +114,7 @@ export function tasksToIcs(tasks: MaintenanceTask[], tanks: Tank[], now = new Da
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${icsDate(t.nextDue)}`,
       `DTEND;VALUE=DATE:${icsDate(addDays(t.nextDue, 1))}`,
-      `RRULE:FREQ=DAILY;INTERVAL=${t.everyDays}`,
+      `RRULE:FREQ=DAILY;INTERVAL=${Math.max(1, Math.trunc(t.everyDays) || 1)}`,
       `SUMMARY:${icsEscape(`${t.label} — ${tank}`)}`,
       'BEGIN:VALARM',
       'ACTION:DISPLAY',
