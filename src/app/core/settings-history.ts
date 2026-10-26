@@ -43,10 +43,21 @@ export function describeChange(c: Pick<SettingChange, 'field' | 'from' | 'to'>):
 }
 
 export interface AlgaeWindow {
-  /** Signalements d'algues non résolus dans les bilans visuels de la période. */
-  findings: number;
-  /** Bilans visuels faits sur la période (0 : rien pour comparer). */
+  /** Niveau d'algues moyen sur la période, de 0 (aucune) à 3 (beaucoup). */
+  level: number;
+  /** Notes d'algues et bilans visuels faits sur la période (0 : rien pour comparer). */
   checks: number;
+}
+
+/**
+ * Niveau d'algues d'une observation, de 0 à 3 : la note manuelle si elle existe,
+ * sinon la gravité la plus forte parmi les algues signalées par un bilan visuel.
+ */
+export function algaeScore(o: Observation): number {
+  if (o.algaeLevel != null) return o.algaeLevel;
+  const algae = o.findings.filter((f) => f.category === 'algae' && !f.resolved);
+  if (!algae.length) return 0;
+  return Math.max(...algae.map((f) => (f.severity === 'danger' ? 3 : f.severity === 'warn' ? 2 : 1)));
 }
 
 export interface ChangeEffect {
@@ -66,10 +77,8 @@ function algae(observations: Observation[], from: number, to: number): AlgaeWind
     const t = new Date(o.date).getTime();
     return t >= from && t < to;
   });
-  return {
-    checks: inWindow.length,
-    findings: inWindow.reduce((n, o) => n + o.findings.filter((f) => f.category === 'algae' && f.severity !== 'info' && !f.resolved).length, 0),
-  };
+  const total = inWindow.reduce((n, o) => n + algaeScore(o), 0);
+  return { checks: inWindow.length, level: inWindow.length ? Math.round((total / inWindow.length) * 10) / 10 : 0 };
 }
 
 /**
@@ -100,8 +109,10 @@ export function changeEffect(
 /** Verdict court, prudent : on ne conclut qu'avec des bilans des deux côtés et assez de recul. */
 export function effectVerdict(e: ChangeEffect): { level: 'ok' | 'warn' | 'info'; text: string } {
   if (e.daysSince < 10) return { level: 'info', text: `Trop tôt pour juger (${e.daysSince} j). Les algues réagissent en 2 à 3 semaines.` };
-  if (!e.before.checks || !e.after.checks) return { level: 'info', text: 'Pas assez de bilans visuels avant et après pour comparer.' };
-  if (e.after.findings < e.before.findings) return { level: 'ok', text: `Moins d’algues signalées : ${e.before.findings} avant, ${e.after.findings} après.` };
-  if (e.after.findings > e.before.findings) return { level: 'warn', text: `Plus d’algues signalées : ${e.before.findings} avant, ${e.after.findings} après.` };
-  return { level: 'info', text: `Pas de différence nette : ${e.before.findings} signalement(s) avant comme après.` };
+  if (!e.before.checks || !e.after.checks) return { level: 'info', text: 'Pas assez de notes d’algues avant et après pour comparer.' };
+  const lv = (n: number) => `${fmt(n)}/3`;
+  const diff = e.after.level - e.before.level;
+  if (diff <= -0.5) return { level: 'ok', text: `Moins d’algues : niveau moyen ${lv(e.before.level)} avant, ${lv(e.after.level)} après.` };
+  if (diff >= 0.5) return { level: 'warn', text: `Plus d’algues : niveau moyen ${lv(e.before.level)} avant, ${lv(e.after.level)} après.` };
+  return { level: 'info', text: `Pas de différence nette : niveau moyen ${lv(e.before.level)} avant, ${lv(e.after.level)} après.` };
 }

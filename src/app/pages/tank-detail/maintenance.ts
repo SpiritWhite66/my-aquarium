@@ -114,7 +114,7 @@ const EVENT_LABELS: Record<string, string> = {
       @if (settings().length) {
         <section class="stack" style="gap: 8px">
           <h2 class="h2">Réglages du matériel</h2>
-          <p class="sub" style="margin: 0">Algues signalées dans les bilans visuels 30 jours avant et après chaque changement.</p>
+          <p class="sub" style="margin: 0">Niveau d’algues (notes rapides et bilans visuels) 30 jours avant et après chaque changement.</p>
           <div class="card">
             @for (g of settings(); track g.key) {
               <article class="sc">

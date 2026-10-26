@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
-import type { ParamKey } from '../../core/models';
+import { ALGAE_LEVELS, ALGAE_TYPES } from '../../core/labels';
+import type {
+  AlgaeLevel, ParamKey } from '../../core/models';
 import { EXTRA_PARAMS, MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf, measuredParams } from '../../core/rules';
 import { fmt, fmtRange, fmtShortDate, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
@@ -12,6 +14,12 @@ import { Icon } from '../../shared/icon';
   imports: [Icon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
+    .algae { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+    .lv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .lv button, .types button { height: 36px; border-radius: 8px; border: 1px solid var(--ln); background: var(--sf); font: 600 13px var(--font); cursor: pointer; color: var(--ink); }
+    .types { display: flex; flex-wrap: wrap; gap: 6px; }
+    .types button { padding: 0 10px; font-weight: 500; }
+    .lv button.on, .types button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
     .head { padding: 14px 0 8px; position: sticky; top: 0; background: var(--bg); z-index: 2; }
     .prev { font-size: 11px; color: var(--mu); font-family: var(--mono); }
     .field.danger { border-color: var(--dg); }
@@ -66,6 +74,24 @@ import { Icon } from '../../shared/icon';
             <span class="pill" [class.ok]="c.level === 'ok'" [class.wn]="c.level === 'warn'" [class.dg]="c.level === 'danger'">{{ c.text }}</span>
           }
         </div>
+      }
+
+      @if (!editing()) {
+        <section class="card algae" aria-labelledby="algae-title">
+          <h2 class="h2" id="algae-title">Algues <span class="sub" style="margin: 0; font-weight: 500">facultatif</span></h2>
+          <div class="lv" role="group" aria-label="Quantité d’algues">
+            @for (l of algaeLevels; track $index; let i = $index) {
+              <button type="button" [class.on]="algae() === i" [attr.aria-pressed]="algae() === i" (click)="algae.set(algae() === i ? null : $any(i))">{{ l }}</button>
+            }
+          </div>
+          @if (algae()) {
+            <div class="types" role="group" aria-label="Types d’algues">
+              @for (t of algaeTypeList; track t) {
+                <button type="button" [class.on]="algaeTypes().has(t)" [attr.aria-pressed]="algaeTypes().has(t)" (click)="toggleType(t)">{{ t }}</button>
+              }
+            </div>
+          }
+        </section>
       }
 
       <div class="field">
@@ -143,7 +169,21 @@ export class ReadingPage {
     return out;
   });
 
-  protected readonly hasValue = computed(() => Object.values(this.raw()).some((v) => parseNumber(v ?? '') != null));
+  private readonly hasWater = computed(() => Object.values(this.raw()).some((v) => parseNumber(v ?? '') != null));
+  protected readonly hasValue = computed(() => this.hasWater() || this.algae() != null);
+
+  protected readonly algaeLevels = ALGAE_LEVELS;
+  protected readonly algaeTypeList = ALGAE_TYPES;
+  protected readonly algae = signal<AlgaeLevel | null>(null);
+  protected readonly algaeTypes = signal(new Set<string>());
+  protected toggleType(t: string): void {
+    this.algaeTypes.update((s) => {
+      const next = new Set(s);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      return next;
+    });
+  }
 
   constructor() {
     // Bac choisi : celui de l'URL, sinon le premier.
@@ -181,7 +221,21 @@ export class ReadingPage {
     const note = this.note().trim() || undefined;
     const prev = this.editing();
     if (prev) await this.store.updateWaterTest({ ...prev, tankId: this.tankId(), date, values, note });
-    else await this.store.addWaterTest({ tankId: this.tankId(), date, values, note });
+    else if (this.hasWater()) await this.store.addWaterTest({ tankId: this.tankId(), date, values, note });
+    const level = this.algae();
+    if (level != null && !prev) {
+      const types = [...this.algaeTypes()];
+      await this.store.addObservation({
+        tankId: this.tankId(),
+        date,
+        manual: true,
+        algaeLevel: level,
+        algaeTypes: types.length ? types : undefined,
+        overall: level === 0 ? 'good' : level === 3 ? 'problem' : 'watch',
+        summary: `Algues : ${ALGAE_LEVELS[level].toLowerCase()}${types.length ? ' (' + types.join(', ') + ')' : ''}`,
+        findings: [],
+      });
+    }
     this.location.back();
   }
 }

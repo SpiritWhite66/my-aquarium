@@ -8,7 +8,8 @@ import { ParamChart } from '../../shared/param-chart';
 import { CYCLING_LABELS, CO2_TARGET, DROP_CHECKER, co2Advice, co2FromKhPh, co2FromPhDrop, co2Status, cyclingPhase, latestKhPh, trendOf } from '../../core/insights';
 import { Co2Counter } from '../../shared/co2-counter';
 import { PhDaySheet } from '../../shared/ph-day-sheet';
-import { describeChange } from '../../core/settings-history';
+import { algaeScore, describeChange } from '../../core/settings-history';
+import { ALGAE_LEVELS } from '../../core/labels';
 
 @Component({
   selector: 'app-water',
@@ -42,6 +43,11 @@ import { describeChange } from '../../core/settings-history';
     .dcv { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-top: 4px; }
     .dcv i { width: 14px; height: 14px; border-radius: 7px; }
     .dcv i.blue { background: #2f6fd6; } .dcv i.green { background: #2f9e55; } .dcv i.yellow { background: #e3c22b; }
+    .bars { display: flex; align-items: flex-end; gap: 4px; height: 56px; margin: 8px 0 6px; border-bottom: 1px solid var(--ln); }
+    .bar { flex: 1; max-width: 28px; background: var(--ok); border-radius: 3px 3px 0 0; }
+    .bar.l1 { background: #9bb84a; }
+    .bar.l2 { background: var(--wn); }
+    .bar.l3 { background: var(--dg); }
     .trend { font-size: 13px; font-weight: 600; color: var(--wa); margin-top: 4px; }
     .trend.bad { color: var(--wn); }
     .cyc { padding: 14px; display: flex; flex-direction: column; gap: 10px; border-color: var(--wa); }
@@ -141,6 +147,20 @@ import { describeChange } from '../../core/settings-history';
         </section>
 
         <a style="align-self: flex-start; font-size: 13px; font-weight: 600" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">Lire une photo des tests</a>
+        @if (algaeNotes().length) {
+          <section class="card chart">
+            <div class="row between">
+              <p class="t">Algues</p>
+              <span class="r">{{ algaeLabels[algaeNotes().at(-1)!.level] }} · {{ shortDate(algaeNotes().at(-1)!.date) }}</span>
+            </div>
+            <div class="bars" role="img" [attr.aria-label]="'Niveau d’algues des ' + algaeNotes().length + ' dernières notes'">
+              @for (a of algaeNotes(); track a.date) {
+                <span class="bar" [style.height.%]="8 + a.level * 30" [class.l1]="a.level === 1" [class.l2]="a.level === 2" [class.l3]="a.level === 3" [title]="shortDate(a.date) + ' : ' + algaeLabels[a.level] + (a.types ? ' (' + a.types + ')' : '')"></span>
+              }
+            </div>
+            <p class="sub" style="margin: 0">Notes rapides du relevé et bilans visuels, de 0 (aucune) à 3 (beaucoup).</p>
+          </section>
+        }
         <div class="row between">
           <h2 class="h2">Évolution</h2>
           <div class="row legend"><i></i>Plage idéale du bac @if (marks().length) { <b class="dash"></b>Réglage modifié } @if (doses().length) { <b class="dtick"></b>Engrais }</div>
@@ -200,6 +220,14 @@ import { describeChange } from '../../core/settings-history';
   `,
 })
 export class WaterTab {
+  protected readonly algaeLabels = ALGAE_LEVELS;
+  /** Niveau d'algues des 16 dernières notes (rapides ou bilans visuels). */
+  protected readonly algaeNotes = computed(() =>
+    this.store.observations()
+      .filter((o) => o.tankId === this.id())
+      .slice(-16)
+      .map((o) => ({ date: o.date, level: algaeScore(o) as 0 | 1 | 2 | 3, types: o.algaeTypes?.join(', ') })),
+  );
   protected readonly nutrient = new Set<string>(['no3', 'po4', 'k', 'fe', 'mg']);
   /** Doses d'engrais du bac, repérées sur les courbes des nutriments. */
   protected readonly doses = computed(() =>

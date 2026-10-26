@@ -25,7 +25,7 @@ import { Icon } from './icon';
     @let o = observation();
     <section class="card" [class.warn]="o.overall === 'watch'" [class.danger]="o.overall === 'problem'">
       <div class="row between">
-        <h2 class="h2"><app-icon name="search" [size]="18" />Bilan visuel</h2>
+        <h2 class="h2"><app-icon [name]="observation().manual ? 'leaves' : 'search'" [size]="18" />{{ observation().manual ? 'Algues' : 'Bilan visuel' }}</h2>
         <span class="pill" [class.ok]="o.overall === 'good'" [class.wn]="o.overall === 'watch'" [class.dg]="o.overall === 'problem'">
           <span class="dot"></span>{{ overall[o.overall] }}
         </span>

@@ -224,7 +224,13 @@ export interface Observation extends Entity {
   findings: Finding[];
   source?: string; // description de la photo
   warnings?: string[];
+  /** Note rapide saisie à la main : 0 aucune, 1 un peu, 2 moyen, 3 beaucoup. */
+  algaeLevel?: AlgaeLevel;
+  algaeTypes?: string[];
+  manual?: boolean;
 }
+
+export type AlgaeLevel = 0 | 1 | 2 | 3;
 
 // ---------- Diagnostics (IA) ----------
 export interface DiagnosisAction {

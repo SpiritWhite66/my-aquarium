@@ -138,8 +138,8 @@ export function buildDossier(i: DossierInput) {
     },
     visualChecks: i.observations
       .filter((o) => o.tankId === tank.id)
-      .slice(-3)
-      .map((o) => ({ date: o.date.slice(0, 10), overall: o.overall, summary: o.summary, findings: o.findings.map((f) => ({ category: f.category, severity: f.severity, title: f.title, resolved: f.resolved || undefined })) })),
+      .slice(-8)
+      .map((o) => ({ date: o.date.slice(0, 10), manual: o.manual || undefined, algaeLevel: o.algaeLevel, algaeTypes: o.algaeTypes, overall: o.overall, summary: o.summary, findings: o.findings.map((f) => ({ category: f.category, severity: f.severity, title: f.title, resolved: f.resolved || undefined })) })),
     fertilization: {
       productsInStock: (i.consumables ?? []).filter((c) => c.category === 'fertilizer').map((c) => ({ name: c.name, brand: c.brand, level: c.level })),
       doses: i.logs

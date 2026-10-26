@@ -28,11 +28,17 @@ describe('changeEffect', () => {
 
   it('compare les algues avant et après, et choisit les photos', () => {
     const e = changeEffect(change, [obs('2026-08-20T00:00:00Z', 3), obs('2026-09-25T00:00:00Z', 1)], [photo('p1', '2026-08-25T00:00:00Z'), photo('p2', '2026-09-20T00:00:00Z')], new Date('2026-10-01'));
-    expect(e.before.findings).toBe(3);
-    expect(e.after.findings).toBe(1);
+    expect(e.before.level).toBe(2);
+    expect(e.after.level).toBe(2);
     expect(e.photoBefore?.id).toBe('p1');
     expect(e.photoAfter?.id).toBe('p2');
-    expect(effectVerdict(e).level).toBe('ok');
+    expect(effectVerdict(e).level).toBe('info');
+  });
+  it('utilise les notes rapides d’algues', () => {
+    const manual = (date: string, algaeLevel: 0 | 1 | 2 | 3): Observation => ({ id: date, updatedAt: '', tankId: 't', date, overall: 'watch', findings: [], manual: true, algaeLevel });
+    const e = changeEffect(change, [manual('2026-08-20T00:00:00Z', 3), manual('2026-08-28T00:00:00Z', 2), manual('2026-09-25T00:00:00Z', 1)], [], new Date('2026-10-01'));
+    expect(e.before.level).toBe(2.5);
+    expect(effectVerdict(e).text).toBe('Moins d’algues : niveau moyen 2,5/3 avant, 1/3 après.');
   });
   it('reste prudent si le changement est récent', () => {
     const e = changeEffect(change, [], [], new Date('2026-09-05'));
