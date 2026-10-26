@@ -221,6 +221,17 @@ export interface Co2Advice {
   suggestedBpm?: number;
 }
 
+/**
+ * CO2 ajouté d'après la baisse de pH entre l'eau sans injection et l'eau en fin d'éclairage.
+ * L'eau à l'équilibre avec l'air contient ~3 mg/L de CO2 ; chaque point de pH en moins multiplie
+ * le CO2 par 10. Indépendant du KH (contrairement à l'estimation KH/pH), donc plus fiable.
+ */
+export function co2FromPhDrop(phBefore: number, phAfter: number): { drop: number; mgL: number } | undefined {
+  if (!(phBefore > 0) || !(phAfter > 0)) return undefined;
+  const drop = Math.round((phBefore - phAfter) * 100) / 100;
+  return { drop, mgL: Math.round(3 * 10 ** Math.max(drop, 0) * 10) / 10 };
+}
+
 /** Zone visée pour un bac planté : 20 à 30 mg/L. */
 export const CO2_TARGET = { min: 20, max: 30 };
 

@@ -5,13 +5,14 @@ import { MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf, measuredParams } from '
 import { agoLabel, fmt, fmtRange, fmtShortDate, speciesName } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { ParamChart } from '../../shared/param-chart';
-import { CYCLING_LABELS, CO2_TARGET, DROP_CHECKER, co2Advice, co2FromKhPh, co2Status, cyclingPhase, latestKhPh, trendOf } from '../../core/insights';
+import { CYCLING_LABELS, CO2_TARGET, DROP_CHECKER, co2Advice, co2FromKhPh, co2FromPhDrop, co2Status, cyclingPhase, latestKhPh, trendOf } from '../../core/insights';
 import { Co2Counter } from '../../shared/co2-counter';
+import { PhDaySheet } from '../../shared/ph-day-sheet';
 import { describeChange } from '../../core/settings-history';
 
 @Component({
   selector: 'app-water',
-  imports: [RouterLink, Icon, ParamChart, Co2Counter],
+  imports: [RouterLink, Icon, ParamChart, Co2Counter, PhDaySheet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; gap: 14px; }
@@ -92,7 +93,16 @@ import { describeChange } from '../../core/settings-history';
           } @else {
             <p class="sub" style="margin: 0">Aucune mesure. Compte les bulles pour régler ton débit.</p>
           }
-          @if (co2Est(); as e) {
+          @if (phDay(); as d) {
+            <div class="est" [class.warn]="d.level === 'warn'" [class.danger]="d.level === 'danger'">
+              <p><b>CO2 mesuré : ~{{ fmtN(d.mgL) }} mg/L</b> <span class="sub">(visé {{ co2Target.min }}–{{ co2Target.max }})</span> · {{ d.title }}</p>
+              <p class="sub" style="margin: 0">pH {{ fmtN(d.phBefore) }}{{ d.phBeforeTime ? ' à ' + d.phBeforeTime : '' }} → {{ fmtN(d.phAfter) }}{{ d.phAfterTime ? ' à ' + d.phAfterTime : '' }}, baisse de {{ fmtN(d.drop) }} ({{ shortDate(d.date) }}). {{ d.detail }}</p>
+              @if (d.suggestedBpm != null && d.suggestedBpm !== co2Last()?.bubblesPerMinute) {
+                <p style="margin-top: 4px"><b>Débit conseillé : ~{{ d.suggestedBpm }} bulles/min</b> (actuellement {{ co2Last()?.bubblesPerMinute }})</p>
+              }
+            </div>
+            @if (co2Est(); as e) { <p class="sub" style="margin: 0">Estimation KH/pH : {{ fmtN(e.mgL) }} mg/L ({{ shortDate(e.date) }}).</p> }
+          } @else if (co2Est(); as e) {
             <div class="est" [class.warn]="e.level === 'warn'" [class.danger]="e.level === 'danger'">
               <p><b>CO2 estimé : {{ fmtN(e.mgL) }} mg/L</b> <span class="sub">(visé {{ co2Target.min }}–{{ co2Target.max }})</span> · {{ e.title }}</p>
               <p class="sub" style="margin: 0">D’après KH {{ fmtN(e.kh) }} et pH {{ fmtN(e.ph) }} ({{ shortDate(e.date) }}). {{ e.detail }}</p>
@@ -103,13 +113,19 @@ import { describeChange } from '../../core/settings-history';
           } @else {
             <p class="sub" style="margin: 0">Mesure le KH et le pH (pendant l’injection) pour estimer le CO2 dissous.</p>
           }
-          <button class="btn water" type="button" style="align-self: flex-start" (click)="counting.set(true)"><app-icon name="timer" [size]="20" />Compter les bulles</button>
+          <div class="row" style="gap: 8px; flex-wrap: wrap">
+            <button class="btn water" type="button" (click)="counting.set(true)"><app-icon name="timer" [size]="20" />Compter les bulles</button>
+            <button class="btn out" type="button" (click)="phSheet.set(true)"><app-icon name="drop" [size]="20" />pH sur la journée</button>
+          </div>
           @if (co2History().length > 1) {
             <p class="sub" style="margin: 0">Précédentes : {{ co2History() }}</p>
           }
         </section>
         @if (counting()) {
           <app-co2-counter [tank]="v.tank" (closed)="counting.set(false)" />
+        }
+        @if (phSheet()) {
+          <app-ph-day-sheet [tank]="v.tank" (closed)="phSheet.set(false)" />
         }
       }
       @if (v.lastTest; as last) {
@@ -244,7 +260,15 @@ export class WaterTab {
   protected readonly dropInfo = DROP_CHECKER;
   protected readonly counting = signal(false);
   private readonly co2List = computed(() => this.store.co2Readings().filter((r) => r.tankId === this.id()));
-  protected readonly co2Last = computed(() => this.co2List().at(-1));
+  protected readonly co2Last = computed(() => this.co2List().filter((r) => r.bubblesPerMinute != null || r.dropChecker).at(-1));
+  protected readonly phSheet = signal(false);
+  /** Dernière mesure de pH sur la journée (moins de 14 jours), avec conseil de débit. */
+  protected readonly phDay = computed(() => {
+    const r = this.co2List().filter((x) => x.phBefore != null && x.phAfter != null).at(-1);
+    if (!r || Date.now() - new Date(r.date).getTime() > 14 * 864e5) return undefined;
+    const m = co2FromPhDrop(r.phBefore!, r.phAfter!);
+    return m ? { ...co2Advice(m.mgL, this.co2Last()?.bubblesPerMinute), ...m, phBefore: r.phBefore!, phAfter: r.phAfter!, phBeforeTime: r.phBeforeTime, phAfterTime: r.phAfterTime, date: r.date } : undefined;
+  });
   protected readonly co2State = computed(() => {
     const r = this.co2Last();
     return r?.bubblesPerMinute != null ? co2Status(r.bubblesPerMinute, this.view()?.tank.co2Target) : undefined;

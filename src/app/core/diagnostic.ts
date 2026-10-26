@@ -18,7 +18,7 @@ import type {
   WaterTest,
 } from './models';
 import { PARAM_BY_KEY, measuredParams, compatibilityIssues, idealRange, isAlive, testAlerts } from './rules';
-import { co2FromKhPh, gearChecks, latestKhPh, photoperiod, trendOf } from './insights';
+import { co2FromKhPh, co2FromPhDrop, gearChecks, latestKhPh, photoperiod, trendOf } from './insights';
 import { daysBetween } from './dates';
 
 export interface DossierInput {
@@ -109,7 +109,11 @@ export function buildDossier(i: DossierInput) {
       ? {
           estimatedMgL: kp ? co2FromKhPh(kp.kh, kp.ph) : undefined,
           estimatedFrom: kp,
-          readings: i.co2Readings.filter((r) => r.tankId === tank.id).slice(-8).map((r) => ({ date: r.date, bpm: r.bubblesPerMinute, dropChecker: r.dropChecker })),
+          readings: i.co2Readings.filter((r) => r.tankId === tank.id).slice(-8).map((r) => ({ date: r.date, bpm: r.bubblesPerMinute, dropChecker: r.dropChecker })).filter((r) => r.bpm != null || r.dropChecker),
+          phDrop: i.co2Readings
+            .filter((r) => r.tankId === tank.id && r.phBefore != null && r.phAfter != null)
+            .slice(-5)
+            .map((r) => ({ date: r.date.slice(0, 10), phBefore: r.phBefore, phBeforeTime: r.phBeforeTime, phAfter: r.phAfter, phAfterTime: r.phAfterTime, ...co2FromPhDrop(r.phBefore!, r.phAfter!) })),
         }
       : undefined,
     equipment: gear.map((e) => ({

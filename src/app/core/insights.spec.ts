@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MaintenanceTask, Tank, WaterTest } from './models';
-import { gearChecks, photoperiod, scheduleHours, afterWaterChange, bpmFromTaps, co2Advice, co2FromKhPh, co2Status, latestKhPh, cyclingPhase, percentFromLabel, stockAlerts, tasksToIcs, trendOf, warrantyEnd } from './insights';
+import { gearChecks, photoperiod, scheduleHours, afterWaterChange, bpmFromTaps, co2Advice, co2FromKhPh, co2FromPhDrop, co2Status, latestKhPh, cyclingPhase, percentFromLabel, stockAlerts, tasksToIcs, trendOf, warrantyEnd } from './insights';
 import type { Consumable, Equipment } from './models';
 
 const DAY = 86_400_000;
@@ -137,5 +137,17 @@ describe('contrôles du matériel', () => {
       eq({ type: 'co2', co2: { schedule: { on: '10:30', off: '19:00' } } }),
     ]);
     expect(checks.every((c) => c.level === 'ok')).toBe(true);
+  });
+});
+
+describe('co2FromPhDrop', () => {
+  it('une baisse de 1 point donne ~30 mg/L', () => {
+    expect(co2FromPhDrop(7.4, 6.4)).toEqual({ drop: 1, mgL: 30 });
+  });
+  it('une petite baisse donne peu de CO2', () => {
+    expect(co2FromPhDrop(7.2, 6.8)!.mgL).toBeCloseTo(7.5, 0);
+  });
+  it('ignore une valeur manquante', () => {
+    expect(co2FromPhDrop(0, 6.8)).toBeUndefined();
   });
 });
