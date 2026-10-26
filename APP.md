@@ -57,7 +57,7 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - **Alertes de compatibilité** à l'ajout : plages d'eau incompatibles, herbivore dans un bac planté, prédation (par ex. Apistogramma et jeunes crevettes).
 
 ### 5. Réglages
-- Sauvegarde complète en ZIP (fflate, écrite et lue en flux), vérifiée avant restauration : un fichier abîmé est refusé sans rien effacer.
+- Sauvegarde complète en ZIP (fflate, écrite et lue en flux), vérifiée avant restauration : un fichier abîmé est refusé sans rien effacer. Sur Chrome (ordinateur), le fichier est écrit directement sur le disque, sans passer par la mémoire.
 - Choix du thème clair ou sombre.
 
 ### 6. Photos

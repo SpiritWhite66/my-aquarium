@@ -72,6 +72,7 @@ export class PhotoViewer {
   readonly startId = input.required<string>();
   readonly closed = output<void>();
 
+  private preloaded?: { id: string; full: Blob };
   private readonly selectedId = linkedSignal(() => this.startId());
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
@@ -83,6 +84,11 @@ export class PhotoViewer {
     afterNextRender(() => this.root()?.nativeElement.focus());
     effect(() => {
       if (!this.photos().length) this.closed.emit();
+    });
+    // L'image est lue d'avance : le partage doit partir sans attente après le clic (exigé par iOS et Android).
+    effect(() => {
+      const id = this.current()?.id;
+      if (id) void this.photoRepo.photoFile(id).then((f) => f && (this.preloaded = { id, full: f.full }));
     });
   }
 
@@ -115,9 +121,9 @@ export class PhotoViewer {
    * puis ouvre l'écran d'import pour coller la réponse. Sans partage de fichiers : téléchargement.
    */
   protected async toAi(p: Photo): Promise<void> {
-    const img = await this.photoRepo.photoFile(p.id);
-    if (!img) return;
-    const file = new File([img.full], this.filename(p), { type: 'image/jpeg' });
+    const full = this.preloaded?.id === p.id ? this.preloaded.full : (await this.photoRepo.photoFile(p.id))?.full;
+    if (!full) return;
+    const file = new File([full], this.filename(p), { type: 'image/jpeg' });
     const text = p.inhabitantId
       ? 'Avec le skill my-aquarium-json : bilan visuel (sanity) de cette photo.'
       : 'Avec le skill my-aquarium-json : inventaire (inventory) puis bilan visuel (sanity) de cette photo de mon bac.';
@@ -126,7 +132,7 @@ export class PhotoViewer {
         await navigator.share({ files: [file], text });
       } else {
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(img.full);
+        a.href = URL.createObjectURL(full);
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         a.download = file.name;
         a.click();

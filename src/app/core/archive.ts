@@ -8,15 +8,28 @@ export interface ArchiveEntry {
   data: Blob;
 }
 
-/** Assemble un ZIP sans compression (les JPEG ne se compressent pas). */
-export async function writeZip(entries: AsyncIterable<ArchiveEntry> | Iterable<ArchiveEntry>): Promise<Blob> {
-  const parts: BlobPart[] = [];
+type Chunk = Uint8Array<ArrayBuffer>;
+
+/** Destination d'un ZIP écrit en flux (par exemple un fichier choisi par l'utilisateur). */
+export interface ZipSink {
+  write(chunk: Chunk): void | Promise<void>;
+}
+
+/**
+ * Écrit un ZIP sans compression (les JPEG ne se compressent pas), morceau par morceau :
+ * `onChunk` reçoit chaque morceau dans l'ordre, et la lecture de l'entrée suivante attend qu'il soit traité.
+ */
+export async function streamZip(
+  entries: AsyncIterable<ArchiveEntry> | Iterable<ArchiveEntry>,
+  onChunk: (chunk: Chunk) => void | Promise<void>,
+): Promise<void> {
   let failure: Error | null = null;
+  let chain: Promise<void> = Promise.resolve();
   let done!: () => void;
   const finished = new Promise<void>((r) => (done = r));
   const zip = new Zip((err, chunk, final) => {
     if (err) failure = err;
-    else parts.push(chunk as Uint8Array<ArrayBuffer>);
+    else chain = chain.then(() => onChunk(chunk as Chunk));
     if (err || final) done();
   });
   for await (const e of entries) {
@@ -24,10 +37,18 @@ export async function writeZip(entries: AsyncIterable<ArchiveEntry> | Iterable<A
     zip.add(file);
     file.push(new Uint8Array(await e.data.arrayBuffer()), true);
     if (failure) throw failure;
+    await chain;
   }
   zip.end();
   await finished;
   if (failure) throw failure;
+  await chain;
+}
+
+/** Assemble un ZIP en mémoire (petites sauvegardes, navigateurs sans écriture directe sur le disque). */
+export async function writeZip(entries: AsyncIterable<ArchiveEntry> | Iterable<ArchiveEntry>): Promise<Blob> {
+  const parts: BlobPart[] = [];
+  await streamZip(entries, (chunk) => void parts.push(chunk));
   return new Blob(parts, { type: 'application/zip' });
 }
 

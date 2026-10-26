@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { AQUARIUM_DB } from '../db';
 import { newId, now, type New } from './util';
-import { isZip, readZip, writeZip, type ArchiveEntry } from '../archive';
+import { isZip, readZip, streamZip, type ArchiveEntry, type ZipSink, writeZip } from '../archive';
 import { BACKUP_TABLES, BACKUP_VERSION, checkBackup } from '../backup-format';
 import type { Entity, ExportFile } from '../models';
 
@@ -15,6 +15,18 @@ export class BackupRepo {
    * et les images dans photos/. Les images sont lues une par une.
    */
   async exportArchive(): Promise<{ blob: Blob; exportedAt: string }> {
+    const { entries, exportedAt } = await this.archiveEntries();
+    return { blob: await writeZip(entries), exportedAt };
+  }
+
+  /** Même sauvegarde, écrite morceau par morceau (fichier sur disque) : rien n'est gardé en mémoire. */
+  async exportArchiveTo(sink: ZipSink): Promise<{ exportedAt: string }> {
+    const { entries, exportedAt } = await this.archiveEntries();
+    await streamZip(entries, (chunk) => sink.write(chunk));
+    return { exportedAt };
+  }
+
+  private async archiveEntries(): Promise<{ entries: AsyncGenerator<ArchiveEntry>; exportedAt: string }> {
     const exportedAt = now();
     const data: Record<string, unknown> = {};
     for (const table of BACKUP_TABLES) {
@@ -32,10 +44,7 @@ export class BackupRepo {
     const ids = (await this.db.photos.toCollection().primaryKeys()) as string[];
     const db = this.db;
     async function* entries(): AsyncGenerator<ArchiveEntry> {
-      yield {
-        name: 'data.json',
-        data: new Blob([JSON.stringify(file)], { type: 'application/json' }),
-      };
+      yield { name: 'data.json', data: new Blob([JSON.stringify(file)], { type: 'application/json' }) };
       for (const id of ids) {
         const img = await db.photoFiles.get(id);
         if (!img) continue;
@@ -43,7 +52,7 @@ export class BackupRepo {
         yield { name: `photos/${id}-thumb.jpg`, data: img.thumb };
       }
     }
-    return { blob: await writeZip(entries()), exportedAt };
+    return { entries: entries(), exportedAt };
   }
 
   /**

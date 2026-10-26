@@ -66,13 +66,36 @@ export class BackupService {
 
   /** Télécharge la sauvegarde complète (photos comprises). */
   async exportNow(): Promise<void> {
-    const { blob, exportedAt } = await this.backupRepo.exportArchive();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `my-aquarium-${this.store.today()}.zip`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    const name = `my-aquarium-${this.store.today()}.zip`;
+    const picker = (window as unknown as { showSaveFilePicker?: SaveFilePicker }).showSaveFilePicker;
+    let exportedAt: string;
+    if (picker) {
+      // Chrome sur ordinateur : le fichier s'écrit directement sur le disque, même avec des centaines de photos.
+      // Le choix du fichier doit venir avant tout traitement long (il exige le clic de l'utilisateur).
+      let handle: FileHandle;
+      try {
+        handle = await picker({ suggestedName: name, types: [{ description: 'Sauvegarde ZIP', accept: { 'application/zip': ['.zip'] } }] });
+      } catch {
+        return; // fenêtre fermée sans choisir de fichier
+      }
+      const out = await handle.createWritable();
+      try {
+        ({ exportedAt } = await this.backupRepo.exportArchiveTo({ write: (chunk) => out.write(chunk) }));
+        await out.close();
+      } catch (err) {
+        await out.abort().catch(() => undefined);
+        throw err;
+      }
+    } else {
+      const { blob, exportedAt: at } = await this.backupRepo.exportArchive();
+      exportedAt = at;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    }
     write('lastBackup', exportedAt);
     this.lastBackup.set(exportedAt);
   }
@@ -108,3 +131,12 @@ export function fmtBytes(n: number): string {
   if (n < 1024 ** 3) return `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} Mo`;
   return `${(n / 1024 ** 3).toFixed(1).replace('.', ',')} Go`;
 }
+
+/** API d'écriture de fichiers (Chrome, ordinateur), absente des types standard. */
+interface FileHandle {
+  createWritable(): Promise<{ write(chunk: Uint8Array): Promise<void>; close(): Promise<void>; abort(): Promise<void> }>;
+}
+type SaveFilePicker = (options: {
+  suggestedName: string;
+  types: { description: string; accept: Record<string, string[]> }[];
+}) => Promise<FileHandle>;

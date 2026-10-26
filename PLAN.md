@@ -89,7 +89,7 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] Dossier de diagnostic (JSON + photos), skill `my-aquarium-diagnostic`, import du plan d'action en tâches.
 - [x] Historique des réglages du matériel et effet sur les algues.
 - [x] Fe, K, Mg ; journal d'engrais ; note rapide des algues ; CO2 par baisse de pH.
-- [x] Notifications quotidiennes (tâches, suivis) et suivi de diagnostic.
+- [x] Notifications quotidiennes (tâches, suivis) : 30 jours préparés, alerte « Rappels à mettre à jour » au-delà.
 - [ ] Vérifier les notifications en arrière-plan sur un vrai téléphone Android (appli installée).
 - [ ] Tester le skill de diagnostic sur un vrai cas d'algues et affiner les consignes.
 

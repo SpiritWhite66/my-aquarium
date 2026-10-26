@@ -122,6 +122,17 @@ describe('sauvegarde', () => {
     expect(await (await repo.photo.photoFile('p1'))!.full.text()).toBe('FULL-p1');
   });
 
+  it('écrit la sauvegarde en flux (vers un fichier) avec le même contenu', async () => {
+    const t = await repo.tank.saveTank(tank('Salon'));
+    await seedPhoto(t);
+    const chunks: Uint8Array[] = [];
+    await repo.backup.exportArchiveTo({ write: (c) => void chunks.push(c) });
+    expect(chunks.length).toBeGreaterThan(1);
+    await repo.tank.deleteTank(t);
+    await repo.backup.importBackup(new Blob(chunks as BlobPart[]));
+    expect(await (await repo.photo.photoFile('p1'))!.thumb.text()).toBe('THUMB-p1');
+  });
+
   it('accepte encore les anciennes sauvegardes JSON (photos en data URL)', async () => {
     const old = {
       format: 'my-aquarium', version: 1, exportedAt: '2026-01-01T00:00:00Z',
