@@ -44,11 +44,11 @@ import { Icon } from './icon';
       }
       @if (followUp(); as f) {
         <p class="follow" [class.due]="f.days <= 0">
-          {{ f.days <= 0 ? 'Suivi à faire : refais un diagnostic' : 'Suivi le ' + date(f.date) }}{{ f.measure ? ' · mesurer ' + f.measure : '' }}
+          {{ f.days <= 0 ? 'Suivi à faire' : 'Suivi le ' + date(f.date) }}{{ f.measure ? ' · mesurer ' + f.measure : '' }}
         </p>
       }
       <div class="row" style="gap: 8px; flex-wrap: wrap">
-        <a class="btn ton" routerLink="/diagnostic" [queryParams]="{ bac: d.tankId }"><app-icon name="search" [size]="18" />Nouveau diagnostic</a>
+        <a class="btn ton" routerLink="/diagnostic" [queryParams]="{ bac: d.tankId }"><app-icon name="search" [size]="18" />{{ d.followUp ? 'Faire le suivi' : 'Nouveau diagnostic' }}</a>
       </div>
     </section>
   `,

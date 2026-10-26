@@ -3,6 +3,8 @@ import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { buildDossier, diagnosticRequest, photoFileName } from '../../core/diagnostic';
 import { fmtShortDate } from '../../core/labels';
+import { measureStatus } from '../../core/follow-up';
+import { addDays, daysBetween } from '../../core/dates';
 import { Icon } from '../../shared/icon';
 import { PhotoUrls } from '../../shared/photo-urls';
 
@@ -27,6 +29,13 @@ const MAX_PHOTOS = 6;
     .ph-pick.on .tick { background: var(--wa); color: var(--on-wa); }
     .summary { padding: 12px 14px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
     .msg { font-size: 13px; }
+    .fu { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 3px 0 0 var(--wa); }
+    .fu-h { font-weight: 600; font-size: 14px; }
+    .fu-l { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+    .fu-l li { display: flex; gap: 6px; align-items: baseline; color: var(--wn); }
+    .fu-l li.m-ok { color: var(--ok); }
+    .fu-l li.m-unk { color: var(--mu); }
+    .fu-l app-icon { flex: none; position: relative; top: 2px; }
   `,
   template: `
     <div class="page" style="max-width: 760px; gap: 16px">
@@ -56,6 +65,38 @@ const MAX_PHOTOS = 6;
             @for (v of store.tankViews(); track v.tank.id) { <option [value]="v.tank.id" [selected]="v.tank.id === tankId()">{{ v.tank.name }}</option> }
           </select>
         </div>
+        @if (previous(); as prev) {
+          <section class="card fu">
+            <label class="check" style="min-height: 0">
+              <input type="checkbox" [checked]="followUp()" (change)="followUp.set($any($event.target).checked)" />
+              <span>Suivi du diagnostic du {{ date(prev.date) }}</span>
+            </label>
+            @if (followUp()) {
+              <p class="sub" style="margin: 0">{{ prev.hypotheses[0]?.title }}{{ dueLabel() ? ' · ' + dueLabel() : '' }}</p>
+              <p class="fu-h">Actions : {{ doneCount() }} sur {{ prev.actions.length }} faites</p>
+              <ul class="fu-l">
+                @for (a of prev.actions; track $index) {
+                  <li [class.m-ok]="a.done"><app-icon [name]="a.done ? 'check' : 'close'" [size]="14" [stroke]="2.4" />{{ a.title }}</li>
+                }
+              </ul>
+              @if (measures().length) {
+                <p class="fu-h">Mesures demandées</p>
+                <ul class="fu-l">
+                  @for (m of measures(); track m.label) {
+                    <li [class.m-ok]="m.done" [class.m-unk]="m.done === undefined">
+                      <app-icon [name]="m.done ? 'check' : m.done === false ? 'close' : 'eye'" [size]="14" [stroke]="2.4" />{{ m.label }}{{ m.detail ? ' : ' + m.detail : '' }}
+                    </li>
+                  }
+                </ul>
+                @if (missingMeasures()) {
+                  <a class="sub" style="margin: 0; font-weight: 600" routerLink="/releve" [queryParams]="{ bac: tankId() }">Faire un relevé avant d’envoyer</a>
+                }
+              }
+              <p class="sub" style="margin: 0">L’IA recevra ce bilan et tout ce qui a changé depuis : relevés, entretien, engrais, réglages, notes d’algues.</p>
+            }
+          </section>
+        }
+
         <div class="field">
           <label for="q">Quel est le problème ?</label>
           <textarea id="q" rows="3" [value]="question()" (input)="question.set($any($event.target).value)"
@@ -118,8 +159,47 @@ export class DiagnosticPage {
 
   private readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.tankId()));
   protected readonly photos = computed(() => this.store.photos().filter((p) => p.tankId === this.tankId()));
-  /** Par défaut : les 3 photos les plus récentes du bac. */
-  protected readonly selected = linkedSignal(() => new Set(this.photos().slice(0, 3).map((p) => p.id)));
+  /** Dernier diagnostic du bac. */
+  protected readonly previous = computed(() => this.store.diagnoses().filter((d) => d.tankId === this.tankId()).at(-1));
+  /** Suivi coché par défaut si le dernier diagnostic date de moins de 90 jours. */
+  protected readonly followUp = linkedSignal(() => {
+    const p = this.previous();
+    return !!p && daysBetween(p.date.slice(0, 10), this.store.today()) <= 90;
+  });
+  private readonly followUpData = computed(() => ({
+    tests: this.store.waterTests(),
+    co2Readings: this.store.co2Readings(),
+    photos: this.store.photos(),
+    logs: this.store.logs(),
+    settingChanges: this.store.settingChanges(),
+    observations: this.store.observations(),
+  }));
+  protected readonly measures = computed(() => {
+    const p = this.previous();
+    return p ? measureStatus(p, this.followUpData()) : [];
+  });
+  protected readonly missingMeasures = computed(() => this.measures().some((m) => m.done === false));
+  protected readonly doneCount = computed(() => this.previous()?.actions.filter((a) => a.done).length ?? 0);
+  protected readonly dueLabel = computed(() => {
+    const p = this.previous();
+    if (!p?.followUp) return '';
+    const due = addDays(p.date.slice(0, 10), p.followUp.inDays);
+    const days = daysBetween(this.store.today(), due);
+    return days > 0 ? `suivi prévu dans ${days} j` : days === 0 ? 'suivi prévu aujourd’hui' : `suivi prévu le ${this.date(due)}`;
+  });
+
+  /**
+   * Par défaut : les 3 photos les plus récentes. En suivi : celles prises depuis le diagnostic,
+   * plus la dernière d'avant pour comparer.
+   */
+  protected readonly selected = linkedSignal(() => {
+    const photos = this.photos();
+    const prev = this.previous();
+    if (!this.followUp() || !prev) return new Set(photos.slice(0, 3).map((p) => p.id));
+    const after = photos.filter((p) => p.date > prev.date).slice(0, 3);
+    const before = photos.find((p) => p.date <= prev.date);
+    return new Set([...after, ...(before ? [before] : [])].map((p) => p.id));
+  });
 
   private readonly chosenPhotos = computed(() => this.photos().filter((p) => this.selected().has(p.id)));
 
@@ -143,6 +223,8 @@ export class DiagnosticPage {
       photos: this.chosenPhotos(),
       question: this.question(),
       today: this.store.today(),
+      followUpOf: this.followUp() ? this.previous() : undefined,
+      allPhotos: this.photos(),
     });
   });
 
@@ -194,7 +276,8 @@ export class DiagnosticPage {
   protected async send(): Promise<void> {
     if (!this.dossier()) return;
     const files = this.files();
-    const text = diagnosticRequest(this.view()!.tank.name, this.question());
+    const prev = this.followUp() ? this.previous() : undefined;
+    const text = diagnosticRequest(this.view()!.tank.name, this.question(), prev ? this.date(prev.date) : undefined);
     this.busy.set(true);
     try {
       if (navigator.canShare?.({ files, text })) {

@@ -98,6 +98,7 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - Note rapide des algues au relevé (aucune / un peu / moyen / beaucoup + types), enregistrée comme observation manuelle ; courbe des algues dans l'onglet Eau, utilisée par la comparaison avant/après des réglages.
 - CO2 par baisse de pH sur la journée (pH avant injection → fin d'éclairage, ~3 × 10^baisse mg/L), prioritaire sur l'estimation KH/pH pendant 14 jours.
 - Notifications quotidiennes (Réglages) : tâches dues et suivis de diagnostic, à l'heure choisie. Texte préparé 14 jours à l'avance dans IndexedDB (table `prefs`) ; affiché par l'appli ouverte, ou par `public/sw.js` (synchronisation périodique, Chrome Android appli installée).
+- Suivi de diagnostic : l'écran Diagnostic propose le suivi du dernier diagnostic du bac (actions faites, mesures demandées obtenues ou non, photos d'après + une d'avant). Le dossier ajoute `sinceLastDiagnosis` (relevés, entretien, engrais, réglages, niveau d'algues avant/après) et le skill commence par juger le plan.
 - Historique des réglages : toute modification de l'intensité, des horaires d'éclairage ou de CO2, de la sieste, de la consigne de chauffage ou du débit est notée (date d'effet modifiable, raison facultative). L'onglet Entretien compare les algues signalées 30 jours avant et après, propose la comparaison des photos, et les courbes de l'onglet Eau marquent chaque changement. L'historique part dans le dossier de diagnostic (`settingsHistory`).
 
 ## Catalogue de départ

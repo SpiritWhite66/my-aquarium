@@ -21,6 +21,7 @@ import type {
 import { PARAM_BY_KEY, measuredParams, compatibilityIssues, idealRange, isAlive, testAlerts } from './rules';
 import { co2FromKhPh, co2FromPhDrop, gearChecks, latestKhPh, photoperiod, trendOf } from './insights';
 import { daysBetween } from './dates';
+import { sinceDiagnosis } from './follow-up';
 
 export interface DossierInput {
   tank: Tank;
@@ -35,8 +36,11 @@ export interface DossierInput {
   observations: Observation[];
   diagnoses: Diagnosis[];
   photos: Photo[]; // photos jointes, déjà choisies
+  allPhotos?: Photo[]; // toutes les photos du bac (pour compter celles prises depuis le diagnostic)
   settingChanges?: SettingChange[];
   consumables?: Consumable[];
+  /** Diagnostic dont celui-ci est le suivi : le dossier résume ce qui a changé depuis. */
+  followUpOf?: Diagnosis;
   question?: string;
   today: string;
 }
@@ -150,6 +154,13 @@ export function buildDossier(i: DossierInput) {
       .filter((c) => c.tankId === tank.id)
       .slice(-15)
       .map((c) => ({ date: c.date.slice(0, 10), equipment: c.equipmentName, setting: c.field, from: c.from, to: c.to, reason: c.note })),
+    sinceLastDiagnosis: i.followUpOf
+      ? sinceDiagnosis(
+          i.followUpOf,
+          { tests, co2Readings: i.co2Readings, photos: i.allPhotos ?? i.photos, logs: i.logs, settingChanges: i.settingChanges ?? [], observations: i.observations },
+          i.today,
+        )
+      : undefined,
     previousDiagnoses: i.diagnoses
       .filter((d) => d.tankId === tank.id)
       .slice(-3)
@@ -172,10 +183,11 @@ export function photoFileName(p: Photo, index: number): string {
 }
 
 /** Texte joint au partage : demande d'analyse pour le skill. */
-export function diagnosticRequest(tankName: string, question?: string): string {
+export function diagnosticRequest(tankName: string, question?: string, followUpOf?: string): string {
   const q = question?.trim();
   return [
     `Diagnostic de mon aquarium « ${tankName} » avec le skill my-aquarium-diagnostic.`,
+    ...(followUpOf ? [`C'est le suivi de ton diagnostic du ${followUpOf} : dis-moi si le plan a fonctionné (voir sinceLastDiagnosis).`] : []),
     q ? `Mon problème : ${q}` : 'Fais un bilan général et dis-moi ce qui peut être amélioré.',
     'Le dossier JSON et les photos sont joints.',
   ].join('\n');
