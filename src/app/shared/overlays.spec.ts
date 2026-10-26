@@ -191,8 +191,10 @@ describe('photos', () => {
     app.click(thumb(/^Bac, .*1 oct/));
     app.press('.btn.ton', 'Définir');
     await vi.waitFor(async () => expect((await app.db.tanks.get('a'))?.coverPhotoId).toBe('p2'));
-    app.harness.detectChanges();
-    expect(app.find('.btn.ton', 'couverture')!.textContent).toContain('Photo de couverture');
+    await vi.waitFor(() => {
+      app.harness.detectChanges();
+      expect(app.find('.btn.ton', 'couverture')!.textContent).toContain('Photo de couverture');
+    });
     const caption = input('caption')!;
     caption.value = 'Joli';
     caption.dispatchEvent(new Event('change'));
