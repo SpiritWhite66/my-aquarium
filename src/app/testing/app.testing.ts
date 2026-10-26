@@ -26,6 +26,10 @@ export interface App {
   /** Remplit un champ comme le ferait une saisie. */
   type(target: Element | null, value: string): void;
   click(target: Element | null): void;
+  /** Premier élément qui correspond au sélecteur (et au texte, s'il est donné). */
+  find(selector: string, text?: string | RegExp): HTMLElement | null;
+  /** Clique sur l'élément trouvé, ou échoue si absent. */
+  press(selector: string, text?: string | RegExp): void;
   flush(): Promise<void>;
 }
 
@@ -104,6 +108,15 @@ export async function bootApp(seed: ((db: AquariumDb) => Promise<void>) | false 
     },
     click(target) {
       (target as HTMLElement).click();
+      harness.detectChanges();
+    },
+    find(selector, text) {
+      return [...el().querySelectorAll<HTMLElement>(selector)].find((e) => !text || (typeof text === 'string' ? e.textContent!.includes(text) : text.test(e.textContent ?? ''))) ?? null;
+    },
+    press(selector, text) {
+      const target = [...el().querySelectorAll<HTMLElement>(selector)].find((e) => !text || (typeof text === 'string' ? e.textContent!.includes(text) : text.test(e.textContent ?? '')));
+      if (!target) throw new Error(`Introuvable : ${selector} ${String(text ?? '')}`);
+      target.click();
       harness.detectChanges();
     },
   };
