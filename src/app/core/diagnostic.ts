@@ -2,6 +2,7 @@
 // Lu par le skill « my-aquarium-diagnostic » (ai/diagnostic/SKILL.md).
 
 import type {
+  SettingChange,
   Co2Reading,
   Diagnosis,
   Equipment,
@@ -33,6 +34,7 @@ export interface DossierInput {
   observations: Observation[];
   diagnoses: Diagnosis[];
   photos: Photo[]; // photos jointes, déjà choisies
+  settingChanges?: SettingChange[];
   question?: string;
   today: string;
 }
@@ -130,6 +132,10 @@ export function buildDossier(i: DossierInput) {
       .filter((o) => o.tankId === tank.id)
       .slice(-3)
       .map((o) => ({ date: o.date.slice(0, 10), overall: o.overall, summary: o.summary, findings: o.findings.map((f) => ({ category: f.category, severity: f.severity, title: f.title, resolved: f.resolved || undefined })) })),
+    settingsHistory: (i.settingChanges ?? [])
+      .filter((c) => c.tankId === tank.id)
+      .slice(-15)
+      .map((c) => ({ date: c.date.slice(0, 10), equipment: c.equipmentName, setting: c.field, from: c.from, to: c.to, reason: c.note })),
     previousDiagnoses: i.diagnoses
       .filter((d) => d.tankId === tank.id)
       .slice(-3)

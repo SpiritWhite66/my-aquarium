@@ -19,6 +19,7 @@ const PAD_Y = 8;
     .pt { fill: var(--sf); stroke: var(--wa); stroke-width: 2; }
     .pt.bad { fill: var(--dg); stroke: var(--dg); }
     .ax { font: 500 10px var(--mono); fill: var(--mu); }
+    .mark { stroke: var(--mu); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
   `,
   template: `
     @let c = chart();
@@ -27,6 +28,9 @@ const PAD_Y = 8;
         <rect class="band" x="0" [attr.y]="c.band.y" [attr.width]="W" [attr.height]="c.band.h" rx="4" />
         <text class="ax" x="2" [attr.y]="c.band.y - 3">{{ c.band.top }}</text>
         <text class="ax" x="2" [attr.y]="c.band.y + c.band.h + 11">{{ c.band.bottom }}</text>
+      }
+      @for (m of c.marks; track $index) {
+        <line class="mark" [attr.x1]="m.x" [attr.x2]="m.x" y1="0" [attr.y2]="H"><title>{{ m.label }}</title></line>
       }
       @if (c.points.length > 1) {
         <polyline class="line" [attr.points]="c.polyline" />
@@ -45,6 +49,8 @@ export class ParamChart {
   readonly tests = input.required<WaterTest[]>();
   readonly range = input<Range>();
   readonly label = input('');
+  /** Changements de réglage à repérer sur la courbe (trait vertical). */
+  readonly marks = input<{ date: string; label: string }[]>([]);
 
   protected readonly chart = computed(() => {
     const key = this.key();
@@ -81,7 +87,14 @@ export class ParamChart {
       ? { y: y(range.max), h: Math.max(y(range.min) - y(range.max), 2), top: fmt(range.max), bottom: fmt(range.min) }
       : undefined;
     const last = data.at(-1);
+    const marks = data.length > 1
+      ? this.marks()
+          .map((m) => ({ t: new Date(m.date).getTime(), label: m.label }))
+          .filter((m) => m.t > t0 && m.t <= t1)
+          .map((m) => ({ x: +x(m.t, 0).toFixed(1), label: m.label }))
+      : [];
     return {
+      marks,
       points,
       polyline: points.map((p) => `${p.x},${p.y}`).join(' '),
       band,

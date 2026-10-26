@@ -313,6 +313,27 @@ export interface Consumable extends Entity {
   notes?: string;
 }
 
+// ---------- Historique des réglages ----------
+/** Changement d'un réglage du matériel, enregistré automatiquement quand on modifie l'équipement. */
+export interface SettingChange extends Entity {
+  tankId?: string;
+  equipmentId: string;
+  equipmentName: string;
+  date: string; // ISO datetime de prise d'effet
+  field:
+    | 'light.intensityPct'
+    | 'light.schedule'
+    | 'light.siesta'
+    | 'light.photoperiod'
+    | 'light.rampMinutes'
+    | 'co2.schedule'
+    | 'heater.setpointC'
+    | 'filter.flowLh';
+  from?: string;
+  to?: string;
+  note?: string; // raison du changement
+}
+
 // ---------- CO2 ----------
 export type DropChecker = 'blue' | 'green' | 'yellow';
 
@@ -342,6 +363,7 @@ export interface ExportFile {
     equipment?: Equipment[];
     consumables?: Consumable[];
     co2Readings?: Co2Reading[];
+    settingChanges?: SettingChange[];
     diagnoses?: Diagnosis[];
   };
 }

@@ -93,6 +93,7 @@ Les jetons de couleur et les composants communs sont dans `src/styles.scss`.
 - Contrôles par bac : durée d'éclairage, brassage, synchronisation CO2/lumière.
 - CO2 estimé par KH et pH (3 × KH × 10^(7 − pH)), zone visée 20–30 mg/L, débit de bulles conseillé.
 - Diagnostic IA : l'app exporte le dossier complet d'un bac (JSON + photos) pour le skill `my-aquarium-diagnostic` (`ai/diagnostic/SKILL.md`). La réponse (kind `diagnosis`) s'importe : hypothèses, plan d'action, tâches créées, suivi. Les diagnostics précédents et les actions faites sont renvoyés au diagnostic suivant.
+- Historique des réglages : toute modification de l'intensité, des horaires d'éclairage ou de CO2, de la sieste, de la consigne de chauffage ou du débit est notée (date d'effet modifiable, raison facultative). L'onglet Entretien compare les algues signalées 30 jours avant et après, propose la comparaison des photos, et les courbes de l'onglet Eau marquent chaque changement. L'historique part dans le dossier de diagnostic (`settingsHistory`).
 
 ## Catalogue de départ
 

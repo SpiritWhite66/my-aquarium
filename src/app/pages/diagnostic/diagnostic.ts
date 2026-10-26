@@ -138,6 +138,7 @@ export class DiagnosticPage {
       co2Readings: this.store.co2Readings(),
       observations: this.store.observations(),
       diagnoses: this.store.diagnoses(),
+      settingChanges: this.store.settingChanges(),
       photos: this.chosenPhotos(),
       question: this.question(),
       today: this.store.today(),

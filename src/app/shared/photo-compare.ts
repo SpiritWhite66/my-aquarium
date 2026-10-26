@@ -109,6 +109,9 @@ export class PhotoCompare {
   readonly tankId = input.required<string>();
   /** Liste des espèces ajoutées entre les deux dates (utile pour un bac entier). */
   readonly showAdditions = input(true);
+  /** Paire à afficher à l'ouverture (sinon la plus ancienne et la plus récente). */
+  readonly initialFirst = input<string>();
+  readonly initialSecond = input<string>();
   readonly closed = output<void>();
 
   protected readonly mode = signal<'slider' | 'side'>('slider');
@@ -116,8 +119,8 @@ export class PhotoCompare {
 
   private readonly sorted = computed(() => [...this.photos()].sort((a, b) => a.date.localeCompare(b.date)));
   // Par défaut : la plus ancienne et la plus récente.
-  protected readonly firstId = linkedSignal(() => this.sorted()[0]?.id);
-  protected readonly secondId = linkedSignal(() => this.sorted().at(-1)?.id);
+  protected readonly firstId = linkedSignal(() => this.initialFirst() ?? this.sorted()[0]?.id);
+  protected readonly secondId = linkedSignal(() => this.initialSecond() ?? this.sorted().at(-1)?.id);
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
   /** [avant, après] : toujours dans l'ordre des dates, quel que soit l'ordre des choix. */

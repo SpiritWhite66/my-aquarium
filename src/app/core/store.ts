@@ -5,6 +5,7 @@ import { BUILTIN_SPECIES } from './catalog';
 import { addDays, todayIso } from './dates';
 import { blobToDataUrl, dataUrlToBlob, processPhoto } from './photos';
 import type {
+  SettingChange,
   Entity,
   ExportFile,
   Inhabitant,
@@ -33,6 +34,7 @@ import {
 } from './rules';
 import { PARAM_BY_KEY } from './rules';
 import { TASK_TYPES } from './labels';
+import { diffSettings } from './settings-history';
 
 export interface TankView {
   tank: Tank;
@@ -89,6 +91,8 @@ export class AquariumStore {
   readonly co2Readings = this.live(() => this.db.co2Readings.orderBy('date').toArray(), []);
   /** Diagnostics IA, du plus ancien au plus récent. */
   readonly diagnoses = this.live(() => this.db.diagnoses.orderBy('date').toArray(), []);
+  /** Changements de réglages du matériel, du plus ancien au plus récent. */
+  readonly settingChanges = this.live(() => this.db.settingChanges.orderBy('date').toArray(), []);
 
   /** Dernière photo de chaque habitant (id habitant → id photo). */
   readonly inhabitantCovers = computed(() => {
@@ -192,10 +196,11 @@ export class AquariumStore {
   async deleteTank(id: string): Promise<void> {
     await this.db.transaction(
       'rw',
-      [this.db.tanks, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.co2Readings, this.db.equipment, this.db.diagnoses],
+      [this.db.tanks, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.co2Readings, this.db.equipment, this.db.diagnoses, this.db.settingChanges],
       async () => {
         // Le matériel du bac est conservé, en réserve.
         await this.db.equipment.where('tankId').equals(id).modify({ tankId: undefined });
+        await this.db.settingChanges.where('tankId').equals(id).delete();
         await this.db.tanks.delete(id);
         for (const table of [this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.co2Readings, this.db.diagnoses]) {
           await table.where('tankId').equals(id).delete();
@@ -367,13 +372,32 @@ export class AquariumStore {
 
   // ---------- Matériel, consommables, CO2 ----------
 
-  async saveEquipment(e: New<Equipment>): Promise<string> {
+  /**
+   * Enregistre un équipement. Si des réglages suivis changent (intensité, horaires…),
+   * le changement est historisé à la date `effective` (aujourd'hui par défaut).
+   */
+  async saveEquipment(e: New<Equipment>, change?: { effective?: string; note?: string }): Promise<string> {
     const id = e.id ?? uuid();
-    await this.db.equipment.put({ ...e, id, updatedAt: now() } as Equipment);
+    await this.db.transaction('rw', [this.db.equipment, this.db.settingChanges], async () => {
+      const before = e.id ? await this.db.equipment.get(e.id) : undefined;
+      await this.db.equipment.put({ ...e, id, updatedAt: now() } as Equipment);
+      if (!before) return;
+      const date = change?.effective && change.effective !== todayIso() ? `${change.effective}T12:00:00.000Z` : now();
+      const note = change?.note?.trim() || undefined;
+      await this.db.settingChanges.bulkPut(
+        diffSettings(before, e).map((d) => ({ ...d, id: uuid(), updatedAt: now(), date, note, tankId: e.tankId, equipmentId: id, equipmentName: e.name })),
+      );
+    });
     return id;
   }
   async deleteEquipment(id: string): Promise<void> {
     await this.db.equipment.delete(id);
+  }
+  async updateSettingChange(id: string, patch: Partial<Pick<SettingChange, 'date' | 'note'>>): Promise<void> {
+    await this.db.settingChanges.update(id, { ...patch, updatedAt: now() });
+  }
+  async deleteSettingChange(id: string): Promise<void> {
+    await this.db.settingChanges.delete(id);
   }
   async saveConsumable(c: New<Consumable>): Promise<string> {
     const id = c.id ?? uuid();
@@ -480,6 +504,7 @@ export class AquariumStore {
         equipment: await this.db.equipment.toArray(),
         consumables: await this.db.consumables.toArray(),
         co2Readings: await this.db.co2Readings.toArray(),
+        settingChanges: await this.db.settingChanges.toArray(),
         diagnoses: await this.db.diagnoses.toArray(),
         photos: await Promise.all(
           (await this.db.photos.toArray()).map(async (p) => ({ ...p, full: await blobToDataUrl(p.full), thumb: await blobToDataUrl(p.thumb) })),
@@ -495,7 +520,7 @@ export class AquariumStore {
       throw new Error('Ce fichier n’est pas une sauvegarde My Aquarium valide.');
     }
     const d = f.data;
-    const tables = [this.db.tanks, this.db.species, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.equipment, this.db.consumables, this.db.co2Readings, this.db.diagnoses];
+    const tables = [this.db.tanks, this.db.species, this.db.inhabitants, this.db.inhabitantEvents, this.db.waterTests, this.db.tasks, this.db.logs, this.db.observations, this.db.photos, this.db.equipment, this.db.consumables, this.db.co2Readings, this.db.diagnoses, this.db.settingChanges];
     await this.db.transaction('rw', tables, async () => {
       for (const t of tables) if (t !== this.db.species) await t.clear();
       await this.db.species.where('source').equals('custom').delete();
@@ -510,6 +535,7 @@ export class AquariumStore {
       await this.db.equipment.bulkPut(d.equipment ?? []);
       await this.db.consumables.bulkPut(d.consumables ?? []);
       await this.db.co2Readings.bulkPut(d.co2Readings ?? []);
+      await this.db.settingChanges.bulkPut(d.settingChanges ?? []);
       await this.db.diagnoses.bulkPut(d.diagnoses ?? []);
       await this.db.photos.bulkPut((d.photos ?? []).map((p) => ({ ...p, full: dataUrlToBlob(p.full), thumb: dataUrlToBlob(p.thumb) })));
     });

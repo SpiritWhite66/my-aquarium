@@ -5,7 +5,9 @@ import { dueLabel, fmtShortDate, frequencyLabel, speciesName } from '../../core/
 import { Icon } from '../../shared/icon';
 import { isPlantTask, taskIcon } from '../../shared/visuals';
 import { WaterChangeSheet } from '../../shared/water-change-sheet';
-import type { MaintenanceTask } from '../../core/models';
+import type { MaintenanceTask, SettingChange } from '../../core/models';
+import { changeEffect, describeChange, effectVerdict } from '../../core/settings-history';
+import { PhotoCompare } from '../../shared/photo-compare';
 
 const EVENT_LABELS: Record<string, string> = {
   added: 'Ajout',
@@ -21,7 +23,7 @@ const EVENT_LABELS: Record<string, string> = {
 
 @Component({
   selector: 'app-maintenance',
-  imports: [RouterLink, Icon, WaterChangeSheet],
+  imports: [RouterLink, Icon, WaterChangeSheet, PhotoCompare],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; gap: 16px; }
@@ -38,6 +40,15 @@ const EVENT_LABELS: Record<string, string> = {
     .ev::before { content: ''; position: absolute; left: -21px; top: 5px; width: 12px; height: 12px; border-radius: 6px; background: var(--sf); border: 2px solid var(--pl); }
     .ev.w::before { border-color: var(--wa); }
     .ev p:first-child { font-weight: 600; }
+    .sc { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .sc + .sc { border-top: 1px solid var(--ln); }
+    .sc ul { margin: 0; padding-left: 18px; font-size: 14px; font-weight: 600; }
+    .verdict { font-size: 13px; padding-left: 10px; border-left: 3px solid var(--ln); }
+    .verdict.v-ok { border-left-color: var(--ok); }
+    .verdict.v-warn { border-left-color: var(--wn); }
+    .sc .acts { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; font-weight: 600; }
+    .linkbtn { border: 0; background: none; padding: 0; font: inherit; color: var(--pl); cursor: pointer; text-decoration: underline; }
+    .linkbtn.mu { color: var(--mu); }
   `,
   template: `
     @if (view(); as v) {
@@ -68,6 +79,34 @@ const EVENT_LABELS: Record<string, string> = {
         }
       </section>
 
+      @if (settings().length) {
+        <section class="stack" style="gap: 8px">
+          <h2 class="h2">Réglages du matériel</h2>
+          <p class="sub" style="margin: 0">Algues signalées dans les bilans visuels 30 jours avant et après chaque changement.</p>
+          <div class="card">
+            @for (g of settings(); track g.key) {
+              <article class="sc">
+                <div class="row between">
+                  <p><b>{{ g.equipmentName }}</b></p>
+                  <span class="sub" style="margin: 0">{{ date(g.date) }}</span>
+                </div>
+                <ul>@for (c of g.changes; track c.id) { <li>{{ describe(c) }}</li> }</ul>
+                @if (g.note) { <p class="sub" style="margin: 0">{{ g.note }}</p> }
+                <p class="verdict" [class.v-ok]="g.verdict.level === 'ok'" [class.v-warn]="g.verdict.level === 'warn'">{{ g.verdict.text }}</p>
+                <div class="acts">
+                  @if (g.effect.photoBefore && g.effect.photoAfter) {
+                    <button class="linkbtn" type="button" (click)="compare.set([g.effect.photoBefore.id, g.effect.photoAfter.id])">Comparer les photos avant / après</button>
+                  } @else if (g.effect.photoBefore) {
+                    <span class="sub" style="margin: 0">Prends une photo du bac pour comparer avec avant.</span>
+                  }
+                  <button class="linkbtn mu" type="button" (click)="removeSetting(g.changes)">Supprimer</button>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
+
       <section class="stack">
         <h2 class="h2">Historique</h2>
         @if (history().length) {
@@ -83,6 +122,9 @@ const EVENT_LABELS: Record<string, string> = {
           <p class="sub">Rien pour l’instant.</p>
         }
       </section>
+      @if (compare(); as pair) {
+        <app-photo-compare [photos]="tankPhotos()" [tankId]="v.tank.id" [initialFirst]="pair[0]" [initialSecond]="pair[1]" (closed)="compare.set(null)" />
+      }
       @if (waterChange(); as t) {
         <app-water-change-sheet [task]="t" (closed)="waterChange.set(null)" />
       }
@@ -101,6 +143,33 @@ export class MaintenanceTab {
   protected readonly date = fmtShortDate;
 
   protected readonly waterChange = signal<MaintenanceTask | null>(null);
+  protected readonly compare = signal<[string, string] | null>(null);
+  protected readonly describe = describeChange;
+
+  protected readonly tankPhotos = computed(() => this.store.photos().filter((p) => p.tankId === this.id() && !p.inhabitantId));
+
+  /** Changements de réglages du bac, regroupés par enregistrement, du plus récent au plus ancien. */
+  protected readonly settings = computed(() => {
+    const groups = new Map<string, SettingChange[]>();
+    for (const c of this.store.settingChanges().filter((c) => c.tankId === this.id())) {
+      const key = c.equipmentId + c.date;
+      groups.set(key, [...(groups.get(key) ?? []), c]);
+    }
+    const list = [...groups.entries()].map(([key, changes]) => ({ key, changes, ...changes[0] }));
+    const now = new Date();
+    return list
+      .map((g) => {
+        const next = list.find((o) => o.equipmentId === g.equipmentId && o.date > g.date && o.changes.some((c) => g.changes.some((d) => d.field === c.field)));
+        const effect = changeEffect(g.changes[0], this.store.observations(), this.store.photos(), now, next?.date);
+        return { ...g, effect, verdict: effectVerdict(effect) };
+      })
+      .sort((a, b) => b.date.localeCompare(a.date));
+  });
+
+  protected async removeSetting(changes: SettingChange[]): Promise<void> {
+    if (!confirm('Retirer ce changement de l’historique ?')) return;
+    for (const c of changes) await this.store.deleteSettingChange(c.id);
+  }
 
   protected done(task: MaintenanceTask): void {
     if (task.type === 'water_change') this.waterChange.set(task);

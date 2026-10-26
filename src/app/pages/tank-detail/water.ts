@@ -7,6 +7,7 @@ import { Icon } from '../../shared/icon';
 import { ParamChart } from '../../shared/param-chart';
 import { CYCLING_LABELS, CO2_TARGET, DROP_CHECKER, co2Advice, co2FromKhPh, co2Status, cyclingPhase, latestKhPh, trendOf } from '../../core/insights';
 import { Co2Counter } from '../../shared/co2-counter';
+import { describeChange } from '../../core/settings-history';
 
 @Component({
   selector: 'app-water',
@@ -24,6 +25,7 @@ import { Co2Counter } from '../../shared/co2-counter';
     .v.danger .n, .v.danger .k { color: var(--dg); }
     .legend { gap: 6px; font-size: 11px; color: var(--mu); }
     .legend i { width: 14px; height: 10px; border-radius: 3px; background: var(--okb); }
+    .legend .dash { width: 0; height: 12px; border-left: 1px dashed var(--mu); margin-left: 8px; }
     .charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
     .chart { padding: 12px 14px; }
     .chart .t { font-weight: 700; }
@@ -124,7 +126,7 @@ import { Co2Counter } from '../../shared/co2-counter';
         <a style="align-self: flex-start; font-size: 13px; font-weight: 600" routerLink="/import-ia" [queryParams]="{ bac: v.tank.id }">Lire une photo des tests</a>
         <div class="row between">
           <h2 class="h2">Évolution</h2>
-          <div class="row legend"><i></i>Plage idéale du bac</div>
+          <div class="row legend"><i></i>Plage idéale du bac @if (marks().length) { <b class="dash"></b>Réglage modifié }</div>
         </div>
         <div class="charts">
           @for (c of charts(); track c.key) {
@@ -135,7 +137,7 @@ import { Co2Counter } from '../../shared/co2-counter';
                   <p class="num r">idéal {{ c.rangeLabel }}</p>
                 }
               </div>
-              <app-param-chart [key]="c.key" [tests]="v.tests" [range]="c.range" [label]="c.label" />
+              <app-param-chart [key]="c.key" [tests]="v.tests" [range]="c.range" [label]="c.label" [marks]="marks()" />
               @if (c.trend; as tr) {
                 <p class="trend" [class.bad]="tr.daysToLimit != null && tr.daysToLimit <= 14">
                   {{ tr.perWeek > 0 ? '↗' : '↘' }} {{ tr.perWeek > 0 ? '+' : '' }}{{ fmtN(tr.perWeek) }} {{ c.unit }} par semaine
@@ -181,6 +183,12 @@ import { Co2Counter } from '../../shared/co2-counter';
   `,
 })
 export class WaterTab {
+  /** Changements de réglages du matériel, repérés sur les courbes. */
+  protected readonly marks = computed(() =>
+    this.store.settingChanges()
+      .filter((c) => c.tankId === this.id())
+      .map((c) => ({ date: c.date, label: `${c.equipmentName} · ${describeChange(c)}` })),
+  );
   protected readonly store = inject(AquariumStore);
   readonly id = input.required<string>();
 

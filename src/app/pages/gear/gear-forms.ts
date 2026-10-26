@@ -6,6 +6,8 @@ import { photoperiod } from '../../core/insights';
 import { fmt } from '../../core/labels';
 import { CONSUMABLE_CATEGORIES, EQUIPMENT_TYPES, STOCK_LEVELS, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
+import { describeChange, diffSettings } from '../../core/settings-history';
+import { todayIso } from '../../core/dates';
 
 const v = (e: Event) => (e.target as HTMLInputElement).value;
 const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
@@ -108,6 +110,22 @@ const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
           </section>
         }
 
+        @if (pending().length) {
+          <section class="card changes">
+            <h2 class="h2">Changement de réglage</h2>
+            <ul>
+              @for (c of pending(); track c.field) { <li>{{ describe(c) }}</li> }
+            </ul>
+            <p class="sub" style="margin: 0">Il sera gardé dans l’historique du bac pour voir son effet sur les algues.</p>
+            <div class="form-grid">
+              <div class="field"><label for="ch-date">Depuis le</label>
+                <input id="ch-date" type="date" [max]="store.today()" [value]="changeDate()" (input)="changeDate.set(v($event))" /></div>
+              <div class="field"><label for="ch-note">Pourquoi (facultatif)</label>
+                <input id="ch-note" [value]="changeNote()" (input)="changeNote.set(v($event))" placeholder="Algues vertes sur les vitres" /></div>
+            </div>
+          </section>
+        }
+
         <div class="row" style="gap: 8px; flex-wrap: wrap">
           <button class="btn fill" type="submit" [disabled]="!name().trim()">Enregistrer</button>
           @if (existing()) {
@@ -120,9 +138,23 @@ const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
   styles: `
     .chipbtn { height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--ln); background: var(--sf); font: 600 13px var(--font); cursor: pointer; }
     .chipbtn.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .changes { padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: inset 3px 0 0 var(--wa); }
+    .changes ul { margin: 0; padding-left: 18px; font-size: 14px; font-weight: 600; }
   `,
 })
 export class EquipmentFormPage {
+  protected readonly describe = describeChange;
+  protected readonly changeDate = signal(todayIso());
+  protected readonly changeNote = signal('');
+  /** Réglages suivis modifiés par rapport à la version enregistrée. */
+  protected readonly pending = computed(() => {
+    const e = this.existing();
+    if (!e) return [];
+    return diffSettings(e, { light: this.light(), co2: this.co2(), heater: this.heater(), filter: this.filter() }).filter((d) => {
+      const t = this.type();
+      return d.field.startsWith(t === 'pump' ? 'filter' : t + '.');
+    });
+  });
   protected readonly str = str;
   protected readonly num = parseNumber;
   protected readonly channelList = ['Blanc', 'Rouge', 'Vert', 'Bleu', 'Blanc chaud', 'UV'];
@@ -223,7 +255,7 @@ export class EquipmentFormPage {
       warrantyMonths: parseNumber(this.warranty()),
       price: parseNumber(this.price()),
       notes: opt(this.notes()),
-    });
+    }, { effective: this.changeDate(), note: this.changeNote() });
     this.location.back();
   }
 

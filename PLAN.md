@@ -87,6 +87,7 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] CO2 estimé par KH/pH avec conseil de débit.
 - [x] Fiches techniques du matériel et contrôles croisés.
 - [x] Dossier de diagnostic (JSON + photos), skill `my-aquarium-diagnostic`, import du plan d'action en tâches.
+- [x] Historique des réglages du matériel et effet sur les algues.
 - [ ] Tester le skill de diagnostic sur un vrai cas d'algues et affiner les consignes.
 
 ## Étape 9 — Finitions V1
