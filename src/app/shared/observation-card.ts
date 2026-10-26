@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import type { Observation } from '../core/models';
-import { AquariumStore } from '../core/store';
 import { CONFIDENCE_LABELS, FINDING_CATEGORIES, OVERALL_LABELS } from '../core/ai-import';
 import { fmtShortDate } from '../core/labels';
 import { Icon } from './icon';
@@ -60,7 +59,6 @@ import { CareRepo } from '../core/data/care.repo';
   `,
 })
 export class ObservationCard {
-  protected readonly store = inject(AquariumStore);
   protected readonly careRepo = inject(CareRepo);
   readonly observation = input.required<Observation>();
 

@@ -1,13 +1,14 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AquariumStore } from './store';
-import { digestsAhead, shouldNotify, type Digest } from './reminders';
+import { DIGEST_DAYS, digestsAhead, shouldNotify, type Digest } from './reminders';
+import { addDays } from './dates';
 import { PrefsRepo } from './data/prefs.repo';
 
 const SYNC_TAG = 'aquarium-reminders';
 
 /**
  * Notifications quotidiennes (tâches dues, suivis de diagnostic), sans serveur :
- *  - l'appli prépare le texte des 14 prochains jours dans IndexedDB ;
+ *  - l'appli prépare le texte des 30 prochains jours dans IndexedDB ;
  *  - elle l'affiche à l'heure choisie quand elle est ouverte (vérification toutes les 5 min) ;
  *  - le service worker l'affiche en arrière-plan là où la synchronisation périodique existe
  *    (Chrome sur Android, appli installée).
@@ -35,7 +36,10 @@ export class NotificationService {
       const digests = this.digests();
       const p = this.prefs();
       if (!p.enabled || !this.store.ready()) return;
-      if (JSON.stringify(digests) !== JSON.stringify(p.digests ?? {})) this.prefsRepo.saveNotificationPrefs({ digests });
+      const until = addDays(this.store.today(), DIGEST_DAYS - 1);
+      if (until !== p.digestsUntil || JSON.stringify(digests) !== JSON.stringify(p.digests ?? {})) {
+        this.prefsRepo.saveNotificationPrefs({ digests, digestsUntil: until });
+      }
       this.check();
     });
     if (typeof window === 'undefined') return;
@@ -73,13 +77,21 @@ export class NotificationService {
     await this.show(today ?? { title: 'Rappels activés', body: 'Rien à faire aujourd’hui. Tu seras prévenu les jours où une tâche est due.' });
   }
 
-  private async check(): Promise<void> {
-    if (this.permission() !== 'granted') return;
-    const today = this.store.today();
-    const digest = shouldNotify({ ...this.prefs(), digests: this.digests() }, new Date(), today);
-    if (!digest) return;
-    await this.prefsRepo.saveNotificationPrefs({ lastShown: today });
-    await this.show(digest);
+  /** Évite deux vérifications simultanées (minuteur + retour sur l'onglet) qui afficheraient deux fois. */
+  private checking = false;
+
+  async check(): Promise<void> {
+    if (this.permission() !== 'granted' || this.checking) return;
+    this.checking = true;
+    try {
+      const today = this.store.today();
+      const digest = shouldNotify({ ...this.prefs(), digests: this.digests(), digestsUntil: addDays(today, DIGEST_DAYS - 1) }, new Date(), today);
+      if (!digest) return;
+      await this.prefsRepo.saveNotificationPrefs({ lastShown: today });
+      await this.show(digest);
+    } finally {
+      this.checking = false;
+    }
   }
 
   private async show(d: Digest): Promise<void> {

@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
-import { AquariumStore } from '../core/store';
 import { Icon } from './icon';
 import { PhotoRepo } from '../core/data/photo.repo';
 
@@ -25,7 +24,6 @@ import { PhotoRepo } from '../core/data/photo.repo';
   `,
 })
 export class PhotoAdd {
-  private readonly store = inject(AquariumStore);
   protected readonly photoRepo = inject(PhotoRepo);
 
   readonly tankId = input.required<string>();

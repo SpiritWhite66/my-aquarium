@@ -8,8 +8,8 @@ import { algaeScore, describeChange } from './settings-history';
 
 /** Mots reconnus dans les mesures demandées par l'IA (« NO3 », « pH à 11h30 et 21h », « photo »…). */
 const MEASURE_PATTERNS: { re: RegExp; kind: 'param' | 'phDrop' | 'photo'; keys?: ParamKey[] }[] = [
-  { re: /\bph\b.*\d{1,2}\s*h|décrochage|baisse de ph/i, kind: 'phDrop' },
-  { re: /photo/i, kind: 'photo' },
+  { re: /\bph\b.*(\d{1,2}\s*h\b|avant|apr[èe]s|fin d)|d[ée]crochage|baisse de ph/i, kind: 'phDrop' },
+  { re: /\bphotos?\b/i, kind: 'photo' },
   { re: /\bno3\b|nitrate/i, kind: 'param', keys: ['no3'] },
   { re: /\bpo4\b|phosphate/i, kind: 'param', keys: ['po4'] },
   { re: /\bnh[34]\b|ammo/i, kind: 'param', keys: ['nh4'] },
@@ -20,7 +20,7 @@ const MEASURE_PATTERNS: { re: RegExp; kind: 'param' | 'phDrop' | 'photo'; keys?:
   { re: /\bk\b|potassium/i, kind: 'param', keys: ['k'] },
   { re: /\bmg\b(?!\s*\/)|magn[ée]sium/i, kind: 'param', keys: ['mg'] },
   { re: /\bph\b/i, kind: 'param', keys: ['ph'] },
-  { re: /temp/i, kind: 'param', keys: ['temp'] },
+  { re: /\btemp(?:[ée]rature)?\b/i, kind: 'param', keys: ['temp'] },
 ];
 
 const dec = (n: number) => String(n).replace('.', ',');

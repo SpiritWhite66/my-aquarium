@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Diagnosis, MaintenanceTask, Tank } from './models';
-import { DEFAULT_PREFS, digestFor, digestsAhead, shouldNotify } from './reminders';
+import { DEFAULT_PREFS, STALE_DIGEST, digestFor, digestsAhead, shouldNotify } from './reminders';
 
 const tank = (id: string, name: string) => ({ id, name, archived: false }) as Tank;
 const task = (label: string, nextDue: string, tankId = 'a') => ({ id: label, tankId, label, nextDue, active: true, everyDays: 7 }) as MaintenanceTask;
@@ -27,5 +27,15 @@ describe('rappels', () => {
     expect(shouldNotify(prefs, new Date(2026, 9, 26, 8, 0), '2026-10-26')).toBeUndefined();
     expect(shouldNotify(prefs, new Date(2026, 9, 26, 9, 30), '2026-10-26')?.title).toBe('t');
     expect(shouldNotify({ ...prefs, lastShown: '2026-10-26' }, new Date(2026, 9, 26, 9, 30), '2026-10-26')).toBeUndefined();
+  });
+  it('prépare 30 jours par défaut', () => {
+    const late = { ...data, tasks: [task('Engrais', '2026-10-01')] };
+    expect(Object.keys(digestsAhead('2026-10-26', late, DEFAULT_PREFS))).toHaveLength(30);
+  });
+  it('prévient quand les rappels préparés sont épuisés', () => {
+    const prefs = { ...DEFAULT_PREFS, enabled: true, digests: {}, digestsUntil: '2026-11-10' };
+    expect(shouldNotify(prefs, new Date(2026, 10, 12, 10, 0), '2026-11-12')).toEqual(STALE_DIGEST);
+    // Dans la période préparée, un jour sans rien à faire reste silencieux.
+    expect(shouldNotify(prefs, new Date(2026, 10, 9, 10, 0), '2026-11-09')).toBeUndefined();
   });
 });

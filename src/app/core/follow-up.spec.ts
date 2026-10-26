@@ -39,3 +39,36 @@ describe('suivi de diagnostic', () => {
     expect(r.waterTestsSince).toHaveLength(1);
   });
 });
+
+describe('reconnaissance des mesures demandées', () => {
+  const run = (label: string) => {
+    const d = { ...diag, followUp: { inDays: 7, measure: [label] } } as Diagnosis;
+    const fe = { ...data, tests: [{ id: 'x', updatedAt: '', tankId: 't', date: '2026-11-01T10:00:00Z', values: { fe: 0.1, k: 8, mg: 12, ph: 6.9, temp: 24, gh: 7, kh: 4 } }], photos: [] };
+    return measureStatus(d, fe)[0];
+  };
+  it.each([
+    ['Fe (test colorimétrique)', true],
+    ['Potassium et magnésium', true],
+    ['Mg 10 mg/L et K 15 mg/L', true],
+    ['GH / KH', true],
+    ['Température de l’eau', true],
+    ['pH', true],
+    ['NO3 (JBL)', false], // pas de NO3 dans ce relevé
+  ])('« %s » → fait : %s', (label, done) => expect(run(label).done).toBe(done));
+
+  it('ne prend pas « photopériode » pour une photo', () => {
+    expect(run('Durée de la photopériode').done).toBeUndefined();
+  });
+  it('ne prend pas « temps » pour une température', () => {
+    expect(run('Observer dans le temps').done).toBeUndefined();
+  });
+  it('reconnaît un pH avant / après CO2 comme une baisse de pH', () => {
+    const r = run('pH avant l’ouverture du CO2 puis en fin d’éclairage');
+    expect(r.done).toBe(true);
+    expect(r.detail).toBe('pH 7,3 → 6,4'); // la mesure de baisse de pH du jeu de données, pas le pH simple
+  });
+  it('ne confond pas « mg/L » avec le magnésium', () => {
+    expect(run('NO3 vers 10 mg/L').label).toBe('NO3 vers 10 mg/L');
+    expect(run('NO3 vers 10 mg/L').done).toBe(false);
+  });
+});

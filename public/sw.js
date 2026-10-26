@@ -43,7 +43,11 @@ async function remind() {
     const today = localDay(now);
     const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     if (!prefs?.enabled || prefs.lastShown === today || hm < prefs.time) return;
-    const digest = prefs.digests?.[today];
+    let digest = prefs.digests?.[today];
+    // Rappels préparés épuisés : on prévient plutôt que de se taire (même texte que STALE_DIGEST).
+    if (!digest && prefs.digestsUntil && today > prefs.digestsUntil) {
+      digest = { title: 'Rappels à mettre à jour', body: 'Ouvre l’appli pour que les rappels de tes bacs continuent.' };
+    }
     if (!digest) return;
     await self.registration.showNotification(digest.title, { body: digest.body, icon: 'icons/icon-192x192.png', badge: 'icons/icon-192x192.png', tag: 'aquarium-daily' });
     const tx = db.transaction('prefs', 'readwrite');

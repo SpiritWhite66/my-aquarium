@@ -13,12 +13,23 @@ export interface NotificationPrefs {
   lastShown?: string; // YYYY-MM-DD
   /** Notification prête pour chaque jour à venir (YYYY-MM-DD). */
   digests?: Record<string, Digest>;
+  /** Dernier jour pour lequel `digests` est à jour ; au-delà, l'appli n'a plus rien préparé. */
+  digestsUntil?: string;
 }
 
 export interface Digest {
   title: string;
   body: string;
 }
+
+/** Nombre de jours préparés à l'avance pour le service worker. */
+export const DIGEST_DAYS = 30;
+
+/** Texte affiché quand les rappels préparés sont épuisés (appli pas ouverte depuis longtemps). */
+export const STALE_DIGEST: Digest = {
+  title: 'Rappels à mettre à jour',
+  body: 'Ouvre l’appli pour que les rappels de tes bacs continuent.',
+};
 
 export const DEFAULT_PREFS: NotificationPrefs = { id: 'notifications', enabled: false, time: '09:00', tasks: true, followUps: true };
 
@@ -58,7 +69,7 @@ export function digestFor(
 }
 
 /** Notifications des `days` prochains jours, à partir de `today`. */
-export function digestsAhead(today: string, data: Parameters<typeof digestFor>[1], prefs: Parameters<typeof digestFor>[2], days = 14): Record<string, Digest> {
+export function digestsAhead(today: string, data: Parameters<typeof digestFor>[1], prefs: Parameters<typeof digestFor>[2], days = DIGEST_DAYS): Record<string, Digest> {
   const out: Record<string, Digest> = {};
   for (let i = 0; i < days; i++) {
     const day = addDays(today, i);
@@ -73,5 +84,8 @@ export function shouldNotify(prefs: NotificationPrefs, now: Date, today: string)
   if (!prefs.enabled || prefs.lastShown === today) return undefined;
   const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   if (hm < prefs.time) return undefined;
-  return prefs.digests?.[today];
+  const digest = prefs.digests?.[today];
+  if (digest) return digest;
+  // Plus rien de préparé pour aujourd'hui : on prévient plutôt que de se taire.
+  return prefs.digestsUntil && today > prefs.digestsUntil ? STALE_DIGEST : undefined;
 }
