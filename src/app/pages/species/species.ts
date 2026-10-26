@@ -53,7 +53,7 @@ const SCALES = {
             [attr.aria-label]="s.source === 'custom' ? 'Modifier la fiche' : 'Personnaliser la fiche'"><app-icon name="edit" [size]="20" /></a>
         </div>
         <div>
-          <p class="kind">{{ kinds[s.kind] }}{{ s.flora?.form ? ' · ' + s.flora?.form : '' }}</p>
+          <p class="kind">{{ kinds[s.kind] }}{{ s.flora?.form ? ' · ' + s.flora.form : '' }}</p>
           <h1 class="h1" style="margin-top: 2px">{{ s.commonNames[0] }}</h1>
           <p class="sci">{{ s.scientificName }}{{ s.commonNames.length > 1 ? ' · ' + s.commonNames.slice(1).join(', ') : '' }}</p>
           <div style="margin-top: 10px"><app-species-chips [species]="s" [max]="6" /></div>

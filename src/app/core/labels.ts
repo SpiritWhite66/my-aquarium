@@ -13,7 +13,7 @@ import type {
   TankType,
   TaskType,
 } from './models';
-import { daysBetween, parseIsoDate } from './dates';
+import { daysBetween, parseIsoDate, localDay } from './dates';
 
 export const TANK_TYPES: Record<TankType, string> = {
   planted: 'Planté',
@@ -197,7 +197,7 @@ export function elapsedLabel(days: number): string {
 
 /** « il y a 2 j » pour un relevé. */
 export function agoLabel(iso: string, today: string): string {
-  const d = daysBetween(iso.slice(0, 10), today);
+  const d = daysBetween(localDay(iso), today);
   if (d <= 0) return 'aujourd’hui';
   if (d === 1) return 'hier';
   return `il y a ${d} j`;

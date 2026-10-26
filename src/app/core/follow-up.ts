@@ -2,7 +2,7 @@
 // suivant juge l'effet du plan d'action au lieu de repartir de zéro.
 
 import type { Co2Reading, Diagnosis, MaintenanceLog, Observation, ParamKey, Photo, SettingChange, WaterTest } from './models';
-import { addDays, daysBetween } from './dates';
+import { addDays, daysBetween, localDay } from './dates';
 import { PARAM_BY_KEY } from './rules';
 import { algaeScore, describeChange } from './settings-history';
 
@@ -72,22 +72,22 @@ export function sinceDiagnosis(diagnosis: Diagnosis, data: FollowUpData, today: 
   const mine = <T extends { tankId?: string; date: string }>(list: T[]) => list.filter((x) => x.tankId === tank && x.date > since);
   const obs = data.observations.filter((o) => o.tankId === tank);
   const avg = (list: Observation[]) => (list.length ? Math.round((list.reduce((n, o) => n + algaeScore(o), 0) / list.length) * 10) / 10 : undefined);
-  const before = obs.filter((o) => o.date <= since && daysBetween(o.date.slice(0, 10), since.slice(0, 10)) <= 30);
+  const before = obs.filter((o) => o.date <= since && daysBetween(localDay(o.date), localDay(since)) <= 30);
   const after = obs.filter((o) => o.date > since);
   const logs = mine(data.logs);
   return {
-    diagnosisDate: since.slice(0, 10),
-    daysSince: daysBetween(since.slice(0, 10), today),
-    followUpPlannedFor: diagnosis.followUp ? addDays(since.slice(0, 10), diagnosis.followUp.inDays) : undefined,
+    diagnosisDate: localDay(since),
+    daysSince: daysBetween(localDay(since), today),
+    followUpPlannedFor: diagnosis.followUp ? addDays(localDay(since), diagnosis.followUp.inDays) : undefined,
     question: diagnosis.question,
     summary: diagnosis.summary,
     mainHypothesis: diagnosis.hypotheses[0]?.title,
     actions: diagnosis.actions.map((a) => ({ title: a.title, priority: a.priority, done: !!a.done })),
     requestedMeasures: measureStatus(diagnosis, data).map((m) => ({ measure: m.label, done: m.done, value: m.detail })),
-    waterTestsSince: mine(data.tests).map((t) => ({ date: t.date.slice(0, 10), values: t.values })),
-    maintenanceSince: logs.filter((l) => l.type !== 'fertilize').map((l) => ({ date: l.date.slice(0, 10), label: l.label, note: l.note })),
+    waterTestsSince: mine(data.tests).map((t) => ({ date: localDay(t.date), values: t.values })),
+    maintenanceSince: logs.filter((l) => l.type !== 'fertilize').map((l) => ({ date: localDay(l.date), label: l.label, note: l.note })),
     fertilizerDosesSince: logs.filter((l) => l.type === 'fertilize').length,
-    settingChangesSince: mine(data.settingChanges).map((c) => ({ date: c.date.slice(0, 10), change: `${c.equipmentName} · ${describeChange(c)}` })),
+    settingChangesSince: mine(data.settingChanges).map((c) => ({ date: localDay(c.date), change: `${c.equipmentName} · ${describeChange(c)}` })),
     algaeLevel: { before: avg(before), since: avg(after), notesSince: after.length },
     photosSince: mine(data.photos).length,
   };

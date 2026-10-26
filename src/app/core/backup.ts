@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AquariumStore } from './store';
-import { daysBetween } from './dates';
+import { daysBetween, localDay, toIsoDate } from './dates';
 
 /** Délai après lequel on rappelle de faire une sauvegarde. */
 export const BACKUP_REMINDER_DAYS = 14;
@@ -23,7 +23,7 @@ export class BackupService {
   /** Nombre de jours depuis la dernière sauvegarde (null : jamais). */
   readonly daysSince = computed(() => {
     const last = this.lastBackup();
-    return last ? daysBetween(last.slice(0, 10), this.store.today()) : null;
+    return last ? daysBetween(localDay(last), this.store.today()) : null;
   });
 
   /** Afficher le rappel : des données existent et la sauvegarde est absente ou ancienne. */
@@ -80,7 +80,7 @@ export class BackupService {
   snooze(): void {
     const until = new Date();
     until.setDate(until.getDate() + 3);
-    const iso = until.toISOString().slice(0, 10);
+    const iso = toIsoDate(until);
     write('backupSnooze', iso);
     this.snoozedUntil.set(iso);
   }

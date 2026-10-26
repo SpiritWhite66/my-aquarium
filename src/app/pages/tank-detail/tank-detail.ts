@@ -39,7 +39,7 @@ import { PhotoUrls } from '../../shared/photo-urls';
               <p class="sub">
                 <span class="num">{{ v.tank.volumeNet ?? v.tank.volumeGross }}</span> L · {{ types[v.tank.type] }}
                 @if (v.tank.co2) { · CO2 }
-                @if (v.tank.lighting?.photoperiodHours) { · éclairage {{ v.tank.lighting?.photoperiodHours }} h }
+                @if (v.tank.lighting?.photoperiodHours) { · éclairage {{ v.tank.lighting.photoperiodHours }} h }
               </p>
             </div>
             <span class="pill" [class.ok]="v.level === 'ok'" [class.wn]="v.level === 'warn'" [class.dg]="v.level === 'danger'">

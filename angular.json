@@ -34,8 +34,6 @@
               "@fontsource/figtree/500.css",
               "@fontsource/figtree/600.css",
               "@fontsource/figtree/700.css",
-              "@fontsource/ibm-plex-mono/500.css",
-              "@fontsource/ibm-plex-mono/600.css",
               "src/styles.scss"
             ]
           },

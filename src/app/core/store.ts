@@ -93,9 +93,9 @@ export class AquariumStore {
   readonly co2Readings = this.live(() => this.db.co2Readings.orderBy('date').toArray(), []);
   /** Diagnostics IA, du plus ancien au plus récent. */
   readonly diagnoses = this.live(() => this.db.diagnoses.orderBy('date').toArray(), []);
-  /** Changements de réglages du matériel, du plus ancien au plus récent. */
   /** Préférences de notification de cet appareil (non incluses dans les sauvegardes). */
   readonly notificationPrefs = this.live(async () => (await this.db.prefs.get('notifications')) ?? DEFAULT_PREFS, DEFAULT_PREFS);
+  /** Changements de réglages du matériel, du plus ancien au plus récent. */
   readonly settingChanges = this.live(() => this.db.settingChanges.orderBy('date').toArray(), []);
 
   /** Dernière photo de chaque habitant (id habitant → id photo). */
@@ -401,7 +401,7 @@ export class AquariumStore {
       const before = e.id ? await this.db.equipment.get(e.id) : undefined;
       await this.db.equipment.put({ ...e, id, updatedAt: now() } as Equipment);
       if (!before) return;
-      const date = change?.effective && change.effective !== todayIso() ? `${change.effective}T12:00:00.000Z` : now();
+      const date = change?.effective && change.effective !== this.today() ? new Date(`${change.effective}T12:00`).toISOString() : now();
       const note = change?.note?.trim() || undefined;
       await this.db.settingChanges.bulkPut(
         diffSettings(before, e).map((d) => ({ ...d, id: uuid(), updatedAt: now(), date, note, tankId: e.tankId, equipmentId: id, equipmentName: e.name })),

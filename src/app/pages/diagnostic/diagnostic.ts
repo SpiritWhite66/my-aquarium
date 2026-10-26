@@ -4,7 +4,7 @@ import { AquariumStore } from '../../core/store';
 import { buildDossier, diagnosticRequest, photoFileName } from '../../core/diagnostic';
 import { fmtShortDate } from '../../core/labels';
 import { measureStatus } from '../../core/follow-up';
-import { addDays, daysBetween } from '../../core/dates';
+import { addDays, daysBetween, localDay } from '../../core/dates';
 import { Icon } from '../../shared/icon';
 import { PhotoUrls } from '../../shared/photo-urls';
 
@@ -164,7 +164,7 @@ export class DiagnosticPage {
   /** Suivi coché par défaut si le dernier diagnostic date de moins de 90 jours. */
   protected readonly followUp = linkedSignal(() => {
     const p = this.previous();
-    return !!p && daysBetween(p.date.slice(0, 10), this.store.today()) <= 90;
+    return !!p && daysBetween(localDay(p.date), this.store.today()) <= 90;
   });
   private readonly followUpData = computed(() => ({
     tests: this.store.waterTests(),
@@ -183,7 +183,7 @@ export class DiagnosticPage {
   protected readonly dueLabel = computed(() => {
     const p = this.previous();
     if (!p?.followUp) return '';
-    const due = addDays(p.date.slice(0, 10), p.followUp.inDays);
+    const due = addDays(localDay(p.date), p.followUp.inDays);
     const days = daysBetween(this.store.today(), due);
     return days > 0 ? `suivi prévu dans ${days} j` : days === 0 ? 'suivi prévu aujourd’hui' : `suivi prévu le ${this.date(due)}`;
   });

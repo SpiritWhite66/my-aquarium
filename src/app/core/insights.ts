@@ -2,7 +2,7 @@
 // Fonctions pures, testées dans insights.spec.ts.
 
 import type { Consumable, DailySchedule, DropChecker, Equipment, LightSpec, MaintenanceTask, ParamKey, Range, Tank, WaterTest } from './models';
-import { addDays, daysBetween, parseIsoDate, toIsoDate } from './dates';
+import { addDays, daysBetween, parseIsoDate, toIsoDate, localDay } from './dates';
 import { fmt } from './labels';
 
 // ---------- Changement d'eau ----------
@@ -97,7 +97,7 @@ export function cyclingPhase(tests: WaterTest[]): CyclingPhase {
 
 // ---------- Agenda (.ics) ----------
 
-const icsDate = (iso: string) => iso.slice(0, 10).replaceAll('-', '');
+const icsDate = (iso: string) => localDay(iso).replaceAll('-', '');
 const icsEscape = (s: string) => s.replace(/[\\;,]/g, (c) => '\\' + c).replace(/\n/g, '\\n');
 
 /** Rappels d'entretien au format iCalendar, avec répétition et alarme à 9 h. */

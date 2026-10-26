@@ -2,7 +2,7 @@
 // Calculé à l'avance pour les prochains jours, pour que le service worker n'ait qu'à le lire.
 
 import type { Diagnosis, MaintenanceTask, Tank } from './models';
-import { addDays } from './dates';
+import { addDays, localDay } from './dates';
 
 export interface NotificationPrefs {
   id: 'notifications';
@@ -29,7 +29,7 @@ export function followUpsDue(diagnoses: Diagnosis[], day: string): Diagnosis[] {
     const prev = latest.get(d.tankId);
     if (!prev || d.date > prev.date) latest.set(d.tankId, d);
   }
-  return [...latest.values()].filter((d) => d.followUp && addDays(d.date.slice(0, 10), d.followUp.inDays) <= day);
+  return [...latest.values()].filter((d) => d.followUp && addDays(localDay(d.date), d.followUp.inDays) <= day);
 }
 
 /** Notification du jour `day`, ou rien s'il n'y a rien à faire. */

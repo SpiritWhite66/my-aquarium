@@ -3,6 +3,7 @@ import type { DoseUnit, MaintenanceTask } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { DOSE_UNITS, parseNumber } from '../core/labels';
 import { Icon } from './icon';
+import { localDay } from '../core/dates';
 
 interface Row {
   product: string;
@@ -86,8 +87,8 @@ export class DoseSheet {
   /** Dernière session de fertilisation (même jour que la plus récente dose). */
   private readonly lastSession = computed(() => {
     const logs = this.doseLogs();
-    const day = logs[0]?.date.slice(0, 10);
-    return day ? logs.filter((l) => l.date.slice(0, 10) === day) : [];
+    const day = logs[0] && localDay(logs[0].date);
+    return day ? logs.filter((l) => localDay(l.date) === day) : [];
   });
   protected readonly lastLabel = computed(() => {
     const d = this.lastSession()[0]?.date;

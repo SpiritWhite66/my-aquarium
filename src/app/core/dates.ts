@@ -16,8 +16,19 @@ export function addDays(isoDate: string, days: number): string {
   return toIsoDate(d);
 }
 
+/**
+ * Jour local (YYYY-MM-DD) d'une date ou d'un horodatage.
+ * Les horodatages sont enregistrés en UTC (« 2026-10-26T23:30:00Z ») : couper la chaîne
+ * donnerait la veille entre minuit et 2 h en France, il faut repasser en heure locale.
+ */
+export function localDay(iso: string): string {
+  if (iso.length <= 10) return iso;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso.slice(0, 10) : toIsoDate(d);
+}
+
 export function parseIsoDate(isoDate: string): Date {
-  const [y, m, d] = isoDate.slice(0, 10).split('-').map(Number);
+  const [y, m, d] = localDay(isoDate).split('-').map(Number);
   return new Date(y, m - 1, d);
 }
 

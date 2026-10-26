@@ -20,7 +20,7 @@ import type {
 } from './models';
 import { PARAM_BY_KEY, measuredParams, compatibilityIssues, idealRange, isAlive, testAlerts } from './rules';
 import { co2FromKhPh, co2FromPhDrop, gearChecks, latestKhPh, photoperiod, trendOf } from './insights';
-import { daysBetween } from './dates';
+import { daysBetween, localDay } from './dates';
 import { sinceDiagnosis } from './follow-up';
 
 export interface DossierInput {
@@ -92,7 +92,7 @@ export function buildDossier(i: DossierInput) {
     recentEvents: i.events
       .filter((e) => e.tankId === tank.id)
       .slice(0, 20)
-      .map((e) => ({ date: e.date.slice(0, 10), type: e.type, quantityDelta: e.quantityDelta, note: e.note, species: byId.get(i.inhabitants.find((h) => h.id === e.inhabitantId)?.speciesId ?? '')?.scientificName })),
+      .map((e) => ({ date: localDay(e.date), type: e.type, quantityDelta: e.quantityDelta, note: e.note, species: byId.get(i.inhabitants.find((h) => h.id === e.inhabitantId)?.speciesId ?? '')?.scientificName })),
     water: {
       measured: params,
       units: Object.fromEntries(params.map((k) => [k, PARAM_BY_KEY[k].unit])),
@@ -119,7 +119,7 @@ export function buildDossier(i: DossierInput) {
           phDrop: i.co2Readings
             .filter((r) => r.tankId === tank.id && r.phBefore != null && r.phAfter != null)
             .slice(-5)
-            .map((r) => ({ date: r.date.slice(0, 10), phBefore: r.phBefore, phBeforeTime: r.phBeforeTime, phAfter: r.phAfter, phAfterTime: r.phAfterTime, ...co2FromPhDrop(r.phBefore!, r.phAfter!) })),
+            .map((r) => ({ date: localDay(r.date), phBefore: r.phBefore, phBeforeTime: r.phBeforeTime, phAfter: r.phAfter, phAfterTime: r.phAfterTime, ...co2FromPhDrop(r.phBefore!, r.phAfter!) })),
         }
       : undefined,
     equipment: gear.map((e) => ({
@@ -138,22 +138,22 @@ export function buildDossier(i: DossierInput) {
     compatibilityIssues: compatibilityIssues(tank, members.map((m) => ({ species: m.s, quantity: m.h.quantity }))).map((x) => `${x.title} : ${x.detail}`),
     maintenance: {
       routine: i.tasks.filter((t) => t.tankId === tank.id && t.active && !t.oneOff).map((t) => ({ label: t.label, type: t.type, everyDays: t.everyDays, nextDue: t.nextDue })),
-      recent: i.logs.filter((l) => l.tankId === tank.id).slice(0, 25).map((l) => ({ date: l.date.slice(0, 10), type: l.type, label: l.label, note: l.note, waterChangedL: l.details?.waterChangedLiters })),
+      recent: i.logs.filter((l) => l.tankId === tank.id).slice(0, 25).map((l) => ({ date: localDay(l.date), type: l.type, label: l.label, note: l.note, waterChangedL: l.details?.waterChangedLiters })),
     },
     visualChecks: i.observations
       .filter((o) => o.tankId === tank.id)
       .slice(-8)
-      .map((o) => ({ date: o.date.slice(0, 10), manual: o.manual || undefined, algaeLevel: o.algaeLevel, algaeTypes: o.algaeTypes, overall: o.overall, summary: o.summary, findings: o.findings.map((f) => ({ category: f.category, severity: f.severity, title: f.title, resolved: f.resolved || undefined })) })),
+      .map((o) => ({ date: localDay(o.date), manual: o.manual || undefined, algaeLevel: o.algaeLevel, algaeTypes: o.algaeTypes, overall: o.overall, summary: o.summary, findings: o.findings.map((f) => ({ category: f.category, severity: f.severity, title: f.title, resolved: f.resolved || undefined })) })),
     fertilization: {
       productsInStock: (i.consumables ?? []).filter((c) => c.category === 'fertilizer').map((c) => ({ name: c.name, brand: c.brand, level: c.level })),
       doses: i.logs
-        .filter((l) => l.tankId === tank.id && l.type === 'fertilize' && daysBetween(l.date.slice(0, 10), i.today) <= 30)
-        .map((l) => ({ date: l.date.slice(0, 10), product: l.details?.product ?? l.label, amount: l.details?.amount, unit: l.details?.unit })),
+        .filter((l) => l.tankId === tank.id && l.type === 'fertilize' && daysBetween(localDay(l.date), i.today) <= 30)
+        .map((l) => ({ date: localDay(l.date), product: l.details?.product ?? l.label, amount: l.details?.amount, unit: l.details?.unit })),
     },
     settingsHistory: (i.settingChanges ?? [])
       .filter((c) => c.tankId === tank.id)
       .slice(-15)
-      .map((c) => ({ date: c.date.slice(0, 10), equipment: c.equipmentName, setting: c.field, from: c.from, to: c.to, reason: c.note })),
+      .map((c) => ({ date: localDay(c.date), equipment: c.equipmentName, setting: c.field, from: c.from, to: c.to, reason: c.note })),
     sinceLastDiagnosis: i.followUpOf
       ? sinceDiagnosis(
           i.followUpOf,
@@ -165,13 +165,13 @@ export function buildDossier(i: DossierInput) {
       .filter((d) => d.tankId === tank.id)
       .slice(-3)
       .map((d) => ({
-        date: d.date.slice(0, 10),
+        date: localDay(d.date),
         question: d.question,
         summary: d.summary,
         mainHypothesis: d.hypotheses[0]?.title,
         actions: d.actions.map((a) => ({ title: a.title, done: !!a.done })),
       })),
-    photos: i.photos.map((p, n) => ({ file: photoFileName(p, n), date: p.date.slice(0, 10), caption: p.caption, subject: p.inhabitantId ? 'habitant' : 'bac' })),
+    photos: i.photos.map((p, n) => ({ file: photoFileName(p, n), date: localDay(p.date), caption: p.caption, subject: p.inhabitantId ? 'habitant' : 'bac' })),
     stats: { volumeL: round(tank.volumeNet ?? tank.volumeGross) },
   };
 }
@@ -179,7 +179,7 @@ export function buildDossier(i: DossierInput) {
 export type Dossier = ReturnType<typeof buildDossier>;
 
 export function photoFileName(p: Photo, index: number): string {
-  return `photo-${index + 1}-${p.date.slice(0, 10)}.jpg`;
+  return `photo-${index + 1}-${localDay(p.date)}.jpg`;
 }
 
 /** Texte joint au partage : demande d'analyse pour le skill. */

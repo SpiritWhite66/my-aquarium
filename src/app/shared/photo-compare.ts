@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, computed, inject, input, linkedSignal, output, signal, viewChild } from '@angular/core';
 import type { Photo } from '../core/models';
 import { AquariumStore } from '../core/store';
-import { daysBetween } from '../core/dates';
+import { daysBetween, localDay } from '../core/dates';
 import { elapsedLabel, fmtDate, speciesName, unitLabel } from '../core/labels';
 import { Icon } from './icon';
 import { PhotoUrls } from './photo-urls';
@@ -143,14 +143,14 @@ export class PhotoCompare {
 
   protected readonly elapsed = computed(() => {
     const p = this.pair();
-    return p ? elapsedLabel(daysBetween(p[0].date.slice(0, 10), p[1].date.slice(0, 10))) : '';
+    return p ? elapsedLabel(daysBetween(localDay(p[0].date), localDay(p[1].date))) : '';
   });
 
   protected readonly additions = computed(() => {
     const p = this.pair();
     if (!p) return [];
-    const from = p[0].date.slice(0, 10);
-    const to = p[1].date.slice(0, 10);
+    const from = localDay(p[0].date);
+    const to = localDay(p[1].date);
     return this.store
       .inhabitants()
       .filter((i) => i.tankId === this.tankId() && i.addedDate > from && i.addedDate <= to)

@@ -5,6 +5,7 @@ import { fmtShortDate, speciesName } from '../core/labels';
 import { Icon } from './icon';
 import { Router } from '@angular/router';
 import { PhotoUrls } from './photo-urls';
+import { localDay } from '../core/dates';
 
 /** Visionneuse plein écran : navigation, légende, photo de couverture, téléchargement, suppression. */
 @Component({
@@ -104,7 +105,7 @@ export class PhotoViewer {
   }
 
   protected filename(p: Photo): string {
-    return `${this.subject(p).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${p.date.slice(0, 10)}.jpg`;
+    return `${this.subject(p).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${localDay(p.date)}.jpg`;
   }
 
   /**

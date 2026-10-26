@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { RouterLink } from '@angular/router';
 import type { Diagnosis } from '../core/models';
 import { AquariumStore } from '../core/store';
-import { addDays, daysBetween } from '../core/dates';
+import { addDays, daysBetween, localDay } from '../core/dates';
 import { fmtShortDate } from '../core/labels';
 import { Icon } from './icon';
 
@@ -61,7 +61,7 @@ export class DiagnosisCard {
   protected readonly followUp = computed(() => {
     const d = this.diagnosis();
     if (!d.followUp) return undefined;
-    const date = addDays(d.date.slice(0, 10), d.followUp.inDays);
+    const date = addDays(localDay(d.date), d.followUp.inDays);
     return { date, days: daysBetween(this.store.today(), date), measure: d.followUp.measure?.join(', ') };
   });
 }
