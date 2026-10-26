@@ -42,7 +42,7 @@ describe('NotificationService', () => {
     await TestBed.inject(PrefsRepo).saveNotificationPrefs({ enabled: true, time: '00:00' });
     const store = TestBed.inject(AquariumStore);
     const service = TestBed.inject(NotificationService);
-    await waitFor(() => store.ready() && store.dueTasks().length === 1 && store.notificationPrefs().enabled);
+    await waitFor(() => store.ready() && store.dueTasks().length === 1 && store.notificationPrefs().enabled && Object.keys(store.notificationPrefs().digests ?? {}).length > 0);
 
     await Promise.all([service.check(), service.check(), service.check()]);
     await service.check();
