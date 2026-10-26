@@ -4,12 +4,13 @@ import { AquariumStore } from '../core/store';
 import { daysBetween, localDay } from '../core/dates';
 import { elapsedLabel, fmtDate, speciesName, unitLabel } from '../core/labels';
 import { Icon } from './icon';
+import { ModalFocus } from './modal-focus';
 import { PhotoUrls } from './photo-urls';
 
 /** Comparaison avant / après de deux photos : curseur ou côte à côte. */
 @Component({
   selector: 'app-photo-compare',
-  imports: [Icon],
+  imports: [Icon, ModalFocus],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .overlay { position: fixed; inset: 0; z-index: 50; background: #0a110e; color: #f3f1ea; display: flex; flex-direction: column; outline: none; overflow-y: auto; }
@@ -41,7 +42,7 @@ import { PhotoUrls } from './photo-urls';
     .muted { color: #c9d6cd; font-size: 13px; }
   `,
   template: `
-    <div #root class="overlay" role="dialog" aria-modal="true" aria-label="Comparaison avant et après" tabindex="-1" (keydown.escape)="closed.emit()">
+    <div #root class="overlay" appModal role="dialog" aria-modal="true" aria-label="Comparaison avant et après" tabindex="-1" (keydown.escape)="closed.emit()">
       <div class="bar">
         <button class="iconbtn" type="button" aria-label="Fermer" (click)="closed.emit()"><app-icon name="close" /></button>
         <span class="title">Avant / après</span>

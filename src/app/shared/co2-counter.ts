@@ -5,6 +5,7 @@ import { DROP_CHECKER, bpmFromTaps, co2Advice, co2FromKhPh, co2Status, latestKhP
 import { fmt } from '../core/labels';
 import { parseNumber } from '../core/labels';
 import { Icon } from './icon';
+import { ModalFocus } from './modal-focus';
 import { GearRepo } from '../core/data/gear.repo';
 import { TankRepo } from '../core/data/tank.repo';
 
@@ -14,7 +15,7 @@ import { TankRepo } from '../core/data/tank.repo';
  */
 @Component({
   selector: 'app-co2-counter',
-  imports: [Icon],
+  imports: [Icon, ModalFocus],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(8, 14, 11, .5); display: flex; align-items: flex-end; justify-content: center; }
@@ -35,7 +36,7 @@ import { TankRepo } from '../core/data/tank.repo';
   `,
   template: `
     <div class="backdrop" (click)="closed.emit()">
-      <div #root class="sheet" role="dialog" aria-modal="true" aria-labelledby="co2-title" tabindex="-1"
+      <div #root class="sheet" appModal role="dialog" aria-modal="true" aria-labelledby="co2-title" tabindex="-1"
         (click)="$event.stopPropagation()" (keydown.escape)="closed.emit()">
         <div class="row between">
           <h2 id="co2-title" class="h2" style="font-size: 18px">Compteur de bulles</h2>

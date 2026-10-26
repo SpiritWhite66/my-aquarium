@@ -53,7 +53,7 @@ const EVENT_LABELS: Record<string, string> = {
     .verdict.v-ok { border-left-color: var(--ok); }
     .verdict.v-warn { border-left-color: var(--wn); }
     .sc .acts { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; font-weight: 600; }
-    .linkbtn { border: 0; background: none; padding: 0; font: inherit; color: var(--pl); cursor: pointer; text-decoration: underline; }
+    .linkbtn { border: 0; background: none; padding: 4px 0; min-height: 24px; font: inherit; color: var(--pl); cursor: pointer; text-decoration: underline; }
     .linkbtn.mu { color: var(--mu); }
     .more { font-size: 13px; font-weight: 600; }
     .gc { font-size: 13px; padding-left: 10px; border-left: 3px solid var(--wn); }

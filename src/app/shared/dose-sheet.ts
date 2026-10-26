@@ -3,6 +3,7 @@ import type { DoseUnit, MaintenanceTask } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { DOSE_UNITS, parseNumber } from '../core/labels';
 import { Icon } from './icon';
+import { ModalFocus } from './modal-focus';
 import { localDay } from '../core/dates';
 import { CareRepo } from '../core/data/care.repo';
 
@@ -16,7 +17,7 @@ interface Row {
 /** Saisie des doses d'engrais : une ligne par produit, préremplie avec la dernière fertilisation du bac. */
 @Component({
   selector: 'app-dose-sheet',
-  imports: [Icon],
+  imports: [Icon, ModalFocus],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(8, 14, 11, .5); display: flex; align-items: flex-end; justify-content: center; }
@@ -32,7 +33,7 @@ interface Row {
   `,
   template: `
     <div class="backdrop" (click)="closed.emit()">
-      <div #root class="sheet" role="dialog" aria-modal="true" aria-labelledby="dose-title" tabindex="-1"
+      <div #root class="sheet" appModal role="dialog" aria-modal="true" aria-labelledby="dose-title" tabindex="-1"
         (click)="$event.stopPropagation()" (keydown.escape)="closed.emit()">
         <div class="row between">
           <h2 id="dose-title" class="h2" style="font-size: 18px">Engrais</h2>

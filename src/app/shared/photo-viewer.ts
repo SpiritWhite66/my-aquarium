@@ -3,6 +3,7 @@ import type { Photo } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { fmtShortDate, speciesName } from '../core/labels';
 import { Icon } from './icon';
+import { ModalFocus } from './modal-focus';
 import { Router } from '@angular/router';
 import { PhotoUrls } from './photo-urls';
 import { localDay } from '../core/dates';
@@ -11,7 +12,7 @@ import { PhotoRepo } from '../core/data/photo.repo';
 /** Visionneuse plein écran : navigation, légende, photo de couverture, téléchargement, suppression. */
 @Component({
   selector: 'app-photo-viewer',
-  imports: [Icon],
+  imports: [Icon, ModalFocus],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .overlay { position: fixed; inset: 0; z-index: 50; background: #0a110e; color: #f3f1ea; display: flex; flex-direction: column; outline: none; }
@@ -32,7 +33,7 @@ import { PhotoRepo } from '../core/data/photo.repo';
   `,
   template: `
     @if (current(); as p) {
-      <div #root class="overlay" role="dialog" aria-modal="true" aria-label="Photo" tabindex="-1" (keydown)="onKey($event)">
+      <div #root class="overlay" appModal role="dialog" aria-modal="true" aria-label="Photo" tabindex="-1" (keydown)="onKey($event)">
         <div class="bar">
           <button class="iconbtn" type="button" aria-label="Fermer" (click)="closed.emit()"><app-icon name="close" /></button>
           <span class="count num">{{ index() + 1 }} / {{ photos().length }}</span>

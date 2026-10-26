@@ -4,6 +4,7 @@ import { AquariumStore } from '../core/store';
 import { CO2_TARGET, co2Advice, co2FromPhDrop } from '../core/insights';
 import { fmt, parseNumber } from '../core/labels';
 import { Icon } from './icon';
+import { ModalFocus } from './modal-focus';
 import { GearRepo } from '../core/data/gear.repo';
 
 /**
@@ -12,7 +13,7 @@ import { GearRepo } from '../core/data/gear.repo';
  */
 @Component({
   selector: 'app-ph-day-sheet',
-  imports: [Icon],
+  imports: [Icon, ModalFocus],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(8, 14, 11, .5); display: flex; align-items: flex-end; justify-content: center; }
@@ -25,7 +26,7 @@ import { GearRepo } from '../core/data/gear.repo';
   `,
   template: `
     <div class="backdrop" (click)="closed.emit()">
-      <div #root class="sheet" role="dialog" aria-modal="true" aria-labelledby="ph-title" tabindex="-1"
+      <div #root class="sheet" appModal role="dialog" aria-modal="true" aria-labelledby="ph-title" tabindex="-1"
         (click)="$event.stopPropagation()" (keydown.escape)="closed.emit()">
         <div class="row between">
           <h2 id="ph-title" class="h2" style="font-size: 18px">pH sur la journée</h2>

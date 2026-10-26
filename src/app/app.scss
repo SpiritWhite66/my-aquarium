@@ -126,3 +126,22 @@
   background: var(--sf2);
   color: var(--ink);
 }
+
+.skip {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 600;
+  transform: translateY(-200%);
+}
+.skip:focus {
+  transform: none;
+}
+.content:focus {
+  outline: none;
+}

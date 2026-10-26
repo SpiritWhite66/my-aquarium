@@ -35,7 +35,7 @@ import { PrefsRepo } from '../../core/data/prefs.repo';
     .switch input:checked::after { transform: translateX(18px); }
     .switch input:disabled { opacity: .5; cursor: default; }
     .check.small { min-height: 32px; font-weight: 500; font-size: 14px; }
-    .linkbtn { border: 0; background: none; padding: 0; color: var(--pl); font: 600 13px var(--font); text-decoration: underline; cursor: pointer; }
+    .linkbtn { border: 0; background: none; padding: 4px 0; min-height: 24px; color: var(--pl); font: 600 13px var(--font); text-decoration: underline; cursor: pointer; }
   `,
   template: `
     <div class="page" style="max-width: 720px">

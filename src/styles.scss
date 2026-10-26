@@ -527,8 +527,8 @@ a.li:hover {
   min-height: 44px;
 }
 .check input {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   accent-color: var(--pl);
 }
 
@@ -539,4 +539,24 @@ a.li:hover {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Zone cliquable d'au moins 24 px de haut (RGAA 13.x / WCAG 2.5.8) pour les boutons-liens. */
+.linkbtn {
+  min-height: 24px;
+  padding-block: 4px;
+}
+
+/* Cases à cocher et liens isolés : cible d'au moins 24 × 24 px. */
+input[type='checkbox'],
+input[type='radio'] {
+  min-width: 24px;
+  min-height: 24px;
+}
+.more,
+.tn,
+a[href^='/import-ia']:not(.btn) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
 }

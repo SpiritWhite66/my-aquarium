@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AquariumStore } from './core/store';
 import { ThemeService } from './core/theme';
 import { BackupService } from './core/backup';
@@ -22,6 +22,21 @@ export class App {
   private readonly backup = inject(BackupService);
   // Vérifie les rappels du jour à l'ouverture.
   private readonly notifications = inject(NotificationService);
+
+  private readonly main = viewChild<ElementRef<HTMLElement>>('main');
+  private navigations = 0;
+
+  constructor() {
+    // Après un changement de page, le focus passe au contenu : un lecteur d'écran annonce la nouvelle page.
+    inject(Router).events.subscribe((e) => {
+      if (e instanceof NavigationEnd && this.navigations++ > 0) this.main()?.nativeElement.focus({ preventScroll: true });
+    });
+  }
+
+  protected skipToContent(e: Event): void {
+    e.preventDefault();
+    this.main()?.nativeElement.focus();
+  }
 
   protected readonly nav = [
     { path: '/', label: 'Accueil', icon: 'home', exact: true },

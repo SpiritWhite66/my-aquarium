@@ -1,3 +1,4 @@
+<a class="skip" href="#contenu" (click)="skipToContent($event)">Aller au contenu</a>
 <div class="shell">
   <aside class="side" aria-label="Navigation">
     <div class="row brand">
@@ -13,14 +14,14 @@
       <p class="sb">Bacs</p>
       @for (v of store.tankViews(); track v.tank.id) {
         <a class="tk" [routerLink]="['/bacs', v.tank.id]" routerLinkActive="on">
-          <span class="dot" [style.color]="'var(--' + (v.level === 'ok' ? 'ok' : v.level === 'warn' ? 'wn' : 'dg') + ')'"></span>
-          {{ v.tank.name }}
+          <span class="dot" [style.color]="'var(--' + (v.level === 'ok' ? 'ok' : v.level === 'warn' ? 'wn' : 'dg') + ')'" aria-hidden="true"></span>
+          {{ v.tank.name }}<span class="sr-only"> · {{ v.level === 'ok' ? 'tout va bien' : v.level === 'warn' ? 'à surveiller' : 'danger' }}</span>
         </a>
       }
     }
   </aside>
 
-  <main class="content">
+  <main class="content" id="contenu" tabindex="-1" #main>
     <router-outlet />
   </main>
 

@@ -5,12 +5,13 @@ import { afterWaterChange, percentFromLabel } from '../core/insights';
 import { idealRange, levelOf } from '../core/rules';
 import { fmt, parseNumber } from '../core/labels';
 import { Icon } from './icon';
+import { ModalFocus } from './modal-focus';
 import { CareRepo } from '../core/data/care.repo';
 
 /** Validation d'un changement d'eau : volume changé et estimation des nitrates après. */
 @Component({
   selector: 'app-water-change-sheet',
-  imports: [Icon],
+  imports: [Icon, ModalFocus],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(8, 14, 11, .5); display: flex; align-items: flex-end; justify-content: center; }
@@ -24,7 +25,7 @@ import { CareRepo } from '../core/data/care.repo';
   `,
   template: `
     <div class="backdrop" (click)="closed.emit()">
-      <div #root class="sheet" role="dialog" aria-modal="true" aria-labelledby="wc-title" tabindex="-1"
+      <div #root class="sheet" appModal role="dialog" aria-modal="true" aria-labelledby="wc-title" tabindex="-1"
         (click)="$event.stopPropagation()" (keydown.escape)="closed.emit()">
         <div class="row between">
           <h2 id="wc-title" class="h2" style="font-size: 18px">Changement d’eau</h2>
