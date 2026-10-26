@@ -11,7 +11,7 @@ const env = (kind: string, data: unknown) => ({ format: 'my-aquarium-ai', versio
 const inventory = env('inventory', {
   items: [
     { scientificName: 'Danio margaritatus', kind: 'fish', quantity: 15, unit: 'individual', confidence: 'high' },
-    { scientificName: 'Neocaridina davidi', commonName: 'Crevette cerise', kind: 'shrimp', quantity: 20, quantityIsEstimate: true, unit: 'individual', confidence: 'medium' },
+    { scientificName: 'Xenomystus nigri', commonName: 'Poisson couteau', kind: 'fish', quantity: 20, quantityIsEstimate: true, unit: 'individual', confidence: 'medium' },
   ],
 });
 const waterTest = env('water_test', { method: 'drops', values: { ph: { value: 7.2, confidence: 'high' }, no3: { value: 25, confidence: 'low' } } });
@@ -66,7 +66,7 @@ describe('import depuis l’IA', () => {
     const shrimp = (await app.db.inhabitants.toArray()).find((i) => i.origin === 'Inventaire IA');
     expect(shrimp).toMatchObject({ quantity: 20, approximate: true, tankId: 'a', status: 'healthy' });
     const sp = await app.db.species.get(shrimp!.speciesId);
-    expect(sp).toMatchObject({ scientificName: 'Neocaridina davidi', source: 'custom', commonNames: ['Crevette cerise'] });
+    expect(sp).toMatchObject({ scientificName: 'Xenomystus nigri', source: 'custom', commonNames: ['Poisson couteau'] });
     expect((await app.db.inhabitantEvents.toArray()).some((e) => e.note === 'Inventaire IA : 12 → 15')).toBe(true);
     await vi.waitFor(() => expect(app.harness.routeNativeElement?.textContent).toContain('Danio'));
   });
