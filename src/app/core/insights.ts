@@ -323,7 +323,9 @@ export function gearChecks(tank: Tank, gear: Equipment[]): GearCheck[] {
     else out.push({ level: 'ok', title: `Brassage : ${fmt(turns)} × le volume par heure`, detail: tank.type === 'planted' ? 'Pour un bac planté avec CO2, 8 à 10 fois est idéal.' : 'Correct.' });
   }
 
-  const co2 = gear.find((g) => g.type === 'co2' && g.co2?.schedule)?.co2;
+  // Un équipement CO2 sans réglage saisi compte quand même : c'est justement le cas à signaler.
+  const co2Gear = gear.find((g) => g.type === 'co2');
+  const co2 = co2Gear && (co2Gear.co2 ?? {});
   if (co2?.schedule && light?.schedule) {
     const lead = minutes(light.schedule.on) - minutes(co2.schedule.on);
     const stopBefore = minutes(light.schedule.off) - minutes(co2.schedule.off);
