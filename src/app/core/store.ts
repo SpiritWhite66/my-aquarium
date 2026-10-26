@@ -1,4 +1,4 @@
-import { Injectable, computed, signal, type Signal } from '@angular/core';
+import { Injectable, InjectionToken, computed, inject, signal, type Signal } from '@angular/core';
 import { liveQuery } from 'dexie';
 import { AquariumDb } from './db';
 import { BUILTIN_SPECIES } from './catalog';
@@ -62,6 +62,9 @@ export interface DueTask {
 
 type New<T extends Entity> = Omit<T, 'id' | 'updatedAt'> & Partial<Pick<T, 'id'>>;
 
+/** Base locale ; remplaçable dans les tests. */
+export const AQUARIUM_DB = new InjectionToken<AquariumDb>('AQUARIUM_DB', { providedIn: 'root', factory: () => new AquariumDb() });
+
 const now = () => new Date().toISOString();
 const uuid = () => crypto.randomUUID();
 
@@ -72,7 +75,8 @@ const uuid = () => crypto.randomUUID();
  */
 @Injectable({ providedIn: 'root' })
 export class AquariumStore {
-  private readonly db = new AquariumDb();
+  private readonly db = inject(AQUARIUM_DB);
+  private readonly clock: ReturnType<typeof setInterval>;
 
   readonly ready = signal(false);
   readonly today = signal(todayIso());
@@ -177,7 +181,7 @@ export class AquariumStore {
   constructor() {
     this.init();
     // La date change à minuit : on la rafraîchit régulièrement.
-    setInterval(() => this.today.set(todayIso()), 60_000);
+    this.clock = setInterval(() => this.today.set(todayIso()), 60_000);
   }
 
   tankView(id: string): Signal<TankView | undefined> {
@@ -216,18 +220,24 @@ export class AquariumStore {
   // ---------- Inventaire ----------
 
   async addInhabitant(data: New<Inhabitant>): Promise<string> {
-    // Même espèce déjà présente et vivante : on cumule la quantité.
-    const existing = this.inhabitants().find(
-      (i) => i.tankId === data.tankId && i.speciesId === data.speciesId && isAlive(i) && i.unit === data.unit,
-    );
-    const id = existing?.id ?? uuid();
-    if (existing) {
-      await this.db.inhabitants.update(id, { quantity: existing.quantity + data.quantity, updatedAt: now() });
-    } else {
-      await this.db.inhabitants.put({ ...data, id, updatedAt: now() } as Inhabitant);
-    }
-    await this.addEvent({ inhabitantId: id, tankId: data.tankId, date: now(), type: 'added', quantityDelta: data.quantity, note: data.origin });
-    return id;
+    return this.db.transaction('rw', [this.db.inhabitants, this.db.inhabitantEvents], async () => {
+      // Même espèce déjà présente et vivante : on cumule la quantité.
+      const existing = await this.findAlive(data.tankId, data.speciesId, data.unit);
+      const id = existing?.id ?? uuid();
+      if (existing) {
+        await this.db.inhabitants.update(id, { quantity: existing.quantity + data.quantity, updatedAt: now() });
+      } else {
+        await this.db.inhabitants.put({ ...data, id, updatedAt: now() } as Inhabitant);
+      }
+      await this.addEvent({ inhabitantId: id, tankId: data.tankId, date: now(), type: 'added', quantityDelta: data.quantity, note: data.origin });
+      return id;
+    });
+  }
+
+  /** Habitant vivant d'une espèce dans un bac, lu dans la base (pas dans les signals, parfois en retard). */
+  private async findAlive(tankId: string, speciesId: string, unit: Inhabitant['unit']): Promise<Inhabitant | undefined> {
+    const list = await this.db.inhabitants.where('tankId').equals(tankId).toArray();
+    return list.find((i) => i.speciesId === speciesId && isAlive(i) && i.unit === unit);
   }
 
   async updateInhabitant(id: string, changes: Partial<Inhabitant>): Promise<void> {
@@ -240,26 +250,34 @@ export class AquariumStore {
 
   /** Enregistre un événement et ajuste la quantité (naissance, décès, bouture…). */
   async recordEvent(inhabitant: Inhabitant, type: InhabitantEvent['type'], quantityDelta = 0, note?: string): Promise<void> {
-    await this.addEvent({ inhabitantId: inhabitant.id, tankId: inhabitant.tankId, date: now(), type, quantityDelta: quantityDelta || undefined, note });
-    if (quantityDelta) {
-      const quantity = Math.max(0, inhabitant.quantity + quantityDelta);
-      await this.updateInhabitant(inhabitant.id, { quantity, status: quantity === 0 && type === 'death' ? 'dead' : inhabitant.status });
-    }
+    await this.db.transaction('rw', [this.db.inhabitants, this.db.inhabitantEvents], async () => {
+      await this.addEvent({ inhabitantId: inhabitant.id, tankId: inhabitant.tankId, date: now(), type, quantityDelta: quantityDelta || undefined, note });
+      if (!quantityDelta) return;
+      const current = (await this.db.inhabitants.get(inhabitant.id)) ?? inhabitant;
+      const quantity = Math.max(0, current.quantity + quantityDelta);
+      await this.updateInhabitant(inhabitant.id, { quantity, status: quantity === 0 && type === 'death' ? 'dead' : current.status });
+    });
   }
 
   async deleteInhabitant(id: string): Promise<void> {
-    await this.db.inhabitants.delete(id);
-    await this.db.photos.where('inhabitantId').equals(id).delete();
-    await this.db.inhabitantEvents.where('inhabitantId').equals(id).delete();
+    await this.db.transaction('rw', [this.db.inhabitants, this.db.photos, this.db.inhabitantEvents], async () => {
+      await this.db.inhabitants.delete(id);
+      await this.db.photos.where('inhabitantId').equals(id).delete();
+      await this.db.inhabitantEvents.where('inhabitantId').equals(id).delete();
+    });
   }
 
   // ---------- Eau ----------
 
   async addWaterTest(test: New<WaterTest>): Promise<void> {
-    await this.db.waterTests.put({ ...test, id: test.id ?? uuid(), updatedAt: now() } as WaterTest);
-    // Un relevé valide la tâche « Test de l'eau » du bac si elle est due.
-    const due = this.tasks().find((t) => t.tankId === test.tankId && t.type === 'water_test' && t.active && t.nextDue <= this.today());
-    if (due) await this.completeTask(due, 'Relevé ajouté');
+    const today = this.today();
+    await this.db.transaction('rw', [this.db.waterTests, this.db.tasks, this.db.logs, this.db.diagnoses], async () => {
+      await this.db.waterTests.put({ ...test, id: test.id ?? uuid(), updatedAt: now() } as WaterTest);
+      // Un relevé valide la tâche « Test de l'eau » du bac si elle est due.
+      const tasks = await this.db.tasks.where('tankId').equals(test.tankId).toArray();
+      const due = tasks.find((t) => t.type === 'water_test' && t.active && t.nextDue <= today);
+      if (due) await this.completeTask(due, 'Relevé ajouté');
+    });
   }
 
   async deleteWaterTest(id: string): Promise<void> {
@@ -293,16 +311,16 @@ export class AquariumStore {
 
   private async completeTaskWith(task: MaintenanceTask, entries: Pick<MaintenanceLog, 'label' | 'note' | 'details'>[], type = task.type): Promise<void> {
     const today = this.today();
-    await this.db.transaction('rw', [this.db.tasks, this.db.logs], async () => {
+    await this.db.transaction('rw', [this.db.tasks, this.db.logs, this.db.diagnoses], async () => {
       await this.db.logs.bulkPut(entries.map((e) => ({ ...e, id: uuid(), updatedAt: now(), tankId: task.tankId, taskId: task.id, type, date: now() })));
       await this.db.tasks.update(task.id, task.oneOff ? { active: false, updatedAt: now() } : { nextDue: addDays(today, task.everyDays), updatedAt: now() });
+      // Tâche issue d'un diagnostic : l'action correspondante est marquée faite.
+      const diag = task.diagnosisId && task.oneOff ? await this.db.diagnoses.get(task.diagnosisId) : undefined;
+      if (diag) {
+        const actions = diag.actions.map((a) => (a.taskId === task.id ? { ...a, done: true } : a));
+        await this.db.diagnoses.update(diag.id, { actions, updatedAt: now() });
+      }
     });
-    // Tâche issue d'un diagnostic : l'action correspondante est marquée faite.
-    const diag = task.diagnosisId && this.diagnoses().find((d) => d.id === task.diagnosisId);
-    if (diag) {
-      const actions = diag.actions.map((a) => (a.taskId === task.id && task.oneOff ? { ...a, done: true } : a));
-      await this.db.diagnoses.update(diag.id, { actions, updatedAt: now() });
-    }
   }
 
   /** Mode vacances : les tâches dues avant le retour sont décalées au jour du retour. */
@@ -320,24 +338,26 @@ export class AquariumStore {
 
   /** Réduit puis enregistre une ou plusieurs photos. Renvoie les identifiants créés. */
   async addPhotos(files: File[], target: { tankId: string; inhabitantId?: string }, caption?: string): Promise<string[]> {
-    const ids: string[] = [];
+    // Réduction des images d'abord : une transaction IndexedDB ne survit pas à un traitement asynchrone externe.
+    const processed: Photo[] = [];
     for (const file of files) {
       const p = await processPhoto(file);
       // La date de la photo est celle du fichier quand elle est fiable, sinon maintenant.
       const taken = file.lastModified && file.lastModified < Date.now() ? new Date(file.lastModified) : new Date();
-      const id = uuid();
-      await this.db.photos.put({
-        id, updatedAt: now(), ...target, date: taken.toISOString(), caption: caption || undefined,
+      processed.push({
+        id: uuid(), updatedAt: now(), ...target, date: taken.toISOString(), caption: caption || undefined,
         full: p.full, thumb: p.thumb, width: p.width, height: p.height,
       });
-      ids.push(id);
     }
-    // Première photo d'un bac : elle devient sa photo de couverture.
-    const tank = this.tanks().find((t) => t.id === target.tankId);
-    if (tank && !tank.coverPhotoId && !target.inhabitantId && ids.length) {
-      await this.db.tanks.update(tank.id, { coverPhotoId: ids[0], updatedAt: now() });
-    }
-    return ids;
+    await this.db.transaction('rw', [this.db.photos, this.db.tanks], async () => {
+      await this.db.photos.bulkPut(processed);
+      // Première photo d'un bac : elle devient sa photo de couverture.
+      const tank = await this.db.tanks.get(target.tankId);
+      if (tank && !tank.coverPhotoId && !target.inhabitantId && processed.length) {
+        await this.db.tanks.update(tank.id, { coverPhotoId: processed[0].id, updatedAt: now() });
+      }
+    });
+    return processed.map((p) => p.id);
   }
 
   async setCaption(id: string, caption: string): Promise<void> {
@@ -349,13 +369,14 @@ export class AquariumStore {
   }
 
   async deletePhoto(photo: Photo): Promise<void> {
-    await this.db.photos.delete(photo.id);
-    const tank = this.tanks().find((t) => t.id === photo.tankId);
-    if (tank?.coverPhotoId === photo.id) {
+    await this.db.transaction('rw', [this.db.photos, this.db.tanks], async () => {
+      await this.db.photos.delete(photo.id);
+      const tank = await this.db.tanks.get(photo.tankId);
+      if (tank?.coverPhotoId !== photo.id) return;
       // La couverture passe à la photo de bac la plus récente restante.
-      const next = this.photos().find((p) => p.tankId === tank.id && p.id !== photo.id && !p.inhabitantId);
-      await this.db.tanks.update(tank.id, { coverPhotoId: next?.id, updatedAt: now() });
-    }
+      const rest = await this.db.photos.where('tankId').equals(tank.id).filter((p) => !p.inhabitantId).sortBy('date');
+      await this.db.tanks.update(tank.id, { coverPhotoId: rest.at(-1)?.id, updatedAt: now() });
+    });
   }
 
   // ---------- Diagnostics ----------
@@ -364,19 +385,21 @@ export class AquariumStore {
   async addDiagnosis(d: New<Diagnosis>, createTasks: boolean[]): Promise<string> {
     const id = d.id ?? uuid();
     const today = this.today();
-    const actions = [];
-    for (const [i, a] of d.actions.entries()) {
-      if (a.task && createTasks[i]) {
-        const taskId = uuid();
-        await this.db.tasks.put({
-          id: taskId, updatedAt: now(), tankId: d.tankId, type: a.task.type, label: a.task.label,
-          everyDays: a.task.everyDays ?? 7, nextDue: addDays(today, a.task.inDays ?? 0), active: true,
-          oneOff: !a.task.everyDays, diagnosisId: id,
-        });
-        actions.push({ ...a, taskId });
-      } else actions.push(a);
-    }
-    await this.db.diagnoses.put({ ...d, id, actions, updatedAt: now() } as Diagnosis);
+    const tasks: MaintenanceTask[] = [];
+    const actions = d.actions.map((a, i) => {
+      if (!a.task || !createTasks[i]) return a;
+      const taskId = uuid();
+      tasks.push({
+        id: taskId, updatedAt: now(), tankId: d.tankId, type: a.task.type, label: a.task.label,
+        everyDays: a.task.everyDays ?? 7, nextDue: addDays(today, a.task.inDays ?? 0), active: true,
+        oneOff: !a.task.everyDays, diagnosisId: id,
+      });
+      return { ...a, taskId };
+    });
+    await this.db.transaction('rw', [this.db.tasks, this.db.diagnoses], async () => {
+      await this.db.tasks.bulkPut(tasks);
+      await this.db.diagnoses.put({ ...d, id, actions, updatedAt: now() } as Diagnosis);
+    });
     return id;
   }
 
@@ -449,25 +472,29 @@ export class AquariumStore {
     if (toTankId === inh.tankId || quantity < 1) return;
     const from = this.tanks().find((t) => t.id === inh.tankId)?.name ?? 'bac';
     const to = this.tanks().find((t) => t.id === toTankId)?.name ?? 'bac';
-    if (quantity >= inh.quantity) {
-      await this.db.inhabitants.update(inh.id, { tankId: toTankId, updatedAt: now() });
-      // L'historique et les photos suivent l'habitant.
-      await this.db.inhabitantEvents.where('inhabitantId').equals(inh.id).modify({ tankId: toTankId });
-      await this.db.photos.where('inhabitantId').equals(inh.id).modify({ tankId: toTankId });
-      await this.addEvent({ inhabitantId: inh.id, tankId: toTankId, date: now(), type: 'moved', note: `${from} → ${to}` });
-      return;
-    }
-    await this.updateInhabitant(inh.id, { quantity: inh.quantity - quantity });
-    await this.addEvent({ inhabitantId: inh.id, tankId: inh.tankId, date: now(), type: 'moved', quantityDelta: -quantity, note: `${quantity} vers ${to}` });
-    const target = this.inhabitants().find((i) => i.tankId === toTankId && i.speciesId === inh.speciesId && isAlive(i) && i.unit === inh.unit);
-    if (target) {
-      await this.updateInhabitant(target.id, { quantity: target.quantity + quantity });
-      await this.addEvent({ inhabitantId: target.id, tankId: toTankId, date: now(), type: 'moved', quantityDelta: quantity, note: `depuis ${from}` });
-    } else {
-      const id = uuid();
-      await this.db.inhabitants.put({ ...inh, id, tankId: toTankId, quantity, addedDate: this.today(), origin: `Déplacé depuis ${from}`, updatedAt: now() });
-      await this.addEvent({ inhabitantId: id, tankId: toTankId, date: now(), type: 'moved', quantityDelta: quantity, note: `depuis ${from}` });
-    }
+    await this.db.transaction('rw', [this.db.inhabitants, this.db.inhabitantEvents, this.db.photos], async () => {
+      const current = await this.db.inhabitants.get(inh.id);
+      if (!current) return;
+      if (quantity >= current.quantity) {
+        await this.db.inhabitants.update(inh.id, { tankId: toTankId, updatedAt: now() });
+        // L'historique et les photos suivent l'habitant.
+        await this.db.inhabitantEvents.where('inhabitantId').equals(inh.id).modify({ tankId: toTankId });
+        await this.db.photos.where('inhabitantId').equals(inh.id).modify({ tankId: toTankId });
+        await this.addEvent({ inhabitantId: inh.id, tankId: toTankId, date: now(), type: 'moved', note: `${from} → ${to}` });
+        return;
+      }
+      await this.updateInhabitant(inh.id, { quantity: current.quantity - quantity });
+      await this.addEvent({ inhabitantId: inh.id, tankId: current.tankId, date: now(), type: 'moved', quantityDelta: -quantity, note: `${quantity} vers ${to}` });
+      const target = await this.findAlive(toTankId, current.speciesId, current.unit);
+      if (target) {
+        await this.updateInhabitant(target.id, { quantity: target.quantity + quantity });
+        await this.addEvent({ inhabitantId: target.id, tankId: toTankId, date: now(), type: 'moved', quantityDelta: quantity, note: `depuis ${from}` });
+      } else {
+        const id = uuid();
+        await this.db.inhabitants.put({ ...current, id, tankId: toTankId, quantity, addedDate: this.today(), origin: `Déplacé depuis ${from}`, updatedAt: now() });
+        await this.addEvent({ inhabitantId: id, tankId: toTankId, date: now(), type: 'moved', quantityDelta: quantity, note: `depuis ${from}` });
+      }
+    });
   }
 
   async updateWaterTest(test: WaterTest): Promise<void> {
@@ -485,8 +512,10 @@ export class AquariumStore {
   async deleteSpecies(id: string): Promise<void> {
     const s = this.speciesById().get(id);
     if (!s || s.source !== 'custom') return;
-    if (s.overrides) await this.replaceSpecies(id, s.overrides);
-    await this.db.species.delete(id);
+    await this.db.transaction('rw', [this.db.inhabitants, this.db.species], async () => {
+      if (s.overrides) await this.replaceSpecies(id, s.overrides);
+      await this.db.species.delete(id);
+    });
   }
 
   async saveSpecies(species: New<Species>): Promise<string> {
@@ -572,6 +601,12 @@ export class AquariumStore {
     // Met à jour les fiches du catalogue intégré sans toucher aux fiches personnelles.
     await this.db.species.bulkPut(BUILTIN_SPECIES);
     this.ready.set(true);
+  }
+
+  /** Pour les tests : arrête l'horloge et ferme la base. */
+  destroy(): void {
+    clearInterval(this.clock);
+    this.db.close();
   }
 
   private live<T>(query: () => Promise<T>, initial: T): Signal<T> {
