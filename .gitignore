@@ -29,3 +29,7 @@ yarn-error.log*
 # Fichiers IA générés (npm run ai)
 /public/ai/
 /ai/dist/
+
+# Tests de mutation
+/.stryker-tmp/
+/reports/
