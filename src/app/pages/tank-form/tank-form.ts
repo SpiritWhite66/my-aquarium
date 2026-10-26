@@ -5,6 +5,7 @@ import { AquariumStore } from '../../core/store';
 import type { Tank, TankType } from '../../core/models';
 import { TANK_TYPES, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
+import { TankRepo } from '../../core/data/tank.repo';
 
 @Component({
   selector: 'app-tank-form',
@@ -83,6 +84,7 @@ import { Icon } from '../../shared/icon';
 })
 export class TankFormPage {
   private readonly store = inject(AquariumStore);
+  protected readonly tankRepo = inject(TankRepo);
   private readonly router = inject(Router);
   protected readonly location = inject(Location);
 
@@ -135,7 +137,7 @@ export class TankFormPage {
     if (!this.valid()) return;
     const prev = this.existing();
     const photo = parseNumber(this.photoperiod());
-    const id = await this.store.saveTank(
+    const id = await this.tankRepo.saveTank(
       {
         ...(prev ?? {}),
         id: this.id(),
@@ -158,13 +160,13 @@ export class TankFormPage {
   }
 
   protected async toggleArchive(t: Tank): Promise<void> {
-    await this.store.archiveTank(t.id, !t.archived);
+    await this.tankRepo.archiveTank(t.id, !t.archived);
     this.router.navigate(['/bacs']);
   }
 
   protected async remove(t: Tank): Promise<void> {
     if (!confirm(`Supprimer « ${t.name} » et tout son historique ? Cette action est définitive.`)) return;
-    await this.store.deleteTank(t.id);
+    await this.tankRepo.deleteTank(t.id);
     this.router.navigate(['/bacs']);
   }
 }

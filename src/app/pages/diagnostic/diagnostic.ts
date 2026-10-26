@@ -7,6 +7,7 @@ import { measureStatus } from '../../core/follow-up';
 import { addDays, daysBetween, localDay } from '../../core/dates';
 import { Icon } from '../../shared/icon';
 import { PhotoUrls } from '../../shared/photo-urls';
+import { PhotoRepo } from '../../core/data/photo.repo';
 
 const MAX_PHOTOS = 6;
 
@@ -145,6 +146,7 @@ const MAX_PHOTOS = 6;
 })
 export class DiagnosticPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly photoRepo = inject(PhotoRepo);
   protected readonly urls = inject(PhotoUrls);
   protected readonly date = fmtShortDate;
   protected readonly maxPhotos = MAX_PHOTOS;
@@ -270,7 +272,7 @@ export class DiagnosticPage {
     const json = new File([JSON.stringify(d, null, 2)], `dossier-${slug}-${this.store.today()}.json`, { type: 'application/json' });
     const photos: File[] = [];
     for (const [i, p] of this.chosenPhotos().entries()) {
-      const img = await this.store.photoFile(p.id);
+      const img = await this.photoRepo.photoFile(p.id);
       if (img) photos.push(new File([img.full], photoFileName(p, i), { type: 'image/jpeg' }));
     }
     return [json, ...photos];

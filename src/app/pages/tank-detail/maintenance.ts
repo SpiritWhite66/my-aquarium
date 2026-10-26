@@ -12,6 +12,8 @@ import { PhotoCompare } from '../../shared/photo-compare';
 import { equipmentIcon, equipmentSummary } from '../gear/gear';
 import { EQUIPMENT_TYPES } from '../../core/labels';
 import { gearChecks } from '../../core/insights';
+import { CareRepo } from '../../core/data/care.repo';
+import { GearRepo } from '../../core/data/gear.repo';
 
 const EVENT_LABELS: Record<string, string> = {
   added: 'Ajout',
@@ -172,6 +174,8 @@ const EVENT_LABELS: Record<string, string> = {
 })
 export class MaintenanceTab {
   protected readonly store = inject(AquariumStore);
+  protected readonly careRepo = inject(CareRepo);
+  protected readonly gearRepo = inject(GearRepo);
   readonly id = input.required<string>();
 
   protected readonly icon = taskIcon;
@@ -218,13 +222,13 @@ export class MaintenanceTab {
 
   protected async removeSetting(changes: SettingChange[]): Promise<void> {
     if (!confirm('Retirer ce changement de l’historique ?')) return;
-    for (const c of changes) await this.store.deleteSettingChange(c.id);
+    for (const c of changes) await this.gearRepo.deleteSettingChange(c.id);
   }
 
   protected done(task: MaintenanceTask): void {
     if (task.type === 'water_change') this.waterChange.set(task);
     else if (task.type === 'fertilize') this.dosing.set(task);
-    else this.store.completeTask(task);
+    else this.careRepo.completeTask(task);
   }
 
   protected readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.id()));

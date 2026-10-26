@@ -101,7 +101,7 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [ ] Revue d'accessibilité.
 
 ## Après la V1
-1. **Backend et synchronisation** : remplacer l'implémentation Dexie d'`AquariumStore` par une implémentation API (avec cache local).
+1. **Backend et synchronisation** : remplacer les repositories de `core/data/` et les lectures d'`AquariumStore` par une implémentation API (avec cache local) ; les écrans ne changent pas.
 2. **Serveur MCP** : outils pour lire les bacs et les relevés, ajouter un relevé et valider une tâche depuis Claude.ai (les règles de `core/rules.ts` sont réutilisables telles quelles).
 3. **Notifications push**, alimentation et programmation de l'éclairage.
 4. Capteurs connectés (température, pH).

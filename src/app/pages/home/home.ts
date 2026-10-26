@@ -12,6 +12,7 @@ import { DoseSheet } from '../../shared/dose-sheet';
 import type { MaintenanceTask } from '../../core/models';
 import { idealRange } from '../../core/rules';
 import { stockAlerts, trendOf } from '../../core/insights';
+import { CareRepo } from '../../core/data/care.repo';
 
 @Component({
   selector: 'app-home',
@@ -22,6 +23,7 @@ import { stockAlerts, trendOf } from '../../core/insights';
 })
 export class HomePage {
   protected readonly store = inject(AquariumStore);
+  protected readonly careRepo = inject(CareRepo);
   protected readonly backup = inject(BackupService);
   protected readonly dueLabel = dueLabel;
   protected readonly types = TANK_TYPES;
@@ -79,7 +81,7 @@ export class HomePage {
   protected done(task: MaintenanceTask): void {
     if (task.type === 'water_change') this.waterChange.set(task);
     else if (task.type === 'fertilize') this.dosing.set(task);
-    else this.store.completeTask(task);
+    else this.careRepo.completeTask(task);
   }
 
   protected readonly stock = computed(() =>

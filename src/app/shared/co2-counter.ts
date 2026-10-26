@@ -5,6 +5,8 @@ import { DROP_CHECKER, bpmFromTaps, co2Advice, co2FromKhPh, co2Status, latestKhP
 import { fmt } from '../core/labels';
 import { parseNumber } from '../core/labels';
 import { Icon } from './icon';
+import { GearRepo } from '../core/data/gear.repo';
+import { TankRepo } from '../core/data/tank.repo';
 
 /**
  * Compteur de bulles CO2 : on tape à chaque bulle dans le compte-bulles,
@@ -93,6 +95,8 @@ import { Icon } from './icon';
 })
 export class Co2Counter {
   private readonly store = inject(AquariumStore);
+  protected readonly gearRepo = inject(GearRepo);
+  protected readonly tankRepo = inject(TankRepo);
   readonly tank = input.required<Tank>();
   readonly closed = output<void>();
 
@@ -153,14 +157,14 @@ export class Co2Counter {
 
   protected async save(asTarget: boolean): Promise<void> {
     const bpm = this.value();
-    await this.store.addCo2Reading({
+    await this.gearRepo.addCo2Reading({
       tankId: this.tank().id,
       date: new Date().toISOString(),
       bubblesPerMinute: bpm,
       dropChecker: this.drop(),
       note: this.taps().length >= 5 && !parseNumber(this.manual()) ? `${this.taps().length} bulles en ${this.elapsed()} s` : undefined,
     });
-    if (asTarget && bpm != null) await this.store.saveTank({ ...this.tank(), co2Target: bpm });
+    if (asTarget && bpm != null) await this.tankRepo.saveTank({ ...this.tank(), co2Target: bpm });
     this.closed.emit();
   }
 }

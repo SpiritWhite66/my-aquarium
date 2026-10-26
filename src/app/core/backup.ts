@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AquariumStore } from './store';
 import { daysBetween, localDay, toIsoDate } from './dates';
+import { BackupRepo } from './data/backup.repo';
 
 /** Délai après lequel on rappelle de faire une sauvegarde. */
 export const BACKUP_REMINDER_DAYS = 14;
@@ -13,6 +14,7 @@ export const BACKUP_REMINDER_DAYS = 14;
 @Injectable({ providedIn: 'root' })
 export class BackupService {
   private readonly store = inject(AquariumStore);
+  private readonly backupRepo = inject(BackupRepo);
 
   /** null : inconnu ou non pris en charge. */
   readonly persisted = signal<boolean | null>(null);
@@ -64,7 +66,7 @@ export class BackupService {
 
   /** Télécharge la sauvegarde complète (photos comprises). */
   async exportNow(): Promise<void> {
-    const { blob, exportedAt } = await this.store.exportArchive();
+    const { blob, exportedAt } = await this.backupRepo.exportArchive();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

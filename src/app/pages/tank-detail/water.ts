@@ -10,6 +10,8 @@ import { Co2Counter } from '../../shared/co2-counter';
 import { PhDaySheet } from '../../shared/ph-day-sheet';
 import { algaeScore, describeChange } from '../../core/settings-history';
 import { ALGAE_LEVELS } from '../../core/labels';
+import { CareRepo } from '../../core/data/care.repo';
+import { TankRepo } from '../../core/data/tank.repo';
 
 @Component({
   selector: 'app-water',
@@ -242,6 +244,8 @@ export class WaterTab {
       .map((c) => ({ date: c.date, label: `${c.equipmentName} · ${describeChange(c)}` })),
   );
   protected readonly store = inject(AquariumStore);
+  protected readonly careRepo = inject(CareRepo);
+  protected readonly tankRepo = inject(TankRepo);
   readonly id = input.required<string>();
 
   protected readonly ago = agoLabel;
@@ -335,7 +339,7 @@ export class WaterTab {
 
   protected endCycling(): void {
     const t = this.view()?.tank;
-    if (t) this.store.saveTank({ ...t, cycling: false });
+    if (t) this.tankRepo.saveTank({ ...t, cycling: false });
   }
 
   protected readonly history = computed(() => [...(this.view()?.tests ?? [])].reverse().slice(0, 20));
@@ -347,6 +351,6 @@ export class WaterTab {
   }
 
   protected remove(id: string): void {
-    if (confirm('Supprimer ce relevé ?')) this.store.deleteWaterTest(id);
+    if (confirm('Supprimer ce relevé ?')) this.careRepo.deleteWaterTest(id);
   }
 }

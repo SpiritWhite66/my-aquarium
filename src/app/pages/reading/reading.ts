@@ -7,6 +7,7 @@ import type {
 import { EXTRA_PARAMS, MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf, measuredParams } from '../../core/rules';
 import { fmt, fmtRange, fmtShortDate, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
+import { CareRepo } from '../../core/data/care.repo';
 
 /** Saisie rapide d'un relevé : valeurs précédentes en indication, contrôle immédiat de la plage. */
 @Component({
@@ -108,6 +109,7 @@ import { Icon } from '../../shared/icon';
 })
 export class ReadingPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly careRepo = inject(CareRepo);
   protected readonly location = inject(Location);
 
   /** `?bac=` dans l'URL. */
@@ -220,12 +222,12 @@ export class ReadingPage {
     const date = this.when() ? new Date(this.when()).toISOString() : new Date().toISOString();
     const note = this.note().trim() || undefined;
     const prev = this.editing();
-    if (prev) await this.store.updateWaterTest({ ...prev, tankId: this.tankId(), date, values, note });
-    else if (this.hasWater()) await this.store.addWaterTest({ tankId: this.tankId(), date, values, note });
+    if (prev) await this.careRepo.updateWaterTest({ ...prev, tankId: this.tankId(), date, values, note });
+    else if (this.hasWater()) await this.careRepo.addWaterTest({ tankId: this.tankId(), date, values, note });
     const level = this.algae();
     if (level != null && !prev) {
       const types = [...this.algaeTypes()];
-      await this.store.addObservation({
+      await this.careRepo.addObservation({
         tankId: this.tankId(),
         date,
         manual: true,

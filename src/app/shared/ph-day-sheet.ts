@@ -4,6 +4,7 @@ import { AquariumStore } from '../core/store';
 import { CO2_TARGET, co2Advice, co2FromPhDrop } from '../core/insights';
 import { fmt, parseNumber } from '../core/labels';
 import { Icon } from './icon';
+import { GearRepo } from '../core/data/gear.repo';
 
 /**
  * Mesure du CO2 par la baisse de pH sur la journée : pH avant l'injection, puis pH en fin d'éclairage.
@@ -66,6 +67,7 @@ import { Icon } from './icon';
 })
 export class PhDaySheet {
   private readonly store = inject(AquariumStore);
+  protected readonly gearRepo = inject(GearRepo);
   readonly tank = input.required<Tank>();
   readonly closed = output<void>();
 
@@ -100,7 +102,7 @@ export class PhDaySheet {
   }
 
   protected async save(): Promise<void> {
-    await this.store.addCo2Reading({
+    await this.gearRepo.addCo2Reading({
       tankId: this.tank().id,
       date: new Date().toISOString(),
       phBefore: parseNumber(this.before()),

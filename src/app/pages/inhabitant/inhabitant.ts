@@ -10,6 +10,7 @@ import { PhotoAdd } from '../../shared/photo-add';
 import { PhotoCompare } from '../../shared/photo-compare';
 import { PhotoUrls } from '../../shared/photo-urls';
 import { PhotoViewer } from '../../shared/photo-viewer';
+import { LivestockRepo } from '../../core/data/livestock.repo';
 
 interface QuickEvent {
   type: InhabitantEventType;
@@ -82,7 +83,7 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
           <div class="field full">
             <label for="pl">Emplacement dans le bac</label>
             <input id="pl" [value]="d.inhabitant.placementNote ?? ''" placeholder="Arrière gauche…"
-              (change)="store.updateInhabitant(d.inhabitant.id, { placementNote: $any($event.target).value || undefined })" />
+              (change)="livestockRepo.updateInhabitant(d.inhabitant.id, { placementNote: $any($event.target).value || undefined })" />
           </div>
         </div>
 
@@ -167,6 +168,7 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
 })
 export class InhabitantPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly livestockRepo = inject(LivestockRepo);
   protected readonly location = inject(Location);
   private readonly router = inject(Router);
 
@@ -204,7 +206,7 @@ export class InhabitantPage {
     if (!to || qty < 1) return;
     const name = this.store.tanks().find((t) => t.id === to)?.name;
     if (!confirm(`Déplacer ${qty} ${unitLabel(i.unit, qty)} vers « ${name} » ?`)) return;
-    await this.store.moveInhabitant(i, to, qty);
+    await this.livestockRepo.moveInhabitant(i, to, qty);
     this.moveQty.set(0);
     // Déplacement complet : on suit l'habitant dans son nouveau bac.
     if (qty >= i.quantity) this.router.navigate(['/bacs', to, 'habitants', i.id], { replaceUrl: true });
@@ -212,21 +214,21 @@ export class InhabitantPage {
 
   protected setQuantity(i: Inhabitant, raw: string): void {
     const q = Math.max(0, Math.round(Number(raw.replace(',', '.'))));
-    if (Number.isFinite(q)) this.store.updateInhabitant(i.id, { quantity: q, approximate: false });
+    if (Number.isFinite(q)) this.livestockRepo.updateInhabitant(i.id, { quantity: q, approximate: false });
   }
 
   protected setStatus(i: Inhabitant, status: HealthStatus): void {
-    this.store.updateInhabitant(i.id, { status });
+    this.livestockRepo.updateInhabitant(i.id, { status });
   }
 
   protected async record(i: Inhabitant, e: QuickEvent): Promise<void> {
-    await this.store.recordEvent(i, e.type, e.sign, this.note().trim() || undefined);
+    await this.livestockRepo.recordEvent(i, e.type, e.sign, this.note().trim() || undefined);
     this.note.set('');
   }
 
   protected async remove(i: Inhabitant): Promise<void> {
     if (!confirm('Supprimer cet habitant et son journal ? (Pour un décès, préfère l’état « Mort ».)')) return;
-    await this.store.deleteInhabitant(i.id);
+    await this.livestockRepo.deleteInhabitant(i.id);
     this.location.back();
   }
 }

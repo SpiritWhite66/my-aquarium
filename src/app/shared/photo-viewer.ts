@@ -6,6 +6,7 @@ import { Icon } from './icon';
 import { Router } from '@angular/router';
 import { PhotoUrls } from './photo-urls';
 import { localDay } from '../core/dates';
+import { PhotoRepo } from '../core/data/photo.repo';
 
 /** Visionneuse plein écran : navigation, légende, photo de couverture, téléchargement, suppression. */
 @Component({
@@ -48,7 +49,7 @@ import { localDay } from '../core/dates';
           <p class="meta">{{ date(p.date) }} · {{ subject(p) }}</p>
           <div class="field">
             <label for="caption">Légende</label>
-            <input id="caption" [value]="p.caption ?? ''" placeholder="Ajouter une légende" (change)="store.setCaption(p.id, $any($event.target).value)" />
+            <input id="caption" [value]="p.caption ?? ''" placeholder="Ajouter une légende" (change)="photoRepo.setCaption(p.id, $any($event.target).value)" />
           </div>
           @if (!p.inhabitantId) {
             <button class="btn ton" type="button" style="align-self: flex-start" (click)="toggleCover(p)">
@@ -62,6 +63,7 @@ import { localDay } from '../core/dates';
 })
 export class PhotoViewer {
   protected readonly store = inject(AquariumStore);
+  protected readonly photoRepo = inject(PhotoRepo);
   protected readonly urls = inject(PhotoUrls);
   protected readonly date = fmtShortDate;
   private readonly router = inject(Router);
@@ -113,7 +115,7 @@ export class PhotoViewer {
    * puis ouvre l'écran d'import pour coller la réponse. Sans partage de fichiers : téléchargement.
    */
   protected async toAi(p: Photo): Promise<void> {
-    const img = await this.store.photoFile(p.id);
+    const img = await this.photoRepo.photoFile(p.id);
     if (!img) return;
     const file = new File([img.full], this.filename(p), { type: 'image/jpeg' });
     const text = p.inhabitantId
@@ -142,7 +144,7 @@ export class PhotoViewer {
   }
 
   protected toggleCover(p: Photo): void {
-    this.store.setCover(p.tankId, this.isCover(p) ? undefined : p.id);
+    this.photoRepo.setCover(p.tankId, this.isCover(p) ? undefined : p.id);
   }
 
   protected async remove(p: Photo): Promise<void> {
@@ -151,6 +153,6 @@ export class PhotoViewer {
     const list = this.photos();
     const neighbor = list[this.index() + 1] ?? list[this.index() - 1];
     if (neighbor) this.selectedId.set(neighbor.id);
-    await this.store.deletePhoto(p);
+    await this.photoRepo.deletePhoto(p);
   }
 }

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { AquariumStore } from '../core/store';
 import { Icon } from './icon';
+import { PhotoRepo } from '../core/data/photo.repo';
 
 /** Bouton d'ajout de photos : ouvre l'appareil photo ou la galerie, réduit les images puis les enregistre. */
 @Component({
@@ -25,6 +26,7 @@ import { Icon } from './icon';
 })
 export class PhotoAdd {
   private readonly store = inject(AquariumStore);
+  protected readonly photoRepo = inject(PhotoRepo);
 
   readonly tankId = input.required<string>();
   readonly inhabitantId = input<string>();
@@ -44,7 +46,7 @@ export class PhotoAdd {
     this.busy.set(true);
     this.error.set('');
     try {
-      const ids = await this.store.addPhotos(files, { tankId: this.tankId(), inhabitantId: this.inhabitantId() });
+      const ids = await this.photoRepo.addPhotos(files, { tankId: this.tankId(), inhabitantId: this.inhabitantId() });
       this.added.emit(ids);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Impossible d’enregistrer la photo.');

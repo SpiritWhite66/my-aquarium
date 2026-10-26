@@ -1,5 +1,6 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AquariumStore } from '../core/store';
+import { PhotoRepo } from '../core/data/photo.repo';
 
 type Variant = 'thumb' | 'full';
 
@@ -12,6 +13,7 @@ type Variant = 'thumb' | 'full';
 @Injectable({ providedIn: 'root' })
 export class PhotoUrls {
   private readonly store = inject(AquariumStore);
+  private readonly photoRepo = inject(PhotoRepo);
   private readonly ids = computed(() => new Set(this.store.photos().map((p) => p.id)));
   private readonly ready = signal(new Map<string, string>());
   private readonly pending = new Set<string>();
@@ -43,7 +45,7 @@ export class PhotoUrls {
     if (this.pending.has(key)) return;
     this.pending.add(key);
     try {
-      const file = await this.store.photoFile(id);
+      const file = await this.photoRepo.photoFile(id);
       if (!file) return;
       const next = new Map(this.ready());
       next.set(key, URL.createObjectURL(file[variant]));

@@ -5,6 +5,7 @@ import { afterWaterChange, percentFromLabel } from '../core/insights';
 import { idealRange, levelOf } from '../core/rules';
 import { fmt, parseNumber } from '../core/labels';
 import { Icon } from './icon';
+import { CareRepo } from '../core/data/care.repo';
 
 /** Validation d'un changement d'eau : volume changé et estimation des nitrates après. */
 @Component({
@@ -58,6 +59,7 @@ import { Icon } from './icon';
 })
 export class WaterChangeSheet {
   private readonly store = inject(AquariumStore);
+  protected readonly careRepo = inject(CareRepo);
   readonly task = input.required<MaintenanceTask>();
   readonly closed = output<void>();
 
@@ -99,7 +101,7 @@ export class WaterChangeSheet {
   protected async confirm(): Promise<void> {
     const liters = Math.round(this.volume() * this.percent()) / 100;
     const e = this.estimate();
-    await this.store.completeTask(
+    await this.careRepo.completeTask(
       this.task(),
       `${this.percent()} % (${fmt(liters)} L)${e ? ` · NO3 estimé ${e.after} mg/L` : ''}`,
       { waterChangedLiters: liters },

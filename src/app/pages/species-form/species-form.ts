@@ -5,6 +5,7 @@ import { AquariumStore } from '../../core/store';
 import type { FaunaInfo, FloraInfo, Range, Species, SpeciesKind } from '../../core/models';
 import { DIETS, DIFFICULTIES, GROWTHS, KINDS, LIGHTS, PLACEMENTS, TEMPERAMENTS, ZONES, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
+import { LivestockRepo } from '../../core/data/livestock.repo';
 
 type RangeKey = 'temp' | 'ph' | 'gh' | 'kh';
 const RANGES: { key: RangeKey; label: string }[] = [
@@ -158,6 +159,7 @@ const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
 })
 export class SpeciesFormPage {
   private readonly store = inject(AquariumStore);
+  protected readonly livestockRepo = inject(LivestockRepo);
   private readonly router = inject(Router);
   protected readonly location = inject(Location);
 
@@ -266,10 +268,10 @@ export class SpeciesFormPage {
     };
     let id: string;
     if (prev?.source === 'builtin') {
-      id = await this.store.saveSpecies(data);
-      await this.store.replaceSpecies(prev.id, id);
+      id = await this.livestockRepo.saveSpecies(data);
+      await this.livestockRepo.replaceSpecies(prev.id, id);
     } else {
-      id = await this.store.saveSpecies({ ...data, id: prev?.id });
+      id = await this.livestockRepo.saveSpecies({ ...data, id: prev?.id });
     }
     this.router.navigate(['/catalogue', id], { replaceUrl: true });
   }
@@ -283,7 +285,7 @@ export class SpeciesFormPage {
       return;
     }
     if (!confirm('Supprimer cette fiche personnelle ?')) return;
-    await this.store.deleteSpecies(s.id);
+    await this.livestockRepo.deleteSpecies(s.id);
     this.router.navigate(['/catalogue'], { replaceUrl: true });
   }
 }

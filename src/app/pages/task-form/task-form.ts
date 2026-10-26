@@ -5,6 +5,7 @@ import type { TaskType } from '../../core/models';
 import { TASK_TYPES, parseNumber } from '../../core/labels';
 import { addDays } from '../../core/dates';
 import { Icon } from '../../shared/icon';
+import { CareRepo } from '../../core/data/care.repo';
 
 @Component({
   selector: 'app-task-form',
@@ -54,6 +55,7 @@ import { Icon } from '../../shared/icon';
 })
 export class TaskFormPage {
   private readonly store = inject(AquariumStore);
+  protected readonly careRepo = inject(CareRepo);
   protected readonly location = inject(Location);
 
   readonly id = input.required<string>();
@@ -91,7 +93,7 @@ export class TaskFormPage {
 
   protected async save(): Promise<void> {
     if (!this.valid()) return;
-    await this.store.saveTask({
+    await this.careRepo.saveTask({
       id: this.taskId(),
       tankId: this.id(),
       type: this.type(),
@@ -105,7 +107,7 @@ export class TaskFormPage {
 
   protected async remove(): Promise<void> {
     if (!confirm('Supprimer cette tâche ?')) return;
-    await this.store.deleteTask(this.taskId()!);
+    await this.careRepo.deleteTask(this.taskId()!);
     this.location.back();
   }
 }

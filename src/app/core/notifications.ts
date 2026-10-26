@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AquariumStore } from './store';
 import { digestsAhead, shouldNotify, type Digest } from './reminders';
+import { PrefsRepo } from './data/prefs.repo';
 
 const SYNC_TAG = 'aquarium-reminders';
 
@@ -14,6 +15,7 @@ const SYNC_TAG = 'aquarium-reminders';
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
   private readonly store = inject(AquariumStore);
+  private readonly prefsRepo = inject(PrefsRepo);
 
   readonly supported = typeof window !== 'undefined' && 'Notification' in window;
   readonly permission = signal<NotificationPermission>(this.supported ? Notification.permission : 'denied');
@@ -33,7 +35,7 @@ export class NotificationService {
       const digests = this.digests();
       const p = this.prefs();
       if (!p.enabled || !this.store.ready()) return;
-      if (JSON.stringify(digests) !== JSON.stringify(p.digests ?? {})) this.store.saveNotificationPrefs({ digests });
+      if (JSON.stringify(digests) !== JSON.stringify(p.digests ?? {})) this.prefsRepo.saveNotificationPrefs({ digests });
       this.check();
     });
     if (typeof window === 'undefined') return;
@@ -53,13 +55,13 @@ export class NotificationService {
     const perm = await Notification.requestPermission();
     this.permission.set(perm);
     if (perm !== 'granted') return false;
-    await this.store.saveNotificationPrefs({ enabled: true });
+    await this.prefsRepo.saveNotificationPrefs({ enabled: true });
     await this.registerBackground();
     return true;
   }
 
   async disable(): Promise<void> {
-    await this.store.saveNotificationPrefs({ enabled: false });
+    await this.prefsRepo.saveNotificationPrefs({ enabled: false });
     const reg = await this.registration();
     await (reg as PeriodicReg | undefined)?.periodicSync?.unregister(SYNC_TAG).catch(() => undefined);
     this.background.set(false);
@@ -76,7 +78,7 @@ export class NotificationService {
     const today = this.store.today();
     const digest = shouldNotify({ ...this.prefs(), digests: this.digests() }, new Date(), today);
     if (!digest) return;
-    await this.store.saveNotificationPrefs({ lastShown: today });
+    await this.prefsRepo.saveNotificationPrefs({ lastShown: today });
     await this.show(digest);
   }
 

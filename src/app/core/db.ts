@@ -1,3 +1,4 @@
+import { InjectionToken } from '@angular/core';
 import Dexie, { type EntityTable } from 'dexie';
 import type { NotificationPrefs } from './reminders';
 import type {
@@ -91,3 +92,6 @@ export class AquariumDb extends Dexie {
       });
   }
 }
+
+/** Base locale de l'appli ; remplacée par une base de test dans les specs. */
+export const AQUARIUM_DB = new InjectionToken<AquariumDb>('AQUARIUM_DB', { providedIn: 'root', factory: () => new AquariumDb() });

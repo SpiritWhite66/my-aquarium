@@ -8,6 +8,9 @@ import { BackupService, fmtBytes } from '../../core/backup';
 import { tasksToIcs } from '../../core/insights';
 import { NotificationService } from '../../core/notifications';
 import type { NotificationPrefs } from '../../core/reminders';
+import { BackupRepo } from '../../core/data/backup.repo';
+import { CareRepo } from '../../core/data/care.repo';
+import { PrefsRepo } from '../../core/data/prefs.repo';
 
 @Component({
   selector: 'app-settings',
@@ -184,10 +187,16 @@ export class SettingsPage {
     else await this.notif.disable();
   }
   protected setPref(patch: Partial<NotificationPrefs>): void {
-    this.store.saveNotificationPrefs(patch);
+    this.prefsRepo.saveNotificationPrefs(patch);
   }
 
   protected readonly store = inject(AquariumStore);
+
+  protected readonly backupRepo = inject(BackupRepo);
+
+  protected readonly careRepo = inject(CareRepo);
+
+  protected readonly prefsRepo = inject(PrefsRepo);
   protected readonly theme = inject(ThemeService);
   protected readonly types = TANK_TYPES;
   protected readonly themes: [ThemeChoice, string][] = [['light', 'Clair'], ['dark', 'Sombre'], ['auto', 'Auto']];
@@ -202,7 +211,7 @@ export class SettingsPage {
   protected async vacation(): Promise<void> {
     const until = this.returnDate();
     if (!until) return;
-    const n = await this.store.postponeTasks(until);
+    const n = await this.careRepo.postponeTasks(until);
     this.message.set({ text: n ? `${n} tâche${n > 1 ? 's' : ''} décalée${n > 1 ? 's' : ''} au ${fmtShortDate(until)} — bonnes vacances !` : 'Aucune tâche à décaler.', error: false });
   }
 
@@ -237,7 +246,7 @@ export class SettingsPage {
     if (!file) return;
     if (!confirm('L’import remplace toutes les données de cet appareil. Continuer ?')) return;
     try {
-      const warnings = await this.store.importBackup(file);
+      const warnings = await this.backupRepo.importBackup(file);
       const note = warnings.length ? ` Remarques : ${warnings.join(' ; ')}.` : '';
       this.message.set({ text: `Données importées.${note}`, error: false });
     } catch (err) {

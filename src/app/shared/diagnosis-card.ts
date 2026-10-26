@@ -5,6 +5,7 @@ import { AquariumStore } from '../core/store';
 import { addDays, daysBetween, localDay } from '../core/dates';
 import { fmtShortDate } from '../core/labels';
 import { Icon } from './icon';
+import { CareRepo } from '../core/data/care.repo';
 
 /** Dernier diagnostic IA d'un bac : conclusion, plan d'action à cocher, date du suivi. */
 @Component({
@@ -34,7 +35,7 @@ import { Icon } from './icon';
       @if (d.hypotheses[0]; as h) { <p class="hyp"><b>Cause principale :</b> {{ h.title }}</p> }
       @for (a of d.actions; track $index; let i = $index) {
         <div class="a" [class.done]="a.done">
-          <input type="checkbox" [checked]="!!a.done" (change)="store.setActionDone(d, i, $any($event.target).checked)" [attr.aria-label]="'Fait : ' + a.title" />
+          <input type="checkbox" [checked]="!!a.done" (change)="careRepo.setActionDone(d, i, $any($event.target).checked)" [attr.aria-label]="'Fait : ' + a.title" />
           <div class="grow">
             <p class="t">{{ a.title }}</p>
             @if (a.detail && !a.done) { <p class="sub">{{ a.detail }}</p> }
@@ -55,6 +56,7 @@ import { Icon } from './icon';
 })
 export class DiagnosisCard {
   protected readonly store = inject(AquariumStore);
+  protected readonly careRepo = inject(CareRepo);
   protected readonly date = fmtShortDate;
   readonly diagnosis = input.required<Diagnosis>();
 

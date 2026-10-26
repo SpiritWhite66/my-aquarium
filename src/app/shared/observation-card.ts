@@ -4,6 +4,7 @@ import { AquariumStore } from '../core/store';
 import { CONFIDENCE_LABELS, FINDING_CATEGORIES, OVERALL_LABELS } from '../core/ai-import';
 import { fmtShortDate } from '../core/labels';
 import { Icon } from './icon';
+import { CareRepo } from '../core/data/care.repo';
 
 /** Dernier bilan visuel d'un bac : constats à cocher une fois traités. */
 @Component({
@@ -36,7 +37,7 @@ import { Icon } from './icon';
       }
       @for (f of visible(); track f.i) {
         <div class="f" [class.done]="f.resolved">
-          <input type="checkbox" [checked]="f.resolved" (change)="store.setFindingResolved(o, f.i, $any($event.target).checked)"
+          <input type="checkbox" [checked]="f.resolved" (change)="careRepo.setFindingResolved(o, f.i, $any($event.target).checked)"
             [attr.aria-label]="'Traité : ' + f.title" />
           <div class="grow">
             <p class="lbl">{{ categories[f.category] }} · {{ conf[f.confidence] }}</p>
@@ -60,6 +61,7 @@ import { Icon } from './icon';
 })
 export class ObservationCard {
   protected readonly store = inject(AquariumStore);
+  protected readonly careRepo = inject(CareRepo);
   readonly observation = input.required<Observation>();
 
   protected readonly overall = OVERALL_LABELS;

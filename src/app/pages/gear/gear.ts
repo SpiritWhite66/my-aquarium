@@ -8,6 +8,7 @@ import type { Equipment } from '../../core/models';
 import { fmt } from '../../core/labels';
 import { daysBetween } from '../../core/dates';
 import { Icon } from '../../shared/icon';
+import { GearRepo } from '../../core/data/gear.repo';
 
 export function equipmentIcon(type: EquipmentType): string {
   return ({ filter: 'filter', heater: 'heater', light: 'bulb', co2: 'bubble', pump: 'filter', air: 'bubble', thermometer: 'thermo', controller: 'timer', other: 'tool' } as Record<EquipmentType, string>)[type];
@@ -138,6 +139,7 @@ export function equipmentSummary(e: Equipment): string {
 })
 export class GearPage {
   private readonly store = inject(AquariumStore);
+  protected readonly gearRepo = inject(GearRepo);
   /** `?vue=consommables`. */
   readonly vue = input<string>();
 
@@ -179,6 +181,6 @@ export class GearPage {
   protected readonly summary = equipmentSummary;
 
   protected setLevel(c: Consumable, level: StockLevel): void {
-    this.store.setConsumableLevel(c.id, level);
+    this.gearRepo.setConsumableLevel(c.id, level);
   }
 }

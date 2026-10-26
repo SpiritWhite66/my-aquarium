@@ -3,8 +3,13 @@ import 'fake-indexeddb/auto';
 import { Blob as NodeBlob } from 'node:buffer';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { AquariumDb } from './db';
-import { AQUARIUM_DB, AquariumStore } from './store';
+import { AQUARIUM_DB, AquariumDb } from './db';
+import { AquariumStore } from './store';
+import { BackupRepo } from './data/backup.repo';
+import { CareRepo } from './data/care.repo';
+import { LivestockRepo } from './data/livestock.repo';
+import { PhotoRepo } from './data/photo.repo';
+import { TankRepo } from './data/tank.repo';
 import type { Diagnosis, Inhabitant, Tank } from './models';
 
 // Le Blob de jsdom ne sait pas se lire (text, arrayBuffer, stream) : on prend celui de Node.
@@ -12,18 +17,19 @@ globalThis.Blob = NodeBlob;
 
 let db: AquariumDb;
 let store: AquariumStore;
+let repo: { backup: BackupRepo; care: CareRepo; livestock: LivestockRepo; photo: PhotoRepo; tank: TankRepo };
 let n = 0;
 
 beforeEach(() => {
   db = new AquariumDb(`test-${n++}`);
   TestBed.configureTestingModule({ providers: [{ provide: AQUARIUM_DB, useValue: db }] });
   store = TestBed.inject(AquariumStore);
+  repo = { backup: TestBed.inject(BackupRepo), care: TestBed.inject(CareRepo), livestock: TestBed.inject(LivestockRepo), photo: TestBed.inject(PhotoRepo), tank: TestBed.inject(TankRepo) };
 });
 
 afterEach(async () => {
-  store.destroy();
+  TestBed.resetTestingModule(); // arrête l'horloge et les requêtes en direct
   await db.delete();
-  TestBed.resetTestingModule();
 });
 
 const tank = (name: string): Omit<Tank, 'id' | 'updatedAt'> => ({ name, type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: false, archived: false });
@@ -33,9 +39,9 @@ const fish = (tankId: string, quantity: number): Omit<Inhabitant, 'id' | 'update
 
 describe('store', () => {
   it('cumule deux ajouts rapides de la même espèce', async () => {
-    const t = await store.saveTank(tank('Salon'));
+    const t = await repo.tank.saveTank(tank('Salon'));
     // Lancés ensemble : le second ne doit pas créer de doublon.
-    await Promise.all([store.addInhabitant(fish(t, 5)), store.addInhabitant(fish(t, 3))]);
+    await Promise.all([repo.livestock.addInhabitant(fish(t, 5)), repo.livestock.addInhabitant(fish(t, 3))]);
     const list = await db.inhabitants.toArray();
     expect(list).toHaveLength(1);
     expect(list[0].quantity).toBe(8);
@@ -43,42 +49,42 @@ describe('store', () => {
   });
 
   it('déplace une partie des habitants vers un autre bac', async () => {
-    const a = await store.saveTank(tank('Salon'));
-    const b = await store.saveTank(tank('Nano'));
-    const id = await store.addInhabitant(fish(a, 10));
-    await store.moveInhabitant((await db.inhabitants.get(id))!, b, 4);
+    const a = await repo.tank.saveTank(tank('Salon'));
+    const b = await repo.tank.saveTank(tank('Nano'));
+    const id = await repo.livestock.addInhabitant(fish(a, 10));
+    await repo.livestock.moveInhabitant((await db.inhabitants.get(id))!, b, 4);
     const list = await db.inhabitants.orderBy('tankId').toArray();
     expect(list.find((i) => i.tankId === a)?.quantity).toBe(6);
     expect(list.find((i) => i.tankId === b)?.quantity).toBe(4);
   });
 
   it('un relevé valide la tâche « test de l’eau » due', async () => {
-    const t = await store.saveTank(tank('Salon'));
-    await store.saveTask({ tankId: t, type: 'water_test', label: 'Test', everyDays: 7, nextDue: '2020-01-01', active: true });
-    await store.addWaterTest({ tankId: t, date: new Date().toISOString(), values: { no3: 10 } });
+    const t = await repo.tank.saveTank(tank('Salon'));
+    await repo.care.saveTask({ tankId: t, type: 'water_test', label: 'Test', everyDays: 7, nextDue: '2020-01-01', active: true });
+    await repo.care.addWaterTest({ tankId: t, date: new Date().toISOString(), values: { no3: 10 } });
     const task = (await db.tasks.toArray())[0];
     expect(task.nextDue > store.today()).toBe(true);
     expect(await db.logs.count()).toBe(1);
   });
 
   it('crée le diagnostic et ses tâches ensemble, puis coche l’action une fois faite', async () => {
-    const t = await store.saveTank(tank('Salon'));
+    const t = await repo.tank.saveTank(tank('Salon'));
     const d = {
       tankId: t, date: new Date().toISOString(), summary: 's', hypotheses: [],
       actions: [{ title: 'Couper', priority: 'now', task: { type: 'plant_trim', label: 'Couper' } }],
     } as unknown as Omit<Diagnosis, 'id' | 'updatedAt'>;
-    const id = await store.addDiagnosis(d, [true]);
+    const id = await repo.care.addDiagnosis(d, [true]);
     const task = (await db.tasks.toArray())[0];
     expect(task.diagnosisId).toBe(id);
-    await store.completeTask(task);
+    await repo.care.completeTask(task);
     expect((await db.diagnoses.get(id))?.actions[0].done).toBe(true);
     expect((await db.tasks.get(task.id))?.active).toBe(false);
   });
 
   it('supprime un habitant avec son historique', async () => {
-    const t = await store.saveTank(tank('Salon'));
-    const id = await store.addInhabitant(fish(t, 2));
-    await store.deleteInhabitant(id);
+    const t = await repo.tank.saveTank(tank('Salon'));
+    const id = await repo.livestock.addInhabitant(fish(t, 2));
+    await repo.livestock.deleteInhabitant(id);
     expect(await db.inhabitants.count()).toBe(0);
     expect(await db.inhabitantEvents.count()).toBe(0);
   });
@@ -94,18 +100,18 @@ async function seedPhoto(tankId: string, id = 'p1') {
 
 describe('sauvegarde', () => {
   it('exporte en ZIP puis restaure tout, images comprises', async () => {
-    const t = await store.saveTank(tank('Salon'));
-    await store.addInhabitant(fish(t, 5));
+    const t = await repo.tank.saveTank(tank('Salon'));
+    await repo.livestock.addInhabitant(fish(t, 5));
     await seedPhoto(t);
-    const { blob } = await store.exportArchive();
-    await store.deleteTank(t);
+    const { blob } = await repo.backup.exportArchive();
+    await repo.tank.deleteTank(t);
     expect(await db.photoFiles.count()).toBe(0);
 
-    const warnings = await store.importBackup(blob);
+    const warnings = await repo.backup.importBackup(blob);
     expect(warnings).toEqual([]);
     expect((await db.tanks.get(t))?.coverPhotoId).toBe('p1');
     expect(await db.inhabitants.count()).toBe(1);
-    expect(await (await store.photoFile('p1'))!.full.text()).toBe('FULL-p1');
+    expect(await (await repo.photo.photoFile('p1'))!.full.text()).toBe('FULL-p1');
   });
 
   it('accepte encore les anciennes sauvegardes JSON (photos en data URL)', async () => {
@@ -117,16 +123,16 @@ describe('sauvegarde', () => {
         photos: [{ id: 'p', updatedAt: '', tankId: 't', date: '2026-01-01T00:00:00Z', width: 1, height: 1, full: 'data:image/jpeg;base64,QUJD', thumb: 'data:image/jpeg;base64,QUI=' }],
       },
     };
-    await store.importBackup(new Blob([JSON.stringify(old)]));
+    await repo.backup.importBackup(new Blob([JSON.stringify(old)]));
     expect((await db.tanks.get('t'))?.name).toBe('Ancien');
-    expect(await (await store.photoFile('p'))!.full.text()).toBe('ABC');
+    expect(await (await repo.photo.photoFile('p'))!.full.text()).toBe('ABC');
     expect(Object.keys((await db.photos.get('p'))!)).not.toContain('full');
   });
 
   it('refuse un fichier abîmé sans rien effacer', async () => {
-    await store.saveTank(tank('Salon'));
+    await repo.tank.saveTank(tank('Salon'));
     const bad = { format: 'my-aquarium', version: 2, exportedAt: '', data: { tanks: [{ id: 'x', name: 3 }] } };
-    await expect(store.importBackup(new Blob([JSON.stringify(bad)]))).rejects.toThrow(/abîmée/);
+    await expect(repo.backup.importBackup(new Blob([JSON.stringify(bad)]))).rejects.toThrow(/abîmée/);
     expect(await db.tanks.count()).toBe(1);
   });
 
@@ -135,7 +141,7 @@ describe('sauvegarde', () => {
       format: 'my-aquarium', version: 2, exportedAt: '',
       data: { tanks: [], waterTests: [{ id: 'w', updatedAt: '', tankId: 'absent', date: '2026-01-01', values: {} }] },
     };
-    const warnings = await store.importBackup(new Blob([JSON.stringify(file)]));
+    const warnings = await repo.backup.importBackup(new Blob([JSON.stringify(file)]));
     expect(warnings[0]).toMatch(/relevés sans bac/);
     expect(await db.waterTests.count()).toBe(0);
   });

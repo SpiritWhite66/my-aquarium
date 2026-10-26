@@ -8,6 +8,7 @@ import { CONSUMABLE_CATEGORIES, EQUIPMENT_TYPES, STOCK_LEVELS, parseNumber } fro
 import { Icon } from '../../shared/icon';
 import { describeChange, diffSettings } from '../../core/settings-history';
 import { todayIso } from '../../core/dates';
+import { GearRepo } from '../../core/data/gear.repo';
 
 const v = (e: Event) => (e.target as HTMLInputElement).value;
 const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
@@ -192,6 +193,8 @@ export class EquipmentFormPage {
   }
 
   protected readonly store = inject(AquariumStore);
+
+  protected readonly gearRepo = inject(GearRepo);
   protected readonly location = inject(Location);
   protected readonly v = v;
   readonly id = input<string>();
@@ -245,7 +248,7 @@ export class EquipmentFormPage {
     // Une plage horaire incomplète n'est pas enregistrée.
     const full = <T extends { on: string; off: string }>(s?: T) => (s?.on && s.off ? s : undefined);
     const t = this.type();
-    await this.store.saveEquipment({
+    await this.gearRepo.saveEquipment({
       light: t === 'light' ? { ...this.light(), schedule: full(this.light().schedule), siesta: full(this.light().siesta) } : undefined,
       filter: t === 'filter' || t === 'pump' ? this.filter() : undefined,
       heater: t === 'heater' ? this.heater() : undefined,
@@ -267,7 +270,7 @@ export class EquipmentFormPage {
 
   protected async remove(): Promise<void> {
     if (!confirm('Supprimer cet équipement ?')) return;
-    await this.store.deleteEquipment(this.existing()!.id);
+    await this.gearRepo.deleteEquipment(this.existing()!.id);
     this.location.back();
   }
 }
@@ -317,6 +320,7 @@ export class EquipmentFormPage {
 })
 export class ConsumableFormPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly gearRepo = inject(GearRepo);
   protected readonly location = inject(Location);
   protected readonly v = v;
   readonly id = input<string>();
@@ -354,7 +358,7 @@ export class ConsumableFormPage {
   protected async save(): Promise<void> {
     if (!this.name().trim()) return;
     const opt = (s: string) => s.trim() || undefined;
-    await this.store.saveConsumable({
+    await this.gearRepo.saveConsumable({
       id: this.existing()?.id,
       name: this.name().trim(),
       category: this.category(),
@@ -370,7 +374,7 @@ export class ConsumableFormPage {
 
   protected async remove(): Promise<void> {
     if (!confirm('Supprimer ce consommable ?')) return;
-    await this.store.deleteConsumable(this.existing()!.id);
+    await this.gearRepo.deleteConsumable(this.existing()!.id);
     this.location.back();
   }
 }

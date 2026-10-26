@@ -16,6 +16,8 @@ import { PARAM_BY_KEY, idealRange, isAlive, levelOf } from '../../core/rules';
 import { KINDS, UNITS, fmt, fmtRange, parseNumber, unitLabel } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { speciesIcon } from '../../shared/visuals';
+import { CareRepo } from '../../core/data/care.repo';
+import { LivestockRepo } from '../../core/data/livestock.repo';
 
 interface InventoryRow {
   include: boolean;
@@ -65,6 +67,8 @@ interface Preview {
 })
 export class AiImportPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly careRepo = inject(CareRepo);
+  protected readonly livestockRepo = inject(LivestockRepo);
   private readonly router = inject(Router);
 
   /** `?bac=` et `?text=` (partage depuis une autre app via le Web Share Target). */
@@ -245,7 +249,7 @@ export class AiImportPage {
         if (quantity < 1) continue;
         const speciesId =
           row.species?.id ??
-          (await this.store.saveSpecies({
+          (await this.livestockRepo.saveSpecies({
             kind: row.kind,
             scientificName: row.scientificName,
             commonNames: [row.commonName || row.scientificName],
@@ -254,10 +258,10 @@ export class AiImportPage {
           }));
         const existing = this.store.inhabitants().find((i) => i.tankId === tankId && i.speciesId === speciesId && isAlive(i));
         if (existing && row.replace) {
-          await this.store.updateInhabitant(existing.id, { quantity, approximate: row.estimate });
-          await this.store.recordEvent(existing, 'note', 0, `Inventaire IA : ${existing.quantity} → ${quantity}`);
+          await this.livestockRepo.updateInhabitant(existing.id, { quantity, approximate: row.estimate });
+          await this.livestockRepo.recordEvent(existing, 'note', 0, `Inventaire IA : ${existing.quantity} → ${quantity}`);
         } else {
-          await this.store.addInhabitant({
+          await this.livestockRepo.addInhabitant({
             tankId,
             speciesId,
             quantity,
@@ -277,7 +281,7 @@ export class AiImportPage {
       }
       if (Object.keys(values).length) {
         const uncertain = p.readings.filter((r) => r.include && r.confidence === 'low').map((r) => PARAM_BY_KEY[r.key].short);
-        await this.store.addWaterTest({
+        await this.careRepo.addWaterTest({
           tankId,
           date: p.readingDate ?? new Date().toISOString(),
           values,
@@ -289,7 +293,7 @@ export class AiImportPage {
 
       if (p.sanity) {
         const species = this.store.catalog();
-        await this.store.addObservation({
+        await this.careRepo.addObservation({
           tankId,
           date: p.sanity.date ?? new Date().toISOString(),
           overall: p.sanity.overall,
@@ -306,7 +310,7 @@ export class AiImportPage {
 
       if (p.diagnosis) {
         const d = p.diagnosis;
-        await this.store.addDiagnosis({ tankId, date: new Date().toISOString(), ...d.data, warnings: d.warnings }, d.createTasks);
+        await this.careRepo.addDiagnosis({ tankId, date: new Date().toISOString(), ...d.data, warnings: d.warnings }, d.createTasks);
         target = 'population';
       }
 

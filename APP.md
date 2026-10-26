@@ -19,7 +19,7 @@ Les **plantes sont aussi importantes que la faune** (poissons, crevettes, escarg
 |---|---|
 | Framework | Angular 22 (composants standalone, signals, zoneless) |
 | Interface | Système de design sur mesure (maquette Claude Design), thèmes clair/sombre/auto, polices Figtree et IBM Plex Mono embarquées |
-| Stockage | Dexie (IndexedDB), derrière une couche « repository » |
+| Stockage | Dexie (IndexedDB) : `AquariumStore` pour la lecture (signals), repositories `core/data/*.repo.ts` pour les écritures |
 | Graphiques | Composant SVG maison (courbe + plage idéale) |
 | PWA | `@angular/pwa` (service worker + manifeste) |
 | Données espèces | Catalogue JSON local, enrichi par GBIF et Wikidata (taxonomie, photos) |

@@ -10,6 +10,7 @@ import { idealRange, issuesIfAdded } from '../../core/rules';
 import { Icon } from '../../shared/icon';
 import { SpeciesChips } from '../../shared/species-chips';
 import { speciesIcon } from '../../shared/visuals';
+import { LivestockRepo } from '../../core/data/livestock.repo';
 
 // Échelle des barres de paramètres.
 const SCALES = {
@@ -128,6 +129,7 @@ const SCALES = {
 })
 export class SpeciesPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly livestockRepo = inject(LivestockRepo);
   protected readonly location = inject(Location);
   private readonly router = inject(Router);
 
@@ -216,7 +218,7 @@ export class SpeciesPage {
     const s = this.species();
     const q = Math.round(Number(this.quantity().replace(',', '.')));
     if (!s || !this.tankId() || !(q > 0)) return;
-    await this.store.addInhabitant({
+    await this.livestockRepo.addInhabitant({
       tankId: this.tankId(),
       speciesId: s.id,
       quantity: q,

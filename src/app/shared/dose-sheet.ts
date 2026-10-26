@@ -4,6 +4,7 @@ import { AquariumStore } from '../core/store';
 import { DOSE_UNITS, parseNumber } from '../core/labels';
 import { Icon } from './icon';
 import { localDay } from '../core/dates';
+import { CareRepo } from '../core/data/care.repo';
 
 interface Row {
   product: string;
@@ -68,6 +69,7 @@ interface Row {
 })
 export class DoseSheet {
   private readonly store = inject(AquariumStore);
+  protected readonly careRepo = inject(CareRepo);
   readonly tankId = input.required<string>();
   /** Tâche de fertilisation à valider (facultatif). */
   readonly task = input<MaintenanceTask>();
@@ -129,7 +131,7 @@ export class DoseSheet {
 
   protected async save(): Promise<void> {
     const doses = this.valid().map((r) => ({ product: r.product.trim(), amount: parseNumber(r.amount), unit: r.unit, consumableId: r.consumableId }));
-    await this.store.logDoses(this.tankId(), doses, this.task());
+    await this.careRepo.logDoses(this.tankId(), doses, this.task());
     this.closed.emit();
   }
 }
