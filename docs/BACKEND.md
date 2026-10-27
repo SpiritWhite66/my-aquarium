@@ -68,10 +68,12 @@ Alternatives pour l'API si Render pose problème : Koyeb (1 service gratuit), Fl
 
 ## 4. Pile technique
 
-- **Node 26 + TypeScript**, framework **Fastify** (léger, démarre vite, ce qui compte avec la mise en veille), ou **NestJS** pour une structure proche d'Angular.
+- **Node 26 + TypeScript**, framework **Fastify** (léger, démarre en moins d'une seconde). NestJS est écarté : plus lourd au démarrage pour peu de gain.
 - **Drizzle ORM** + migrations SQL versionnées.
 - Validation avec **Zod**. On partage les types avec le front dans un dossier `shared/`, ce qui fait de ce dépôt un monorepo.
-- Spring Boot est possible, mais déconseillé ici : démarrage lent et 512 Mo de RAM, c'est juste.
+- Écartés :
+  - **Spring Boot** : démarrage lent, et 512 Mo de RAM c'est juste.
+  - **Rust** : démarre en ~10 ms et consomme ~10 Mo, mais le gain est inférieur à 1 s sur un réveil de 30-60 s (voir section 10). L'API fait peu de calcul ; on perdrait les types partagés avec Angular et la vitesse de développement.
 
 ## 5. Module référentiel
 
@@ -192,7 +194,28 @@ sequenceDiagram
 
 ## 10. Démarrage à froid
 
-Render endort le service gratuit après 15 min d'inactivité ; le premier appel prend alors 30 à 60 s. Avec le modèle local d'abord, **l'utilisateur ne le voit pas** : l'appli affiche ses données locales et la synchro se fait en arrière-plan. Ne pas ajouter de « ping » toutes les 14 min pour garder le service éveillé : cela consomme tout le quota d'heures.
+Render endort le service gratuit après 15 min d'inactivité ; le premier appel prend alors 30 à 60 s. Avec le modèle local d'abord, **l'utilisateur ne le voit pas** : l'appli affiche ses données locales et la synchro se fait en arrière-plan.
+
+- **Les 15 min ne sont pas réglables**, et un arrêt volontaire du processus serait vu comme un plantage puis redémarré. Inutile de toute façon : 750 h/mois couvrent un service allumé en continu (744 h sur 31 jours). C'est une raison de plus de n'avoir qu'un service.
+- Ne pas ajouter de « ping » pour garder le service éveillé : cela consomme presque tout le quota, sans bénéfice pour l'utilisateur.
+
+D'où viennent les 30-60 s (ordres de grandeur) :
+
+| Étape | Durée | Dépend de |
+|---|---|---|
+| Render alloue une machine et lance le conteneur | quasi tout | Render, un peu la taille de l'image |
+| Démarrage de l'API | Node + Fastify ~0,3-1 s, Rust ~10 ms | le langage |
+| Réveil de Neon | ~0,5-1 s | Neon |
+
+Le langage ne change donc presque rien. Ce qui aide vraiment :
+
+- **Image Docker légère** : `node:26-slim` ou alpine, build en plusieurs étapes, dépendances de production seulement (`npm ci --omit=dev`).
+- **JavaScript compilé à l'avance** (`tsc` ou esbuild), jamais `ts-node`/`tsx` en production.
+- **Peu de dépendances**, rien de lourd chargé au démarrage.
+- **Connexion à la base à la première requête**, pas au lancement.
+- Route `GET /health` légère pour le contrôle de santé de Render, sans accès à la base.
+
+Si le réveil devenait un vrai problème : changer d'hébergeur, pas de langage. Cloudflare Workers démarre en quelques millisecondes sans mise en veille, mais impose sa base SQLite (D1) au lieu de Postgres.
 
 ## 11. Étapes proposées
 
