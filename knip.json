@@ -5,7 +5,9 @@
       "entry": ["public/sw.js", "vitest.mutation.config.mts", "src/test-setup.mutation.testing.ts"],
       "ignoreDependencies": ["@fontsource/figtree"]
     },
-    "api": { "entry": ["src/server.ts", "src/db/migrate.ts", "e2e/*.e2e.ts", "vitest.mutation.config.ts"] },
+    "api": {
+      "entry": ["src/server.ts", "src/db/migrate.ts", "e2e/*.e2e.ts", "vitest.mutation.config.ts"]
+    },
     "shared": {}
   }
 }

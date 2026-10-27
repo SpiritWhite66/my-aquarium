@@ -1,6 +1,13 @@
 {
   "extends": "../tsconfig.node.json",
   "compilerOptions": { "composite": false, "noEmit": true },
-  "include": ["src", "test", "e2e", "drizzle.config.ts", "vitest.config.ts", "vitest.mutation.config.ts"],
+  "include": [
+    "src",
+    "test",
+    "e2e",
+    "drizzle.config.ts",
+    "vitest.config.ts",
+    "vitest.mutation.config.ts"
+  ],
   "references": [{ "path": "../shared/tsconfig.build.json" }]
 }
