@@ -3,6 +3,7 @@ import { Blob as NodeBlob } from 'node:buffer';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { addDays, todayIso } from '../../core/dates';
 import { bootApp, closeApp, seedAll, type App } from '../../testing/app.testing';
+import { daysAgoIso } from '../../testing/dates.testing';
 
 const jsdomBlob = globalThis.Blob;
 beforeAll(() => {
@@ -166,7 +167,7 @@ describe('matériel du bac', () => {
 });
 
 describe('réglages du matériel', () => {
-  const daysAgo = (n: number) => new Date(Date.now() - n * 864e5).toISOString();
+  const daysAgo = daysAgoIso;
   // Une seule date : les changements enregistrés ensemble ont exactement la même (sinon, une milliseconde
   // d'écart entre deux appels à Date.now() les sépare en deux groupes).
   const FORTY_DAYS_AGO = daysAgo(40);

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BackupService } from '../../core/backup';
 import { addDays, todayIso } from '../../core/dates';
 import { bootApp, closeApp, seedAll, type App } from '../../testing/app.testing';
+import { daysAgoIso } from '../../testing/dates.testing';
 
 let app: App;
 beforeEach(() => localStorage.clear());
@@ -84,7 +85,7 @@ describe('rappel de sauvegarde', () => {
   });
 
   it('annonce l’ancienneté de la dernière sauvegarde', async () => {
-    localStorage.setItem('lastBackup', new Date(Date.now() - 20 * 864e5).toISOString());
+    localStorage.setItem('lastBackup', daysAgoIso(20));
     await boot();
     await app.go('/', 'Dernière sauvegarde il y a 20 jours');
   });
@@ -170,6 +171,7 @@ describe('à surveiller', () => {
   });
 
   it('prévient quand les nitrates montent vers la limite', async () => {
+    // La tendance porte sur une durée (fenêtre de 21 × 24 h), pas sur des jours de calendrier.
     const day = (n: number) => new Date(Date.now() - (21 - n * 7) * 864e5).toISOString();
     await boot((db) =>
       db.waterTests.bulkPut(

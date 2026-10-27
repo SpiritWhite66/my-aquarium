@@ -89,11 +89,16 @@ describe('import depuis l’IA', () => {
 
   it('montre l’inventaire, reconnaît les espèces connues et remplace par défaut la quantité existante', async () => {
     await analyze(inventory);
-    const rows = [...app.el().querySelectorAll('.inv')];
-    expect(rows).toHaveLength(2);
-    expect(rows[0].textContent).toContain('Danio margaritatus');
-    expect(rows[0].textContent).toMatch(/12/);
-    expect((rows[0].querySelector('input[type=checkbox]') as HTMLInputElement).checked).toBe(true);
+    // Les espèces et habitants existants arrivent de la base après l'analyse.
+    await vi.waitFor(() => {
+      const rows = [...app.el().querySelectorAll('.inv')];
+      expect(rows).toHaveLength(2);
+      expect(rows[0].textContent).toContain('Danio margaritatus');
+      expect(rows[0].textContent).toMatch(/12/);
+      expect((rows[0].querySelector('input[type=checkbox]') as HTMLInputElement).checked).toBe(
+        true,
+      );
+    });
   });
 
   it('enregistre l’inventaire : met à jour l’existant et crée une fiche pour l’espèce inconnue', async () => {

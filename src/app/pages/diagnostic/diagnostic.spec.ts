@@ -2,6 +2,7 @@
 import { Blob as NodeBlob } from 'node:buffer';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { bootApp, closeApp, seedAll, type App } from '../../testing/app.testing';
+import { daysAgoIso } from '../../testing/dates.testing';
 
 const jsdomBlob = globalThis.Blob;
 beforeAll(() => {
@@ -25,7 +26,7 @@ afterEach(async () => {
 });
 
 const U = '';
-const daysAgo = (n: number) => new Date(Date.now() - n * 864e5).toISOString();
+const daysAgo = daysAgoIso;
 const photo = (id: string, ago: number, tankId = 'a') => ({
   id,
   updatedAt: U,
@@ -78,7 +79,8 @@ describe('page de diagnostic', () => {
 
   it('prépare le dossier du bac demandé et résume son contenu', async () => {
     await boot({ photos: 2 });
-    await app.go('/diagnostic?bac=a', 'Contenu du dossier');
+    // Le résumé se complète à mesure que les données arrivent : on attend les espèces.
+    await app.go('/diagnostic?bac=a', '1 espèces');
     expect((app.el().querySelector('#tank') as HTMLSelectElement).value).toBe('a');
     expect(summary()).toContain(
       '1 espèces · 0 relevés · 1 équipements · 1 opérations d’entretien · 1 diagnostic(s) précédent(s) · 2 photo(s)',
