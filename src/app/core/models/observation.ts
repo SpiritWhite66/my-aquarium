@@ -10,7 +10,7 @@ export type FindingCategory =
   | 'aquascape'
   | 'other';
 
-export interface Finding {
+interface Finding {
   category: FindingCategory;
   severity: 'info' | 'warn' | 'danger';
   title: string;

@@ -33,8 +33,8 @@ export interface App {
   flush(): Promise<void>;
 }
 
-export const tankA: Tank = { id: 'a', updatedAt: U, name: 'Bac salon', type: 'planted', volumeGross: 60, volumeNet: 50, startDate: '2026-03-01', co2: false, archived: false, substrate: 'Sable', lighting: { model: 'Rampe', photoperiodHours: 8 } };
-export const tankB: Tank = { id: 'b', updatedAt: U, name: 'Nano', type: 'planted', volumeGross: 30, startDate: '2026-06-01', co2: true, co2Target: 2, archived: false };
+const tankA: Tank = { id: 'a', updatedAt: U, name: 'Bac salon', type: 'planted', volumeGross: 60, volumeNet: 50, startDate: '2026-03-01', co2: false, archived: false, substrate: 'Sable', lighting: { model: 'Rampe', photoperiodHours: 8 } };
+const tankB: Tank = { id: 'b', updatedAt: U, name: 'Nano', type: 'planted', volumeGross: 30, startDate: '2026-06-01', co2: true, co2Target: 2, archived: false };
 
 export async function seedAll(db: AquariumDb): Promise<void> {
   const day = (i: number) => `2026-10-${String(10 + i).padStart(2, '0')}T10:00:00Z`;

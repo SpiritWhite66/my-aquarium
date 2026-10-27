@@ -1,7 +1,7 @@
 import type { Entity } from './entity';
 import type { TaskType } from './care';
 
-export interface DiagnosisAction {
+interface DiagnosisAction {
   title: string;
   detail?: string;
   priority: 'now' | 'soon' | 'later';

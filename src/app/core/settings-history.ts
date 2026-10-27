@@ -42,7 +42,7 @@ export function describeChange(c: Pick<SettingChange, 'field' | 'from' | 'to'>):
   return `${SETTING_LABELS[c.field]} : ${c.from ?? '—'} → ${c.to ?? '—'}`;
 }
 
-export interface AlgaeWindow {
+interface AlgaeWindow {
   /** Niveau d'algues moyen sur la période, de 0 (aucune) à 3 (beaucoup). */
   level: number;
   /** Notes d'algues et bilans visuels faits sur la période (0 : rien pour comparer). */

@@ -6,7 +6,7 @@ import type { Diagnosis, FindingCategory, ParamKey, QuantityUnit, Species, Speci
 
 export type Confidence = 'high' | 'medium' | 'low';
 
-export interface AiInventoryItem {
+interface AiInventoryItem {
   scientificName: string;
   commonName?: string;
   kind: SpeciesKind;
@@ -17,7 +17,7 @@ export interface AiInventoryItem {
   note?: string;
 }
 
-export interface AiReading {
+interface AiReading {
   value: number;
   confidence: Confidence;
   note?: string;

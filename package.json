@@ -12,6 +12,9 @@
     "test": "ng test",
     "mutation": "stryker run",
     "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,html,scss}\" \"e2e/**/*.ts\" \"*.{ts,mjs,mts,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,scss}\" \"e2e/**/*.ts\" \"*.{ts,mjs,mts,json}\"",
+    "knip": "knip",
     "e2e": "playwright test"
   },
   "private": true,
@@ -20,7 +23,6 @@
     "@angular/common": "^22.2.0",
     "@angular/compiler": "^22.2.0",
     "@angular/core": "^22.2.0",
-    "@angular/forms": "^22.2.0",
     "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
     "@angular/service-worker": "^22.2.0",

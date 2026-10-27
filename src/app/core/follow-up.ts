@@ -93,5 +93,3 @@ export function sinceDiagnosis(diagnosis: Diagnosis, data: FollowUpData, today: 
     photosSince: mine(data.photos).length,
   };
 }
-
-export type SinceDiagnosis = ReturnType<typeof sinceDiagnosis>;

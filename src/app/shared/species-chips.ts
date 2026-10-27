@@ -8,7 +8,7 @@ interface Chip {
 }
 
 /** Badges courts d'une espèce : placement, lumière, CO2, banc, « mange les plantes »… */
-export function speciesChips(s: Species): Chip[] {
+function speciesChips(s: Species): Chip[] {
   const chips: Chip[] = [];
   const fl = s.flora;
   if (fl) {

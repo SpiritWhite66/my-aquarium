@@ -3,7 +3,7 @@
 import type { Inhabitant, InhabitantEvent, MaintenanceLog, Species } from './models';
 import { isPlantTask, speciesName } from './labels';
 
-export const TIMELINE_EVENT_LABELS: Record<InhabitantEvent['type'], string> = {
+const TIMELINE_EVENT_LABELS: Record<InhabitantEvent['type'], string> = {
   added: 'Ajout',
   birth: 'Naissance',
   death: 'Décès',

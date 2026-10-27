@@ -7,7 +7,7 @@ export interface Range {
   max: number;
 }
 
-export type Predation = 'shrimp_fry' | 'shrimp' | 'snails' | 'small_fish';
+type Predation = 'shrimp_fry' | 'shrimp' | 'snails' | 'small_fish';
 
 export interface FaunaInfo {
   adultSizeCm: number;
