@@ -1,11 +1,29 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { SpeciesStore } from '../../core/stores/species.store';
 import { PopulationStore } from '../../core/stores/population.store';
 import type { FaunaInfo, FloraInfo, Range, Species, SpeciesKind } from '../../core/models';
-import { DIETS, DIFFICULTIES, GROWTHS, KINDS, LIGHTS, PLACEMENTS, TEMPERAMENTS, ZONES, parseNumber } from '../../core/labels';
+import {
+  DIETS,
+  DIFFICULTIES,
+  GROWTHS,
+  KINDS,
+  LIGHTS,
+  PLACEMENTS,
+  TEMPERAMENTS,
+  ZONES,
+  parseNumber,
+} from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { LivestockRepo } from '../../core/data/livestock.repo';
 import { must } from '../../core/assert';
@@ -187,13 +205,37 @@ export class SpeciesFormPage {
   protected readonly names = signal('');
   protected readonly difficulty = signal<Species['difficulty'] | ''>('');
   protected readonly notes = signal('');
-  protected readonly range = signal<Record<RangeKey, [string, string]>>({ temp: ['', ''], ph: ['', ''], gh: ['', ''], kh: ['', ''] });
-  protected readonly flora = signal<FloraInfo>({ light: 'medium', co2: 'none', growth: 'medium', placement: 'midground', propagation: [] });
-  protected readonly fauna = signal<FaunaInfo>({ adultSizeCm: 0, temperament: 'peaceful', zone: 'middle', diet: 'omnivore' });
+  protected readonly range = signal<Record<RangeKey, [string, string]>>({
+    temp: ['', ''],
+    ph: ['', ''],
+    gh: ['', ''],
+    kh: ['', ''],
+  });
+  protected readonly flora = signal<FloraInfo>({
+    light: 'medium',
+    co2: 'none',
+    growth: 'medium',
+    placement: 'midground',
+    propagation: [],
+  });
+  protected readonly fauna = signal<FaunaInfo>({
+    adultSizeCm: 0,
+    temperament: 'peaceful',
+    zone: 'middle',
+    diet: 'omnivore',
+  });
   protected readonly error = signal('');
 
-  protected readonly source = computed(() => (this.id() ? this.speciesStore.speciesById().get(must(this.id())) : undefined));
-  protected readonly title = computed(() => (!this.id() ? 'Nouvelle espèce' : this.source()?.source === 'builtin' ? 'Personnaliser la fiche' : 'Modifier la fiche'));
+  protected readonly source = computed(() =>
+    this.id() ? this.speciesStore.speciesById().get(must(this.id())) : undefined,
+  );
+  protected readonly title = computed(() =>
+    !this.id()
+      ? 'Nouvelle espèce'
+      : this.source()?.source === 'builtin'
+        ? 'Personnaliser la fiche'
+        : 'Modifier la fiche',
+  );
 
   private loaded = false;
 
@@ -221,7 +263,10 @@ export class SpeciesFormPage {
     return parseNumber(raw);
   }
   protected list(raw: string): string[] {
-    return raw.split(',').map((x) => x.trim()).filter(Boolean);
+    return raw
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean);
   }
   protected has(p: NonNullable<FaunaInfo['predation']>[number]): boolean {
     return !!this.fauna().predation?.includes(p);
@@ -286,7 +331,9 @@ export class SpeciesFormPage {
     if (!s) return;
     const used = this.populationStore.inhabitants().filter((i) => i.speciesId === s.id).length;
     if (used) {
-      this.error.set(`Cette fiche est utilisée par ${used} habitant${used > 1 ? 's' : ''} : retire-les d’abord de tes bacs.`);
+      this.error.set(
+        `Cette fiche est utilisée par ${used} habitant${used > 1 ? 's' : ''} : retire-les d’abord de tes bacs.`,
+      );
       return;
     }
     if (!confirm('Supprimer cette fiche personnelle ?')) return;

@@ -16,12 +16,7 @@
     "!src/app/core/backup.ts",
     "src/app/core/data/*.repo.ts"
   ],
-  "reporters": [
-    "clear-text",
-    "progress",
-    "html",
-    "json"
-  ],
+  "reporters": ["clear-text", "progress", "html", "json"],
   "jsonReporter": {
     "fileName": "reports/mutation/mutation.json"
   },

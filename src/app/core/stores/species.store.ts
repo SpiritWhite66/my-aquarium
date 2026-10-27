@@ -14,7 +14,11 @@ export class SpeciesStore {
 
   /** Catalogue affiché : les fiches intégrées personnalisées sont remplacées par leur copie. */
   readonly catalog = computed(() => {
-    const overridden = new Set(this.species().map((s) => s.overrides).filter(Boolean));
+    const overridden = new Set(
+      this.species()
+        .map((s) => s.overrides)
+        .filter(Boolean),
+    );
     return this.species().filter((s) => !overridden.has(s.id));
   });
 }

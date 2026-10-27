@@ -20,14 +20,62 @@ export interface ParamDef {
 }
 
 export const PARAMS: ParamDef[] = [
-  { key: 'temp', label: 'Température', short: 'Temp.', unit: '°C', fallback: { min: 22, max: 26 }, fromSpecies: true },
-  { key: 'ph', label: 'pH', short: 'pH', unit: '', fallback: { min: 6, max: 7.5 }, fromSpecies: true },
-  { key: 'gh', label: 'Dureté GH', short: 'GH', unit: '°d', fallback: { min: 4, max: 12 }, fromSpecies: true },
-  { key: 'kh', label: 'Dureté KH', short: 'KH', unit: '°d', fallback: { min: 2, max: 8 }, fromSpecies: true },
-  { key: 'no2', label: 'Nitrites NO2', short: 'NO2', unit: 'mg/L', fallback: { min: 0, max: 0.1 }, toxic: true },
+  {
+    key: 'temp',
+    label: 'Température',
+    short: 'Temp.',
+    unit: '°C',
+    fallback: { min: 22, max: 26 },
+    fromSpecies: true,
+  },
+  {
+    key: 'ph',
+    label: 'pH',
+    short: 'pH',
+    unit: '',
+    fallback: { min: 6, max: 7.5 },
+    fromSpecies: true,
+  },
+  {
+    key: 'gh',
+    label: 'Dureté GH',
+    short: 'GH',
+    unit: '°d',
+    fallback: { min: 4, max: 12 },
+    fromSpecies: true,
+  },
+  {
+    key: 'kh',
+    label: 'Dureté KH',
+    short: 'KH',
+    unit: '°d',
+    fallback: { min: 2, max: 8 },
+    fromSpecies: true,
+  },
+  {
+    key: 'no2',
+    label: 'Nitrites NO2',
+    short: 'NO2',
+    unit: 'mg/L',
+    fallback: { min: 0, max: 0.1 },
+    toxic: true,
+  },
   { key: 'no3', label: 'Nitrates NO3', short: 'NO3', unit: 'mg/L', fallback: { min: 0, max: 25 } },
-  { key: 'nh4', label: 'Ammonium NH4', short: 'NH4', unit: 'mg/L', fallback: { min: 0, max: 0.2 }, toxic: true },
-  { key: 'po4', label: 'Phosphates PO4', short: 'PO4', unit: 'mg/L', fallback: { min: 0, max: 1.5 } },
+  {
+    key: 'nh4',
+    label: 'Ammonium NH4',
+    short: 'NH4',
+    unit: 'mg/L',
+    fallback: { min: 0, max: 0.2 },
+    toxic: true,
+  },
+  {
+    key: 'po4',
+    label: 'Phosphates PO4',
+    short: 'PO4',
+    unit: 'mg/L',
+    fallback: { min: 0, max: 1.5 },
+  },
   { key: 'fe', label: 'Fer', short: 'Fe', unit: 'mg/L', fallback: { min: 0, max: 0.5 } },
   { key: 'k', label: 'Potassium K', short: 'K', unit: 'mg/L' },
   { key: 'mg', label: 'Magnésium Mg', short: 'Mg', unit: 'mg/L' },
@@ -35,7 +83,10 @@ export const PARAMS: ParamDef[] = [
   { key: 'conductivity', label: 'Conductivité', short: 'Cond.', unit: 'µS/cm' },
 ];
 
-export const PARAM_BY_KEY = Object.fromEntries(PARAMS.map((p) => [p.key, p])) as Record<ParamKey, ParamDef>;
+export const PARAM_BY_KEY = Object.fromEntries(PARAMS.map((p) => [p.key, p])) as Record<
+  ParamKey,
+  ParamDef
+>;
 
 /** Paramètres affichés par défaut (relevé et onglet Eau). */
 export const MAIN_PARAMS: ParamKey[] = ['temp', 'ph', 'gh', 'kh', 'no2', 'no3', 'nh4', 'po4'];
@@ -109,7 +160,11 @@ export interface ParamAlert {
 }
 
 /** Valeurs hors plage d'un relevé. */
-export function testAlerts(test: WaterTest | undefined, species: Species[], tank: Tank): ParamAlert[] {
+export function testAlerts(
+  test: WaterTest | undefined,
+  species: Species[],
+  tank: Tank,
+): ParamAlert[] {
   if (!test) return [];
   const out: ParamAlert[] = [];
   for (const [k, value] of Object.entries(test.values) as [ParamKey, number | undefined][]) {
@@ -117,7 +172,8 @@ export function testAlerts(test: WaterTest | undefined, species: Species[], tank
     const range = idealRange(k, species, tank);
     if (!range) continue;
     const level = levelOf(k, value, range);
-    if (level !== 'ok') out.push({ key: k, value, range, level, direction: value > range.max ? 'high' : 'low' });
+    if (level !== 'ok')
+      out.push({ key: k, value, range, level, direction: value > range.max ? 'high' : 'low' });
   }
   return out.sort((a, b) => (a.level === b.level ? 0 : a.level === 'danger' ? -1 : 1));
 }
@@ -134,7 +190,9 @@ export interface Issue {
 const nameOf = (s: Species) => s.commonNames[0] ?? s.scientificName;
 const list = (xs: Species[]) => {
   const names = xs.map(nameOf);
-  return names.length > 1 ? `${names.slice(0, -1).join(', ')} et ${names.at(-1)}` : (names[0] ?? '');
+  return names.length > 1
+    ? `${names.slice(0, -1).join(', ')} et ${names.at(-1)}`
+    : (names[0] ?? '');
 };
 
 export function isAlive(i: Inhabitant): boolean {
@@ -145,7 +203,10 @@ export function isAlive(i: Inhabitant): boolean {
  * Problèmes de cohabitation dans un bac.
  * `members` associe chaque espèce présente à sa quantité.
  */
-export function compatibilityIssues(tank: Tank, members: { species: Species; quantity: number }[]): Issue[] {
+export function compatibilityIssues(
+  tank: Tank,
+  members: { species: Species; quantity: number }[],
+): Issue[] {
   const issues: Issue[] = [];
   const species = members.map((m) => m.species);
   const plants = species.filter((s) => s.kind === 'plant');
@@ -234,7 +295,8 @@ export function compatibilityIssues(tank: Tank, members: { species: Species; qua
     issues.push({
       level: 'warn',
       title: `${list(fryPredators)} ${fryPredators.length > 1 ? 'mangent' : 'mange'} les jeunes crevettes`,
-      detail: 'Les adultes s’en sortent bien. Prévoir des mousses ou des plantes denses comme abri.',
+      detail:
+        'Les adultes s’en sortent bien. Prévoir des mousses ou des plantes denses comme abri.',
       speciesIds: [...fryPredators.map((p) => p.id), ...shrimps.map((p) => p.id)],
     });
   }

@@ -64,6 +64,10 @@ export class DiagnosisCard {
     const d = this.diagnosis();
     if (!d.followUp) return undefined;
     const date = addDays(localDay(d.date), d.followUp.inDays);
-    return { date, days: daysBetween(this.store.today(), date), measure: d.followUp.measure?.join(', ') };
+    return {
+      date,
+      days: daysBetween(this.store.today(), date),
+      measure: d.followUp.measure?.join(', '),
+    };
   });
 }

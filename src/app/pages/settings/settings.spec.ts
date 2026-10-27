@@ -44,7 +44,8 @@ function fakeNotification(permission = 'granted') {
   return FakeNotification;
 }
 const message = () => app.find('.msg')?.textContent;
-const file = (content: string, name = 'sauvegarde.json') => new File([content], name, { type: 'application/json' });
+const file = (content: string, name = 'sauvegarde.json') =>
+  new File([content], name, { type: 'application/json' });
 function pick(input: HTMLInputElement, f: File) {
   Object.defineProperty(input, 'files', { value: [f], configurable: true });
   input.dispatchEvent(new Event('change'));
@@ -92,18 +93,32 @@ describe('réglages', () => {
       const sw = app.find('input[role=switch]') as HTMLInputElement;
       sw.checked = true;
       sw.dispatchEvent(new Event('change'));
-      await vi.waitFor(async () => expect((await app.db.prefs.toArray()).some((p) => JSON.stringify(p).includes('"enabled":true'))).toBe(true));
+      await vi.waitFor(async () =>
+        expect(
+          (await app.db.prefs.toArray()).some((p) => JSON.stringify(p).includes('"enabled":true')),
+        ).toBe(true),
+      );
       await app.until(() => !!app.find('input[type=time]'));
       const time = app.find('input[type=time]') as HTMLInputElement;
       time.value = '07:30';
       time.dispatchEvent(new Event('change'));
-      const tasks = app.find('label.check', 'Tâches dues')!.querySelector('input') as HTMLInputElement;
+      const tasks = app
+        .find('label.check', 'Tâches dues')!
+        .querySelector('input') as HTMLInputElement;
       tasks.checked = false;
       tasks.dispatchEvent(new Event('change'));
-      await vi.waitFor(() => expect(TestBed.inject(PrefsStore).notificationPrefs()).toMatchObject({ enabled: true, time: '07:30', tasks: false }));
+      await vi.waitFor(() =>
+        expect(TestBed.inject(PrefsStore).notificationPrefs()).toMatchObject({
+          enabled: true,
+          time: '07:30',
+          tasks: false,
+        }),
+      );
       sw.checked = false;
       sw.dispatchEvent(new Event('change'));
-      await vi.waitFor(() => expect(TestBed.inject(PrefsStore).notificationPrefs().enabled).toBe(false));
+      await vi.waitFor(() =>
+        expect(TestBed.inject(PrefsStore).notificationPrefs().enabled).toBe(false),
+      );
     });
 
     it('une heure vidée revient à 9 h', async () => {
@@ -115,7 +130,9 @@ describe('réglages', () => {
       sw.dispatchEvent(new Event('change'));
       await app.until(() => !!app.find('input[type=time]'));
       app.type(app.find('input[type=time]'), '');
-      await vi.waitFor(() => expect(TestBed.inject(PrefsStore).notificationPrefs().time).toBe('09:00'));
+      await vi.waitFor(() =>
+        expect(TestBed.inject(PrefsStore).notificationPrefs().time).toBe('09:00'),
+      );
     });
   });
 
@@ -142,7 +159,9 @@ describe('réglages', () => {
     it('décale les tâches en retard et le dit', async () => {
       app.type(app.find('input[type=date]'), '2099-01-01');
       app.press('button.ton', 'Décaler');
-      await vi.waitFor(() => expect(message()).toMatch(/2 tâches décalées au .* — bonnes vacances/));
+      await vi.waitFor(() =>
+        expect(message()).toMatch(/2 tâches décalées au .* — bonnes vacances/),
+      );
       expect((await app.db.tasks.get('t1'))?.nextDue).toBe('2099-01-01');
     });
 
@@ -175,8 +194,14 @@ describe('réglages', () => {
 
     it('écrit directement dans le fichier choisi quand le navigateur sait le faire', async () => {
       const chunks: Uint8Array[] = [];
-      const out = { write: vi.fn(async (c: Uint8Array) => void chunks.push(c)), close: vi.fn(async () => undefined), abort: vi.fn(async () => undefined) };
-      const picker = vi.fn(async (_o: { suggestedName: string }) => ({ createWritable: async () => out }));
+      const out = {
+        write: vi.fn(async (c: Uint8Array) => void chunks.push(c)),
+        close: vi.fn(async () => undefined),
+        abort: vi.fn(async () => undefined),
+      };
+      const picker = vi.fn(async (_o: { suggestedName: string }) => ({
+        createWritable: async () => out,
+      }));
       (window as unknown as Record<string, unknown>)['showSaveFilePicker'] = picker;
       app = await bootApp();
       await app.go('/reglages', 'Dernière sauvegarde');
@@ -196,13 +221,23 @@ describe('réglages', () => {
       await app.go('/reglages', 'Dernière sauvegarde');
       app.press('button.fill', 'Exporter');
       await app.flush();
-      await vi.waitFor(() => expect(app.find('button.fill', 'Exporter')!.hasAttribute('disabled')).toBe(false));
+      await vi.waitFor(() =>
+        expect(app.find('button.fill', 'Exporter')!.hasAttribute('disabled')).toBe(false),
+      );
       expect(localStorage.getItem('lastBackup')).toBeNull();
     });
 
     it('annule l’écriture et signale l’erreur si elle échoue en route', async () => {
-      const out = { write: vi.fn(async () => { throw new Error('disque plein'); }), close: vi.fn(), abort: vi.fn(async () => undefined) };
-      (window as unknown as Record<string, unknown>)['showSaveFilePicker'] = async () => ({ createWritable: async () => out });
+      const out = {
+        write: vi.fn(async () => {
+          throw new Error('disque plein');
+        }),
+        close: vi.fn(),
+        abort: vi.fn(async () => undefined),
+      };
+      (window as unknown as Record<string, unknown>)['showSaveFilePicker'] = async () => ({
+        createWritable: async () => out,
+      });
       app = await bootApp();
       await app.go('/reglages', 'Dernière sauvegarde');
       app.press('button.fill', 'Exporter');
@@ -214,7 +249,25 @@ describe('réglages', () => {
     it('restaure une sauvegarde valide', async () => {
       app = await bootApp();
       await app.go('/reglages', 'Dernière sauvegarde');
-      const backup = { format: 'my-aquarium', version: 2, exportedAt: '', data: { tanks: [{ id: 'z', updatedAt: '', name: 'Restauré', type: 'planted', volumeGross: 10, startDate: '2026-01-01', co2: false, archived: false }] } };
+      const backup = {
+        format: 'my-aquarium',
+        version: 2,
+        exportedAt: '',
+        data: {
+          tanks: [
+            {
+              id: 'z',
+              updatedAt: '',
+              name: 'Restauré',
+              type: 'planted',
+              volumeGross: 10,
+              startDate: '2026-01-01',
+              co2: false,
+              archived: false,
+            },
+          ],
+        },
+      };
       pick(app.el().querySelector('input[type=file]')!, file(JSON.stringify(backup)));
       await vi.waitFor(() => expect(message()).toBe('Données importées.'));
       expect((await app.db.tanks.toArray()).map((t) => t.name)).toEqual(['Restauré']);
@@ -240,7 +293,14 @@ describe('réglages', () => {
 
     it('indique l’état de la protection du stockage et permet de réessayer', async () => {
       const persist = vi.fn(async () => false);
-      vi.stubGlobal('navigator', { ...navigator, storage: { persisted: async () => false, persist, estimate: async () => ({ usage: 2 * 1024 * 1024, quota: 1e9 }) } });
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        storage: {
+          persisted: async () => false,
+          persist,
+          estimate: async () => ({ usage: 2 * 1024 * 1024, quota: 1e9 }),
+        },
+      });
       app = await bootApp();
       await app.go('/reglages', 'Stockage non protégé');
       expect(app.el().textContent).toContain('Espace utilisé : 2,0 Mo');
@@ -283,7 +343,9 @@ describe('BackupService', () => {
     const snooze = localStorage.getItem('backupSnooze')!;
     const expected = new Date();
     expected.setDate(expected.getDate() + 3);
-    expect(snooze).toBe(`${expected.getFullYear()}-${String(expected.getMonth() + 1).padStart(2, '0')}-${String(expected.getDate()).padStart(2, '0')}`);
+    expect(snooze).toBe(
+      `${expected.getFullYear()}-${String(expected.getMonth() + 1).padStart(2, '0')}-${String(expected.getDate()).padStart(2, '0')}`,
+    );
   });
 
   it('ne rappelle rien sans bac', async () => {
@@ -293,7 +355,15 @@ describe('BackupService', () => {
   });
 
   it('une persistance refusée ou indisponible ne casse rien', async () => {
-    vi.stubGlobal('navigator', { ...navigator, storage: { persisted: async () => { throw new Error('x'); }, persist: async () => false } });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      storage: {
+        persisted: async () => {
+          throw new Error('x');
+        },
+        persist: async () => false,
+      },
+    });
     const s = await service();
     await vi.waitFor(() => expect(s.persisted()).toBeNull());
     await s.requestPersist();

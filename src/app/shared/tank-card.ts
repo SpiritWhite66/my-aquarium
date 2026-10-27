@@ -61,5 +61,7 @@ export class TankCard {
   protected readonly fmt = fmt;
   protected readonly urls = inject(PhotoUrls);
   protected readonly types = TANK_TYPES;
-  protected readonly isPlanted = computed(() => this.view().tank.type === 'planted' || this.view().plants.length > 0);
+  protected readonly isPlanted = computed(
+    () => this.view().tank.type === 'planted' || this.view().plants.length > 0,
+  );
 }

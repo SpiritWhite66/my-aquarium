@@ -97,18 +97,36 @@ export class TankFormPage {
   // Chaque champ prend la valeur du bac enregistré quand il est chargé (modification), puis appartient à la saisie.
   protected readonly name = fromEntity(this.existing, (t) => t.name, '');
   protected readonly type = fromEntity<Tank, TankType>(this.existing, (t) => t.type, 'planted');
-  protected readonly volumeGross = fromEntity(this.existing, (t) => String(t.volumeGross).replace('.', ','), '');
-  protected readonly volumeNet = fromEntity(this.existing, (t) => (t.volumeNet != null ? String(t.volumeNet).replace('.', ',') : ''), '');
+  protected readonly volumeGross = fromEntity(
+    this.existing,
+    (t) => String(t.volumeGross).replace('.', ','),
+    '',
+  );
+  protected readonly volumeNet = fromEntity(
+    this.existing,
+    (t) => (t.volumeNet != null ? String(t.volumeNet).replace('.', ',') : ''),
+    '',
+  );
   protected readonly startDate = fromEntity(this.existing, (t) => t.startDate, this.store.today());
-  protected readonly photoperiod = fromEntity(this.existing, (t) => (t.lighting?.photoperiodHours != null ? String(t.lighting.photoperiodHours) : ''), '');
+  protected readonly photoperiod = fromEntity(
+    this.existing,
+    (t) => (t.lighting?.photoperiodHours != null ? String(t.lighting.photoperiodHours) : ''),
+    '',
+  );
   protected readonly substrate = fromEntity(this.existing, (t) => t.substrate ?? '', '');
   protected readonly notes = fromEntity(this.existing, (t) => t.notes ?? '', '');
   protected readonly co2 = fromEntity(this.existing, (t) => t.co2, false);
   protected readonly cycling = fromEntity(this.existing, (t) => !!t.cycling, false);
-  protected readonly co2Target = fromEntity(this.existing, (t) => (t.co2Target != null ? String(t.co2Target) : ''), '');
+  protected readonly co2Target = fromEntity(
+    this.existing,
+    (t) => (t.co2Target != null ? String(t.co2Target) : ''),
+    '',
+  );
   protected readonly defaults = signal(true);
 
-  protected readonly valid = computed(() => this.name().trim() && (parseNumber(this.volumeGross()) ?? 0) > 0);
+  protected readonly valid = computed(
+    () => this.name().trim() && (parseNumber(this.volumeGross()) ?? 0) > 0,
+  );
 
   protected val(e: Event): string {
     return (e.target as HTMLInputElement).value;
@@ -146,7 +164,8 @@ export class TankFormPage {
   }
 
   protected async remove(t: Tank): Promise<void> {
-    if (!confirm(`Supprimer « ${t.name} » et tout son historique ? Cette action est définitive.`)) return;
+    if (!confirm(`Supprimer « ${t.name} » et tout son historique ? Cette action est définitive.`))
+      return;
     await this.tankRepo.deleteTank(t.id);
     void this.router.navigate(['/bacs']);
   }

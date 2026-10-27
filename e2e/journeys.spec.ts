@@ -12,7 +12,10 @@ test('crée un bac, le retrouve dans la liste puis après rechargement', async (
   await expect(await app.tankLink('Bac du bureau')).toBeVisible();
 });
 
-test('ajoute des habitants, cumule la même espèce puis en déplace une partie', async ({ app, page }) => {
+test('ajoute des habitants, cumule la même espèce puis en déplace une partie', async ({
+  app,
+  page,
+}) => {
   await app.seed();
   const add = async (qty: string) => {
     await page.goto(NEON);
@@ -33,12 +36,19 @@ test('ajoute des habitants, cumule la même espèce puis en déplace une partie'
   await page.getByRole('button', { name: 'Déplacer' }).click();
   await expect(page.getByLabel('Quantité (sur 11)')).toBeVisible();
   await app.openTank('Nano');
-  await expect(page.getByRole('main').getByRole('link').filter({ hasText: 'Néon bleu' })).toContainText('11');
+  await expect(
+    page.getByRole('main').getByRole('link').filter({ hasText: 'Néon bleu' }),
+  ).toContainText('11');
   await app.openTank('Salon');
-  await expect(page.getByRole('main').getByRole('link').filter({ hasText: 'Néon bleu' })).toContainText('16');
+  await expect(
+    page.getByRole('main').getByRole('link').filter({ hasText: 'Néon bleu' }),
+  ).toContainText('16');
 });
 
-test('un relevé apparaît dans l’onglet Eau et valide la tâche « test de l’eau »', async ({ app, page }) => {
+test('un relevé apparaît dans l’onglet Eau et valide la tâche « test de l’eau »', async ({
+  app,
+  page,
+}) => {
   await app.seed();
   await page.goto('/bacs/nano/taches/nouvelle');
   await page.getByLabel('Type').selectOption({ label: 'Test de l’eau' });
@@ -46,19 +56,26 @@ test('un relevé apparaît dans l’onglet Eau et valide la tâche « test de l�
   await page.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(page).not.toHaveURL(/taches/);
   await page.goto('/');
-  await expect(page.getByRole('button', { name: /Test de l’eau : marquer comme fait/ })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /Test de l’eau : marquer comme fait/ }),
+  ).toBeVisible();
 
   await page.goto('/releve?bac=nano');
   await page.getByLabel('NO3 mg/L').fill('80');
   await page.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(page).not.toHaveURL(/releve/);
   await page.goto('/');
-  await expect(page.getByRole('button', { name: /Test de l’eau : marquer comme fait/ })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: /Test de l’eau : marquer comme fait/ }),
+  ).toHaveCount(0);
   await app.openTank('Nano', 'eau');
   await expect(page.getByRole('main')).toContainText('80');
 });
 
-test('coche une tâche due : elle quitte l’accueil et entre dans l’historique', async ({ app, page }) => {
+test('coche une tâche due : elle quitte l’accueil et entre dans l’historique', async ({
+  app,
+  page,
+}) => {
   await app.seed();
   await page.goto('/bacs/salon/taches/nouvelle');
   await page.getByLabel('Type').selectOption({ label: 'Vitres' });
@@ -69,7 +86,9 @@ test('coche une tâche due : elle quitte l’accueil et entre dans l’historiqu
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Nettoyer la vitre avant : marquer comme fait' }).click();
-  await expect(page.getByRole('button', { name: 'Nettoyer la vitre avant : marquer comme fait' })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Nettoyer la vitre avant : marquer comme fait' }),
+  ).toHaveCount(0);
   await app.openTank('Salon', 'entretien');
   await expect(page.getByRole('main')).toContainText('Nettoyer la vitre avant');
 });
@@ -77,7 +96,9 @@ test('coche une tâche due : elle quitte l’accueil et entre dans l’historiqu
 test('ajoute une photo, la met en couverture puis la supprime', async ({ app, page }) => {
   await app.seed();
   await app.openTank('Nano', 'photos');
-  await page.locator('input[type=file][accept="image/*"]').setInputFiles('public/apple-touch-icon.png');
+  await page
+    .locator('input[type=file][accept="image/*"]')
+    .setInputFiles('public/apple-touch-icon.png');
   const thumbs = page.getByRole('main').locator('button.t');
   await expect(thumbs).toHaveCount(1);
   // La première photo d'un bac devient sa couverture.
@@ -92,7 +113,10 @@ test('ajoute une photo, la met en couverture puis la supprime', async ({ app, pa
   await expect(thumbs).toHaveCount(0);
 });
 
-test('modifie un réglage d’éclairage : le changement entre dans l’historique', async ({ app, page }) => {
+test('modifie un réglage d’éclairage : le changement entre dans l’historique', async ({
+  app,
+  page,
+}) => {
   await app.seed();
   await page.goto('/materiel/equipement/nouveau?bac=salon');
   await page.getByLabel('Nom').fill('Rampe LED');
@@ -102,7 +126,10 @@ test('modifie un réglage d’éclairage : le changement entre dans l’historiq
   await expect(page).not.toHaveURL(/nouveau/);
 
   await page.goto('/materiel');
-  await page.getByRole('link', { name: /Rampe LED/ }).first().click();
+  await page
+    .getByRole('link', { name: /Rampe LED/ })
+    .first()
+    .click();
   await page.getByLabel('Intensité réglée (%)').fill('80');
   await page.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(page).toHaveURL(/\/materiel$/);

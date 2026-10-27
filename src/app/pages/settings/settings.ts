@@ -179,8 +179,10 @@ export class SettingsPage {
   protected readonly prefs = inject(PrefsStore).notificationPrefs;
   protected readonly notifStatus = computed(() => {
     if (!this.notif.supported) return 'Ce navigateur ne gère pas les notifications.';
-    if (this.notif.permission() === 'denied') return 'Bloquées dans les réglages du navigateur pour ce site.';
-    if (!this.prefs().enabled) return 'Un rappel par jour quand une tâche est due ou un suivi de diagnostic arrive.';
+    if (this.notif.permission() === 'denied')
+      return 'Bloquées dans les réglages du navigateur pour ce site.';
+    if (!this.prefs().enabled)
+      return 'Un rappel par jour quand une tâche est due ou un suivi de diagnostic arrive.';
     return this.notif.background()
       ? `Chaque jour à ${this.prefs().time}, même appli fermée.`
       : `Chaque jour à partir de ${this.prefs().time}, à l’ouverture de l’appli. Installe-la sur Android (Chrome) pour les recevoir appli fermée.`;
@@ -205,7 +207,11 @@ export class SettingsPage {
   protected readonly prefsRepo = inject(PrefsRepo);
   protected readonly theme = inject(ThemeService);
   protected readonly types = TANK_TYPES;
-  protected readonly themes: [ThemeChoice, string][] = [['light', 'Clair'], ['dark', 'Sombre'], ['auto', 'Auto']];
+  protected readonly themes: [ThemeChoice, string][] = [
+    ['light', 'Clair'],
+    ['dark', 'Sombre'],
+    ['auto', 'Auto'],
+  ];
 
   protected readonly backup = inject(BackupService);
   protected readonly bytes = fmtBytes;
@@ -218,7 +224,12 @@ export class SettingsPage {
     const until = this.returnDate();
     if (!until) return;
     const n = await this.careRepo.postponeTasks(until);
-    this.message.set({ text: n ? `${n} tâche${n > 1 ? 's' : ''} décalée${n > 1 ? 's' : ''} au ${fmtShortDate(until)} — bonnes vacances !` : 'Aucune tâche à décaler.', error: false });
+    this.message.set({
+      text: n
+        ? `${n} tâche${n > 1 ? 's' : ''} décalée${n > 1 ? 's' : ''} au ${fmtShortDate(until)} — bonnes vacances !`
+        : 'Aucune tâche à décaler.',
+      error: false,
+    });
   }
 
   protected exportIcs(): void {
@@ -228,7 +239,9 @@ export class SettingsPage {
     a.href = url;
     a.download = 'aquariums-rappels.ics';
     a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); }, 1000);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
   }
 
   protected readonly exporting = signal(false);
@@ -239,7 +252,10 @@ export class SettingsPage {
       await this.backup.exportNow();
       this.message.set({ text: 'Sauvegarde téléchargée.', error: false });
     } catch (err) {
-      this.message.set({ text: err instanceof Error ? err.message : 'Export impossible.', error: true });
+      this.message.set({
+        text: err instanceof Error ? err.message : 'Export impossible.',
+        error: true,
+      });
     } finally {
       this.exporting.set(false);
     }
@@ -256,7 +272,10 @@ export class SettingsPage {
       const note = warnings.length ? ` Remarques : ${warnings.join(' ; ')}.` : '';
       this.message.set({ text: `Données importées.${note}`, error: false });
     } catch (err) {
-      this.message.set({ text: err instanceof Error ? err.message : 'Import impossible.', error: true });
+      this.message.set({
+        text: err instanceof Error ? err.message : 'Import impossible.',
+        error: true,
+      });
     }
   }
 }

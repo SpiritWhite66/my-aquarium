@@ -3,23 +3,90 @@ import type { Diagnosis } from './models';
 import { measureStatus, sinceDiagnosis } from './follow-up';
 
 const diag = {
-  id: 'd', updatedAt: '', tankId: 't', date: '2026-10-26T10:00:00.000Z', summary: 'Carence', hypotheses: [{ title: 'Carence NO3/PO4', probability: 'high' }],
-  actions: [{ title: 'Changement d’eau', priority: 'now', done: true }, { title: 'Engrais', priority: 'soon' }],
-  followUp: { inDays: 14, measure: ['NO3', 'PO4', 'NH4 et NO2', 'pH à 11h30 et à 21h', 'photo du même angle', 'croissance des Anubias', 'NO3 vers 10 mg/L'] },
+  id: 'd',
+  updatedAt: '',
+  tankId: 't',
+  date: '2026-10-26T10:00:00.000Z',
+  summary: 'Carence',
+  hypotheses: [{ title: 'Carence NO3/PO4', probability: 'high' }],
+  actions: [
+    { title: 'Changement d’eau', priority: 'now', done: true },
+    { title: 'Engrais', priority: 'soon' },
+  ],
+  followUp: {
+    inDays: 14,
+    measure: [
+      'NO3',
+      'PO4',
+      'NH4 et NO2',
+      'pH à 11h30 et à 21h',
+      'photo du même angle',
+      'croissance des Anubias',
+      'NO3 vers 10 mg/L',
+    ],
+  },
 } as Diagnosis;
 
 const data = {
   tests: [
-    { id: 'a', updatedAt: '', tankId: 't', date: '2026-10-20T10:00:00Z', values: { no3: 0, po4: 0 } },
-    { id: 'b', updatedAt: '', tankId: 't', date: '2026-11-02T10:00:00Z', values: { no3: 10, nh4: 0 } },
+    {
+      id: 'a',
+      updatedAt: '',
+      tankId: 't',
+      date: '2026-10-20T10:00:00Z',
+      values: { no3: 0, po4: 0 },
+    },
+    {
+      id: 'b',
+      updatedAt: '',
+      tankId: 't',
+      date: '2026-11-02T10:00:00Z',
+      values: { no3: 10, nh4: 0 },
+    },
   ],
-  co2Readings: [{ id: 'c', updatedAt: '', tankId: 't', date: '2026-11-01T21:00:00Z', phBefore: 7.3, phAfter: 6.4 }],
+  co2Readings: [
+    {
+      id: 'c',
+      updatedAt: '',
+      tankId: 't',
+      date: '2026-11-01T21:00:00Z',
+      phBefore: 7.3,
+      phAfter: 6.4,
+    },
+  ],
   photos: [],
-  logs: [{ id: 'l', updatedAt: '', tankId: 't', type: 'fertilize' as const, label: 'Engrais — NPK 5 ml', date: '2026-10-28T10:00:00Z' }],
+  logs: [
+    {
+      id: 'l',
+      updatedAt: '',
+      tankId: 't',
+      type: 'fertilize' as const,
+      label: 'Engrais — NPK 5 ml',
+      date: '2026-10-28T10:00:00Z',
+    },
+  ],
   settingChanges: [],
   observations: [
-    { id: 'o1', updatedAt: '', tankId: 't', date: '2026-10-25T10:00:00Z', overall: 'problem' as const, findings: [], manual: true, algaeLevel: 3 as const },
-    { id: 'o2', updatedAt: '', tankId: 't', date: '2026-11-02T10:00:00Z', overall: 'watch' as const, findings: [], manual: true, algaeLevel: 1 as const },
+    {
+      id: 'o1',
+      updatedAt: '',
+      tankId: 't',
+      date: '2026-10-25T10:00:00Z',
+      overall: 'problem' as const,
+      findings: [],
+      manual: true,
+      algaeLevel: 3 as const,
+    },
+    {
+      id: 'o2',
+      updatedAt: '',
+      tankId: 't',
+      date: '2026-11-02T10:00:00Z',
+      overall: 'watch' as const,
+      findings: [],
+      manual: true,
+      algaeLevel: 1 as const,
+    },
   ],
 };
 
@@ -43,7 +110,19 @@ describe('suivi de diagnostic', () => {
 describe('reconnaissance des mesures demandées', () => {
   const run = (label: string) => {
     const d = { ...diag, followUp: { inDays: 7, measure: [label] } } as Diagnosis;
-    const fe = { ...data, tests: [{ id: 'x', updatedAt: '', tankId: 't', date: '2026-11-01T10:00:00Z', values: { fe: 0.1, k: 8, mg: 12, ph: 6.9, temp: 24, gh: 7, kh: 4 } }], photos: [] };
+    const fe = {
+      ...data,
+      tests: [
+        {
+          id: 'x',
+          updatedAt: '',
+          tankId: 't',
+          date: '2026-11-01T10:00:00Z',
+          values: { fe: 0.1, k: 8, mg: 12, ph: 6.9, temp: 24, gh: 7, kh: 4 },
+        },
+      ],
+      photos: [],
+    };
     return measureStatus(d, fe)[0];
   };
   it.each([

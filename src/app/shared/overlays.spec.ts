@@ -23,7 +23,8 @@ afterEach(async () => {
 });
 
 const dialog = () => app.find('[role=dialog]');
-const thumb = (label: RegExp) => [...app.el().querySelectorAll('.t')].find((t) => label.test(t.getAttribute('aria-label') ?? ''))!;
+const thumb = (label: RegExp) =>
+  [...app.el().querySelectorAll('.t')].find((t) => label.test(t.getAttribute('aria-label') ?? ''))!;
 const input = (id: string) => app.el().querySelector<HTMLInputElement>('#' + id);
 
 describe('compteur de bulles', () => {
@@ -72,7 +73,11 @@ describe('compteur de bulles', () => {
     app.press('.dc button', 'Jaune');
     app.press('.btn.fill', 'Enregistrer');
     await app.until(() => dialog() === null);
-    expect((await app.db.co2Readings.toArray()).some((r) => r.dropChecker === 'yellow' && r.bubblesPerMinute == null)).toBe(true);
+    expect(
+      (await app.db.co2Readings.toArray()).some(
+        (r) => r.dropChecker === 'yellow' && r.bubblesPerMinute == null,
+      ),
+    ).toBe(true);
   });
 
   it('compte au moins 5 bulles pour retenir un débit mesuré', async () => {
@@ -102,7 +107,12 @@ describe('pH sur la journée', () => {
     app.press('.btn.fill', 'Enregistrer');
     await app.until(() => dialog() === null);
     const r = (await app.db.co2Readings.toArray()).find((x) => x.phBefore === 7.4);
-    expect(r).toMatchObject({ phAfter: 6.6, phBeforeTime: '09:00', phAfterTime: '17:00', tankId: 'b' });
+    expect(r).toMatchObject({
+      phAfter: 6.6,
+      phBeforeTime: '09:00',
+      phAfterTime: '17:00',
+      tankId: 'b',
+    });
   });
 
   it('ne propose rien tant que les deux pH ne sont pas saisis', () => {
@@ -151,9 +161,25 @@ describe('changement d’eau', () => {
 describe('photos', () => {
   async function withPhotos() {
     app = await bootApp();
-    for (const [id, day, inhabitantId] of [['p1', '2026-09-01', undefined], ['p2', '2026-10-01', undefined], ['p3', '2026-10-05', 'i1']] as const) {
-      await app.db.photos.put({ id, updatedAt: '', tankId: 'a', inhabitantId, date: `${day}T10:00:00Z`, width: 300, height: 200 });
-      await app.db.photoFiles.put({ id, full: new Blob(['f' + id], { type: 'image/jpeg' }), thumb: new Blob(['t' + id], { type: 'image/jpeg' }) });
+    for (const [id, day, inhabitantId] of [
+      ['p1', '2026-09-01', undefined],
+      ['p2', '2026-10-01', undefined],
+      ['p3', '2026-10-05', 'i1'],
+    ] as const) {
+      await app.db.photos.put({
+        id,
+        updatedAt: '',
+        tankId: 'a',
+        inhabitantId,
+        date: `${day}T10:00:00Z`,
+        width: 300,
+        height: 200,
+      });
+      await app.db.photoFiles.put({
+        id,
+        full: new Blob(['f' + id], { type: 'image/jpeg' }),
+        thumb: new Blob(['t' + id], { type: 'image/jpeg' }),
+      });
     }
     await app.db.tanks.update('a', { coverPhotoId: 'p1' });
     await app.go('/bacs/a/photos', '3');
@@ -163,7 +189,11 @@ describe('photos', () => {
   it('affiche la grille avec la couverture marquée', async () => {
     await withPhotos();
     expect(app.el().querySelectorAll('.t .star')).toHaveLength(1);
-    expect([...app.el().querySelectorAll('.t')].map((t) => t.getAttribute('aria-label')).filter((l) => l!.startsWith('Bac, '))).toHaveLength(2);
+    expect(
+      [...app.el().querySelectorAll('.t')]
+        .map((t) => t.getAttribute('aria-label'))
+        .filter((l) => l!.startsWith('Bac, ')),
+    ).toHaveLength(2);
   });
 
   it('la visionneuse navigue (boutons et flèches) en boucle', async () => {
@@ -223,11 +253,15 @@ describe('photos', () => {
 
   it('« Analyser avec l’IA » télécharge la photo quand le partage n’existe pas, puis ouvre l’import', async () => {
     await withPhotos();
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
     app.click(thumb(/^Bac, .*1 sept/));
     app.press('button[aria-label="Analyser avec l’IA"]');
     await vi.waitFor(() => expect(click).toHaveBeenCalled());
-    await vi.waitFor(() => expect(app.harness.routeNativeElement?.textContent).toContain('Importer'));
+    await vi.waitFor(() =>
+      expect(app.harness.routeNativeElement?.textContent).toContain('Importer'),
+    );
     click.mockRestore();
   });
 
@@ -253,7 +287,10 @@ describe('photos', () => {
   it('ajouter une photo invalide affiche une erreur', async () => {
     await withPhotos();
     const file = app.el().querySelector<HTMLInputElement>('input[type=file]')!;
-    Object.defineProperty(file, 'files', { value: [new File(['x'], 'a.txt', { type: 'text/plain' })], configurable: true });
+    Object.defineProperty(file, 'files', {
+      value: [new File(['x'], 'a.txt', { type: 'text/plain' })],
+      configurable: true,
+    });
     file.dispatchEvent(new Event('change'));
     await app.until(() => !!app.el().querySelector('.err'));
     expect(app.el().querySelector('.err')!.textContent).toContain('pas une image');

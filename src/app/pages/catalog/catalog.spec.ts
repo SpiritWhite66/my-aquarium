@@ -19,7 +19,9 @@ describe('catalogue', () => {
   it('compte les espèces et les plantes, et liste tout par ordre alphabétique', async () => {
     await open();
     const plants = BUILTIN_SPECIES.filter((s) => s.kind === 'plant').length;
-    expect(app.find('header .sub')?.textContent).toContain(`${BUILTIN_SPECIES.length} espèces · ${plants} plantes`);
+    expect(app.find('header .sub')?.textContent).toContain(
+      `${BUILTIN_SPECIES.length} espèces · ${plants} plantes`,
+    );
     const list = names();
     expect(list).toHaveLength(BUILTIN_SPECIES.length);
     expect(list).toEqual([...list].sort((a, b) => a.localeCompare(b, 'fr')));
@@ -79,7 +81,9 @@ describe('catalogue', () => {
     const all = names().length;
     app.press('.filters button', 'Sans CO2');
     expect(chip('Sans CO2').getAttribute('aria-pressed')).toBe('true');
-    const needy = BUILTIN_SPECIES.filter((s) => s.kind === 'plant' && s.flora?.co2 === 'required').length;
+    const needy = BUILTIN_SPECIES.filter(
+      (s) => s.kind === 'plant' && s.flora?.co2 === 'required',
+    ).length;
     expect(needy).toBeGreaterThan(0);
     expect(names()).toHaveLength(all - needy);
     app.press('.filters button', 'Sans CO2');
@@ -118,7 +122,15 @@ describe('catalogue', () => {
 
   it('une fiche personnalisée remplace la fiche intégrée et se signale', async () => {
     app = await bootApp(async (db) => {
-      await db.species.put({ id: 'custom-1', source: 'custom', overrides: 'danio-margaritatus', scientificName: 'Danio margaritatus', commonNames: ['Mon danio'], kind: 'fish', updatedAt: '' } as never);
+      await db.species.put({
+        id: 'custom-1',
+        source: 'custom',
+        overrides: 'danio-margaritatus',
+        scientificName: 'Danio margaritatus',
+        commonNames: ['Mon danio'],
+        kind: 'fish',
+        updatedAt: '',
+      } as never);
       const { seedAll } = await import('../../testing/app.testing');
       await seedAll(db);
     });

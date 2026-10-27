@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { SpeciesStore } from '../../core/stores/species.store';
@@ -56,7 +64,14 @@ interface Preview {
   readings: ReadingRow[];
   readingMethod?: 'drops' | 'strips' | 'probe';
   readingDate?: string;
-  sanity?: { overall: 'good' | 'watch' | 'problem'; summary?: string; findings: AiFinding[]; date?: string; photo?: string; warnings?: string[] };
+  sanity?: {
+    overall: 'good' | 'watch' | 'problem';
+    summary?: string;
+    findings: AiFinding[];
+    date?: string;
+    photo?: string;
+    warnings?: string[];
+  };
   warnings: string[];
   diagnosis?: DiagnosisPreview;
 }
@@ -89,17 +104,30 @@ export class AiImportPage {
   protected readonly icon = speciesIcon;
   protected readonly unitLabel = unitLabel;
   protected readonly fmt = fmt;
-  protected readonly probLabels = { high: 'Très probable', medium: 'Possible', low: 'Peu probable' } as const;
-  protected readonly prioLabels = { now: 'Maintenant', soon: 'Bientôt', later: 'Plus tard' } as const;
+  protected readonly probLabels = {
+    high: 'Très probable',
+    medium: 'Possible',
+    low: 'Peu probable',
+  } as const;
+  protected readonly prioLabels = {
+    now: 'Maintenant',
+    soon: 'Bientôt',
+    later: 'Plus tard',
+  } as const;
 
-  protected readonly tankId = defaultTank(() => this.store.tankViews().map((v) => v.tank.id), this.bac);
+  protected readonly tankId = defaultTank(
+    () => this.store.tankViews().map((v) => v.tank.id),
+    this.bac,
+  );
   protected readonly raw = signal('');
   protected readonly errors = signal<string[]>([]);
   protected readonly preview = signal<Preview | null>(null);
   protected readonly copied = signal(false);
   protected readonly saving = signal(false);
 
-  private readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.tankId()));
+  private readonly view = computed(() =>
+    this.store.tankViews().find((v) => v.tank.id === this.tankId()),
+  );
 
   protected readonly readingChecks = computed(() => {
     const v = this.view();
@@ -119,7 +147,12 @@ export class AiImportPage {
   protected readonly count = computed(() => {
     const p = this.preview();
     if (!p) return 0;
-    return p.inventory.filter((r) => r.include).length + (p.readings.some((r) => r.include) ? 1 : 0) + (p.sanity ? 1 : 0) + (p.diagnosis ? 1 : 0);
+    return (
+      p.inventory.filter((r) => r.include).length +
+      (p.readings.some((r) => r.include) ? 1 : 0) +
+      (p.sanity ? 1 : 0) +
+      (p.diagnosis ? 1 : 0)
+    );
   });
 
   constructor() {
@@ -137,7 +170,9 @@ export class AiImportPage {
     const prompt = await fetch('ai/prompt.md').then((r) => r.text());
     await navigator.clipboard.writeText(prompt);
     this.copied.set(true);
-    setTimeout(() => { this.copied.set(false); }, 2500);
+    setTimeout(() => {
+      this.copied.set(false);
+    }, 2500);
   }
 
   protected async pasteFromClipboard(): Promise<void> {
@@ -173,7 +208,9 @@ export class AiImportPage {
   private rebuild(payloads: AiPayload[]): void {
     this.lastPayloads = payloads;
     const species = this.speciesStore.catalog();
-    const inTank = this.populationStore.inhabitants().filter((i) => i.tankId === this.tankId() && isAlive(i));
+    const inTank = this.populationStore
+      .inhabitants()
+      .filter((i) => i.tankId === this.tankId() && isAlive(i));
     const preview: Preview = { inventory: [], readings: [], warnings: [] };
 
     for (const p of payloads) {
@@ -200,13 +237,31 @@ export class AiImportPage {
       } else if (p.kind === 'water_test') {
         preview.readingMethod = p.data.method;
         preview.readingDate = p.capturedAt;
-        for (const [key, r] of Object.entries(p.data.values) as [ParamKey, { value: number; confidence: Confidence; note?: string }][]) {
-          preview.readings.push({ include: true, key, value: String(r.value).replace('.', ','), confidence: r.confidence, note: r.note });
+        for (const [key, r] of Object.entries(p.data.values) as [
+          ParamKey,
+          { value: number; confidence: Confidence; note?: string },
+        ][]) {
+          preview.readings.push({
+            include: true,
+            key,
+            value: String(r.value).replace('.', ','),
+            confidence: r.confidence,
+            note: r.note,
+          });
         }
       } else if (p.kind === 'diagnosis') {
-        preview.diagnosis = { data: p.data, warnings: p.warnings, createTasks: p.data.actions.map((a) => !!a.task) };
+        preview.diagnosis = {
+          data: p.data,
+          warnings: p.warnings,
+          createTasks: p.data.actions.map((a) => !!a.task),
+        };
       } else {
-        preview.sanity = { ...p.data, date: p.capturedAt, photo: p.source?.photo, warnings: p.warnings };
+        preview.sanity = {
+          ...p.data,
+          date: p.capturedAt,
+          photo: p.source?.photo,
+          warnings: p.warnings,
+        };
       }
     }
     this.preview.set(preview);
@@ -219,15 +274,31 @@ export class AiImportPage {
   }
 
   protected updateRow(i: number, changes: Partial<InventoryRow>): void {
-    this.preview.update((p) => p && { ...p, inventory: p.inventory.map((r, j) => (j === i ? { ...r, ...changes } : r)) });
+    this.preview.update(
+      (p) =>
+        p && { ...p, inventory: p.inventory.map((r, j) => (j === i ? { ...r, ...changes } : r)) },
+    );
   }
 
   protected updateReading(i: number, changes: Partial<ReadingRow>): void {
-    this.preview.update((p) => p && { ...p, readings: p.readings.map((r, j) => (j === i ? { ...r, ...changes } : r)) });
+    this.preview.update(
+      (p) =>
+        p && { ...p, readings: p.readings.map((r, j) => (j === i ? { ...r, ...changes } : r)) },
+    );
   }
 
   protected toggleTask(i: number, on: boolean): void {
-    this.preview.update((p) => p?.diagnosis ? { ...p, diagnosis: { ...p.diagnosis, createTasks: p.diagnosis.createTasks.map((v, j) => (j === i ? on : v)) } } : p);
+    this.preview.update((p) =>
+      p?.diagnosis
+        ? {
+            ...p,
+            diagnosis: {
+              ...p.diagnosis,
+              createTasks: p.diagnosis.createTasks.map((v, j) => (j === i ? on : v)),
+            },
+          }
+        : p,
+    );
   }
 
   protected reset(): void {
@@ -255,10 +326,20 @@ export class AiImportPage {
             source: 'custom',
             notes: 'Fiche créée depuis un inventaire IA, à compléter.',
           }));
-        const existing = this.populationStore.inhabitants().find((i) => i.tankId === tankId && i.speciesId === speciesId && isAlive(i));
+        const existing = this.populationStore
+          .inhabitants()
+          .find((i) => i.tankId === tankId && i.speciesId === speciesId && isAlive(i));
         if (existing && row.replace) {
-          await this.livestockRepo.updateInhabitant(existing.id, { quantity, approximate: row.estimate });
-          await this.livestockRepo.recordEvent(existing, 'note', 0, `Inventaire IA : ${existing.quantity} → ${quantity}`);
+          await this.livestockRepo.updateInhabitant(existing.id, {
+            quantity,
+            approximate: row.estimate,
+          });
+          await this.livestockRepo.recordEvent(
+            existing,
+            'note',
+            0,
+            `Inventaire IA : ${existing.quantity} → ${quantity}`,
+          );
         } else {
           await this.livestockRepo.addInhabitant({
             tankId,
@@ -279,13 +360,20 @@ export class AiImportPage {
         if (n != null) values[r.key] = n;
       }
       if (Object.keys(values).length) {
-        const uncertain = p.readings.filter((r) => r.include && r.confidence === 'low').map((r) => PARAM_BY_KEY[r.key].short);
+        const uncertain = p.readings
+          .filter((r) => r.include && r.confidence === 'low')
+          .map((r) => PARAM_BY_KEY[r.key].short);
         await this.careRepo.addWaterTest({
           tankId,
           date: p.readingDate ?? new Date().toISOString(),
           values,
           method: p.readingMethod,
-          note: ['Lu par une IA sur photo', uncertain.length ? `à vérifier : ${uncertain.join(', ')}` : ''].filter(Boolean).join(' · '),
+          note: [
+            'Lu par une IA sur photo',
+            uncertain.length ? `à vérifier : ${uncertain.join(', ')}` : '',
+          ]
+            .filter(Boolean)
+            .join(' · '),
         });
         target = 'eau';
       }
@@ -301,7 +389,9 @@ export class AiImportPage {
           warnings: p.sanity.warnings,
           findings: p.sanity.findings.map((f) => ({
             ...f,
-            speciesId: f.scientificName ? matchSpecies(f.scientificName, undefined, species)?.id : undefined,
+            speciesId: f.scientificName
+              ? matchSpecies(f.scientificName, undefined, species)?.id
+              : undefined,
           })),
         });
         target = 'population';
@@ -309,7 +399,10 @@ export class AiImportPage {
 
       if (p.diagnosis) {
         const d = p.diagnosis;
-        await this.careRepo.addDiagnosis({ tankId, date: new Date().toISOString(), ...d.data, warnings: d.warnings }, d.createTasks);
+        await this.careRepo.addDiagnosis(
+          { tankId, date: new Date().toISOString(), ...d.data, warnings: d.warnings },
+          d.createTasks,
+        );
         target = 'population';
       }
 

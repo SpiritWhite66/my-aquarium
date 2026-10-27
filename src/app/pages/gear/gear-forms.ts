@@ -2,10 +2,25 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
 import { GearStore } from '../../core/stores/gear.store';
-import type { Co2Spec, Consumable, ConsumableCategory, Equipment, EquipmentType, FilterSpec, HeaterSpec, LightSpec, StockLevel } from '../../core/models';
+import type {
+  Co2Spec,
+  Consumable,
+  ConsumableCategory,
+  Equipment,
+  EquipmentType,
+  FilterSpec,
+  HeaterSpec,
+  LightSpec,
+  StockLevel,
+} from '../../core/models';
 import { photoperiod } from '../../core/insights';
 import { fmt } from '../../core/labels';
-import { CONSUMABLE_CATEGORIES, EQUIPMENT_TYPES, STOCK_LEVELS, parseNumber } from '../../core/labels';
+import {
+  CONSUMABLE_CATEGORIES,
+  EQUIPMENT_TYPES,
+  STOCK_LEVELS,
+  parseNumber,
+} from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { fromEntity } from '../../shared/form-state';
 import { describeChange, diffSettings } from '../../core/settings-history';
@@ -148,14 +163,21 @@ const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
 })
 export class EquipmentFormPage {
   protected readonly describe = describeChange;
-  protected readonly existing = computed(() => this.gearStore.equipment().find((e) => e.id === this.id()));
+  protected readonly existing = computed(() =>
+    this.gearStore.equipment().find((e) => e.id === this.id()),
+  );
   protected readonly changeDate = signal(todayIso());
   protected readonly changeNote = signal('');
   /** Réglages suivis modifiés par rapport à la version enregistrée. */
   protected readonly pending = computed(() => {
     const e = this.existing();
     if (!e) return [];
-    return diffSettings(e, { light: this.light(), co2: this.co2(), heater: this.heater(), filter: this.filter() }).filter((d) => {
+    return diffSettings(e, {
+      light: this.light(),
+      co2: this.co2(),
+      heater: this.heater(),
+      filter: this.filter(),
+    }).filter((d) => {
       const t = this.type();
       return d.field.startsWith(t === 'pump' ? 'filter' : t + '.');
     });
@@ -163,9 +185,21 @@ export class EquipmentFormPage {
   protected readonly str = str;
   protected readonly num = parseNumber;
   protected readonly channelList = ['Blanc', 'Rouge', 'Vert', 'Bleu', 'Blanc chaud', 'UV'];
-  protected readonly light = fromEntity<Equipment, LightSpec>(this.existing, (e) => e.light ?? {}, {});
-  protected readonly filter = fromEntity<Equipment, FilterSpec>(this.existing, (e) => e.filter ?? {}, {});
-  protected readonly heater = fromEntity<Equipment, HeaterSpec>(this.existing, (e) => e.heater ?? {}, {});
+  protected readonly light = fromEntity<Equipment, LightSpec>(
+    this.existing,
+    (e) => e.light ?? {},
+    {},
+  );
+  protected readonly filter = fromEntity<Equipment, FilterSpec>(
+    this.existing,
+    (e) => e.filter ?? {},
+    {},
+  );
+  protected readonly heater = fromEntity<Equipment, HeaterSpec>(
+    this.existing,
+    (e) => e.heater ?? {},
+    {},
+  );
   protected readonly co2 = fromEntity<Equipment, Co2Spec>(this.existing, (e) => e.co2 ?? {}, {});
   protected readonly hours = computed(() => {
     const h = photoperiod(this.light());
@@ -180,7 +214,10 @@ export class EquipmentFormPage {
       return { ...l, channels: [...set] };
     });
   }
-  protected setLight(key: 'intensityPct' | 'levels' | 'rampMinutes' | 'par' | 'powerW' | 'lumens' | 'kelvin', raw: string): void {
+  protected setLight(
+    key: 'intensityPct' | 'levels' | 'rampMinutes' | 'par' | 'powerW' | 'lumens' | 'kelvin',
+    raw: string,
+  ): void {
     this.light.update((l) => ({ ...l, [key]: parseNumber(raw) }));
   }
   protected setSchedule(which: 'schedule' | 'siesta', part: 'on' | 'off', value: string): void {
@@ -209,9 +246,17 @@ export class EquipmentFormPage {
   protected readonly types = Object.entries(EQUIPMENT_TYPES) as [EquipmentType, string][];
   // Chaque champ prend la valeur de la fiche enregistrée quand elle est chargée (modification), puis appartient à la saisie.
   protected readonly name = fromEntity(this.existing, (e) => e.name, '');
-  protected readonly type = fromEntity<Equipment, EquipmentType>(this.existing, (e) => e.type, 'filter');
+  protected readonly type = fromEntity<Equipment, EquipmentType>(
+    this.existing,
+    (e) => e.type,
+    'filter',
+  );
   /** Nouvel équipement : le bac de l'URL (?bac=…) est présélectionné. */
-  protected readonly tankId = fromEntity(this.existing, (e) => e.tankId ?? '', () => (this.id() ? '' : (this.bac() ?? '')));
+  protected readonly tankId = fromEntity(
+    this.existing,
+    (e) => e.tankId ?? '',
+    () => (this.id() ? '' : (this.bac() ?? '')),
+  );
   protected readonly brand = fromEntity(this.existing, (e) => e.brand ?? '', '');
   protected readonly model = fromEntity(this.existing, (e) => e.model ?? '', '');
   protected readonly specs = fromEntity(this.existing, (e) => e.specs ?? '', '');
@@ -226,23 +271,33 @@ export class EquipmentFormPage {
     // Une plage horaire incomplète n'est pas enregistrée.
     const full = <T extends { on: string; off: string }>(s?: T) => (s?.on && s.off ? s : undefined);
     const t = this.type();
-    await this.gearRepo.saveEquipment({
-      light: t === 'light' ? { ...this.light(), schedule: full(this.light().schedule), siesta: full(this.light().siesta) } : undefined,
-      filter: t === 'filter' || t === 'pump' ? this.filter() : undefined,
-      heater: t === 'heater' ? this.heater() : undefined,
-      co2: t === 'co2' ? { ...this.co2(), schedule: full(this.co2().schedule) } : undefined,
-      id: this.existing()?.id,
-      name: this.name().trim(),
-      type: this.type(),
-      tankId: this.tankId() || undefined,
-      brand: opt(this.brand()),
-      model: opt(this.model()),
-      specs: opt(this.specs()),
-      purchaseDate: opt(this.purchaseDate()),
-      warrantyMonths: parseNumber(this.warranty()),
-      price: parseNumber(this.price()),
-      notes: opt(this.notes()),
-    }, { effective: this.changeDate(), note: this.changeNote() });
+    await this.gearRepo.saveEquipment(
+      {
+        light:
+          t === 'light'
+            ? {
+                ...this.light(),
+                schedule: full(this.light().schedule),
+                siesta: full(this.light().siesta),
+              }
+            : undefined,
+        filter: t === 'filter' || t === 'pump' ? this.filter() : undefined,
+        heater: t === 'heater' ? this.heater() : undefined,
+        co2: t === 'co2' ? { ...this.co2(), schedule: full(this.co2().schedule) } : undefined,
+        id: this.existing()?.id,
+        name: this.name().trim(),
+        type: this.type(),
+        tankId: this.tankId() || undefined,
+        brand: opt(this.brand()),
+        model: opt(this.model()),
+        specs: opt(this.specs()),
+        purchaseDate: opt(this.purchaseDate()),
+        warrantyMonths: parseNumber(this.warranty()),
+        price: parseNumber(this.price()),
+        notes: opt(this.notes()),
+      },
+      { effective: this.changeDate(), note: this.changeNote() },
+    );
     this.location.back();
   }
 
@@ -304,12 +359,25 @@ export class ConsumableFormPage {
   protected readonly v = v;
   readonly id = input<string>();
 
-  protected readonly categories = Object.entries(CONSUMABLE_CATEGORIES) as [ConsumableCategory, string][];
+  protected readonly categories = Object.entries(CONSUMABLE_CATEGORIES) as [
+    ConsumableCategory,
+    string,
+  ][];
   protected readonly levels = Object.entries(STOCK_LEVELS) as [StockLevel, string][];
-  protected readonly existing = computed(() => this.gearStore.consumables().find((c) => c.id === this.id()));
+  protected readonly existing = computed(() =>
+    this.gearStore.consumables().find((c) => c.id === this.id()),
+  );
   protected readonly name = fromEntity(this.existing, (c) => c.name, '');
-  protected readonly category = fromEntity<Consumable, ConsumableCategory>(this.existing, (c) => c.category, 'food');
-  protected readonly level = fromEntity<Consumable, StockLevel>(this.existing, (c) => c.level, 'full');
+  protected readonly category = fromEntity<Consumable, ConsumableCategory>(
+    this.existing,
+    (c) => c.category,
+    'food',
+  );
+  protected readonly level = fromEntity<Consumable, StockLevel>(
+    this.existing,
+    (c) => c.level,
+    'full',
+  );
   protected readonly brand = fromEntity(this.existing, (c) => c.brand ?? '', '');
   protected readonly openedDate = fromEntity(this.existing, (c) => c.openedDate ?? '', '');
   protected readonly expiryDate = fromEntity(this.existing, (c) => c.expiryDate ?? '', '');

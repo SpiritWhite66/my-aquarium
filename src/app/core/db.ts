@@ -77,7 +77,9 @@ export class AquariumDb extends Dexie {
       .upgrade(async (tx) => {
         const ids = (await tx.table('photos').toCollection().primaryKeys()) as string[];
         for (let i = 0; i < ids.length; i += 20) {
-          const batch = (await tx.table('photos').bulkGet(ids.slice(i, i + 20))) as (Photo & Partial<Omit<PhotoFile, 'id'>> | undefined)[];
+          const batch = (await tx.table('photos').bulkGet(ids.slice(i, i + 20))) as (
+            (Photo & Partial<Omit<PhotoFile, 'id'>>) | undefined
+          )[];
           const files: PhotoFile[] = [];
           const metas: Photo[] = [];
           for (const p of batch) {
@@ -94,4 +96,7 @@ export class AquariumDb extends Dexie {
 }
 
 /** Base locale de l'appli ; remplacée par une base de test dans les specs. */
-export const AQUARIUM_DB = new InjectionToken<AquariumDb>('AQUARIUM_DB', { providedIn: 'root', factory: () => new AquariumDb() });
+export const AQUARIUM_DB = new InjectionToken<AquariumDb>('AQUARIUM_DB', {
+  providedIn: 'root',
+  factory: () => new AquariumDb(),
+});

@@ -7,19 +7,33 @@ async function waitForServiceWorker(page: Page) {
     const reg = await navigator.serviceWorker.ready;
     if (navigator.serviceWorker.controller) return;
     await new Promise<void>((ok) => {
-      navigator.serviceWorker.addEventListener('controllerchange', () => { ok(); }, { once: true });
+      navigator.serviceWorker.addEventListener(
+        'controllerchange',
+        () => {
+          ok();
+        },
+        { once: true },
+      );
       // Angular ne réclame pas les pages ouvertes : un rechargement suffit ensuite.
       if (reg.active) ok();
     });
   });
   // Le cache d'Angular se remplit en arrière-plan.
-  await page.waitForFunction(async () => (await caches.keys()).some((k) => k.includes('ngsw')), undefined, { timeout: 45_000 });
+  await page.waitForFunction(
+    async () => (await caches.keys()).some((k) => k.includes('ngsw')),
+    undefined,
+    { timeout: 45_000 },
+  );
 }
 
 test.describe('hors ligne', () => {
   test.setTimeout(90_000);
 
-  test('l’appli s’ouvre sans réseau avec ses données, et enregistre un relevé', async ({ app, page, context }) => {
+  test('l’appli s’ouvre sans réseau avec ses données, et enregistre un relevé', async ({
+    app,
+    page,
+    context,
+  }) => {
     await app.seed();
     await waitForServiceWorker(page);
     await page.reload();
@@ -41,7 +55,10 @@ test('le manifeste rend l’appli installable', async ({ page, request }) => {
   await page.goto('/');
   const href = await page.locator('link[rel=manifest]').getAttribute('href');
   expect(href).toBeTruthy();
-  const manifest = (await (await request.get(href ?? '')).json()) as { start_url?: string; icons: { sizes: string; src: string }[] };
+  const manifest = (await (await request.get(href ?? '')).json()) as {
+    start_url?: string;
+    icons: { sizes: string; src: string }[];
+  };
   expect(manifest).toMatchObject({ name: 'Mes aquariums', display: 'standalone' });
   expect(manifest.start_url).toBeTruthy();
   const sizes = manifest.icons.map((i) => i.sizes);

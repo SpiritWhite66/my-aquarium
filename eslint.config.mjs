@@ -6,7 +6,19 @@ import security from 'eslint-plugin-security';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'coverage/**', 'reports/**', 'playwright-report/**', 'test-results/**', '.angular/**', '.stryker-tmp/**', 'public/**', 'ai/**'] },
+  {
+    ignores: [
+      'dist/**',
+      'coverage/**',
+      'reports/**',
+      'playwright-report/**',
+      'test-results/**',
+      '.angular/**',
+      '.stryker-tmp/**',
+      'public/**',
+      'ai/**',
+    ],
+  },
   {
     files: ['src/**/*.ts'],
     extends: [
@@ -26,16 +38,28 @@ export default tseslint.config(
     },
     linterOptions: { reportUnusedDisableDirectives: 'error' },
     rules: {
-      '@angular-eslint/directive-selector': ['error', { type: 'attribute', prefix: 'app', style: 'camelCase' }],
-      '@angular-eslint/component-selector': ['error', { type: 'element', prefix: 'app', style: 'kebab-case' }],
+      '@angular-eslint/directive-selector': [
+        'error',
+        { type: 'attribute', prefix: 'app', style: 'camelCase' },
+      ],
+      '@angular-eslint/component-selector': [
+        'error',
+        { type: 'element', prefix: 'app', style: 'kebab-case' },
+      ],
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
       // `texte || undefined` : une chaîne ou un booléen vide/faux doit bien devenir « absent ».
-      '@typescript-eslint/prefer-nullish-coalescing': ['error', { ignorePrimitives: { string: true, boolean: true } }],
+      '@typescript-eslint/prefer-nullish-coalescing': [
+        'error',
+        { ignorePrimitives: { string: true, boolean: true } },
+      ],
       'no-console': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
       // Désactivée : son correctif remplace `as HTMLSelectElement` par `!`, ce qui change le type et casse la compilation.
       '@typescript-eslint/non-nullable-type-assertion-style': 'off',
       // Désactivée : on ne peut pas distinguer obj[clé] dangereux et bénin (faux positifs en masse
@@ -65,7 +89,9 @@ export default tseslint.config(
       security.configs.recommended,
       commentsRecommended,
     ],
-    languageOptions: { parserOptions: { project: ['./e2e/tsconfig.json'], tsconfigRootDir: import.meta.dirname } },
+    languageOptions: {
+      parserOptions: { project: ['./e2e/tsconfig.json'], tsconfigRootDir: import.meta.dirname },
+    },
     linterOptions: { reportUnusedDisableDirectives: 'error' },
     rules: {
       '@typescript-eslint/consistent-type-imports': 'error',

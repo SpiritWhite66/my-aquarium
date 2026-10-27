@@ -102,14 +102,26 @@ export class PopulationTab {
   protected readonly icon = speciesIcon;
   protected readonly unit = unitLabel;
 
-  protected readonly lastDiagnosis = computed(() => this.careStore.diagnoses().filter((d) => d.tankId === this.id()).at(-1));
-  protected readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.id()));
+  protected readonly lastDiagnosis = computed(() =>
+    this.careStore
+      .diagnoses()
+      .filter((d) => d.tankId === this.id())
+      .at(-1),
+  );
+  protected readonly view = computed(() =>
+    this.store.tankViews().find((v) => v.tank.id === this.id()),
+  );
   // La flore passe en premier : les plantes comptent autant que les animaux.
   protected readonly groups = computed(() => {
     const v = this.view();
     if (!v) return [];
     return [
-      { title: 'Flore', icon: 'sprout', items: v.plants, empty: 'Aucune plante. Ajoute-en depuis le catalogue.' },
+      {
+        title: 'Flore',
+        icon: 'sprout',
+        items: v.plants,
+        empty: 'Aucune plante. Ajoute-en depuis le catalogue.',
+      },
       { title: 'Faune', icon: 'fish', items: v.fauna, empty: 'Aucun animal pour l’instant.' },
     ];
   });

@@ -83,7 +83,9 @@ export class ParamChart {
     const t0 = data[0]?.time ?? 0;
     const t1 = data.at(-1)?.time ?? 1;
     const x = (t: number, i: number) =>
-      t1 === t0 ? PAD_X + (i * (W - 2 * PAD_X)) / Math.max(data.length - 1, 1) : PAD_X + ((t - t0) / (t1 - t0)) * (W - 2 * PAD_X);
+      t1 === t0
+        ? PAD_X + (i * (W - 2 * PAD_X)) / Math.max(data.length - 1, 1)
+        : PAD_X + ((t - t0) / (t1 - t0)) * (W - 2 * PAD_X);
 
     const points = data.map((d, i) => ({
       x: +x(d.time, i).toFixed(1),
@@ -91,21 +93,28 @@ export class ParamChart {
       bad: levelOf(key, d.value, range) !== 'ok',
     }));
     const band = range
-      ? { y: y(range.max), h: Math.max(y(range.min) - y(range.max), 2), top: fmt(range.max), bottom: fmt(range.min) }
+      ? {
+          y: y(range.max),
+          h: Math.max(y(range.min) - y(range.max), 2),
+          top: fmt(range.max),
+          bottom: fmt(range.min),
+        }
       : undefined;
     const last = data.at(-1);
-    const marks = data.length > 1
-      ? this.marks()
-          .map((m) => ({ t: new Date(m.date).getTime(), label: m.label }))
-          .filter((m) => m.t > t0 && m.t <= t1)
-          .map((m) => ({ x: +x(m.t, 0).toFixed(1), label: m.label }))
-      : [];
-    const ticks = data.length > 1
-      ? this.ticks()
-          .map((m) => ({ t: new Date(m.date).getTime(), label: m.label }))
-          .filter((m) => m.t > t0 && m.t <= t1)
-          .map((m) => ({ x: +x(m.t, 0).toFixed(1), label: m.label }))
-      : [];
+    const marks =
+      data.length > 1
+        ? this.marks()
+            .map((m) => ({ t: new Date(m.date).getTime(), label: m.label }))
+            .filter((m) => m.t > t0 && m.t <= t1)
+            .map((m) => ({ x: +x(m.t, 0).toFixed(1), label: m.label }))
+        : [];
+    const ticks =
+      data.length > 1
+        ? this.ticks()
+            .map((m) => ({ t: new Date(m.date).getTime(), label: m.label }))
+            .filter((m) => m.t > t0 && m.t <= t1)
+            .map((m) => ({ x: +x(m.t, 0).toFixed(1), label: m.label }))
+        : [];
     return {
       ticks,
       marks,

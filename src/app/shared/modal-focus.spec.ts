@@ -28,14 +28,20 @@ function setup() {
   const fixture = TestBed.createComponent(Host);
   document.body.append(fixture.nativeElement);
   fixture.detectChanges();
-  const q = <T extends HTMLElement>(id: string) => fixture.nativeElement.querySelector(`#${id}`) as T;
+  const q = <T extends HTMLElement>(id: string) =>
+    fixture.nativeElement.querySelector(`#${id}`) as T;
   const open = () => {
     q('opener').focus();
     fixture.componentInstance.open.set(true);
     fixture.detectChanges();
   };
   const tab = (shift = false) => {
-    const e = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: shift, bubbles: true, cancelable: true });
+    const e = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      shiftKey: shift,
+      bubbles: true,
+      cancelable: true,
+    });
     (document.activeElement ?? document.body).dispatchEvent(e);
     return e;
   };
@@ -120,7 +126,10 @@ describe('fenêtre modale', () => {
   });
 
   it('une fenêtre sans aucun élément focalisable garde le focus', () => {
-    @Component({ imports: [ModalFocus], template: `<div appModal tabindex="-1" id="empty"><p>Texte</p></div>` })
+    @Component({
+      imports: [ModalFocus],
+      template: `<div appModal tabindex="-1" id="empty"><p>Texte</p></div>`,
+    })
     class Empty {}
     const fixture = TestBed.createComponent(Empty);
     document.body.append(fixture.nativeElement);

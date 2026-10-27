@@ -31,7 +31,13 @@ export const STALE_DIGEST: Digest = {
   body: 'Ouvre l’appli pour que les rappels de tes bacs continuent.',
 };
 
-export const DEFAULT_PREFS: NotificationPrefs = { id: 'notifications', enabled: false, time: '09:00', tasks: true, followUps: true };
+export const DEFAULT_PREFS: NotificationPrefs = {
+  id: 'notifications',
+  enabled: false,
+  time: '09:00',
+  tasks: true,
+  followUps: true,
+};
 
 /** Date du suivi prévu par le dernier diagnostic de chaque bac. */
 export function followUpsDue(diagnoses: Diagnosis[], day: string): Diagnosis[] {
@@ -40,7 +46,9 @@ export function followUpsDue(diagnoses: Diagnosis[], day: string): Diagnosis[] {
     const prev = latest.get(d.tankId);
     if (!prev || d.date > prev.date) latest.set(d.tankId, d);
   }
-  return [...latest.values()].filter((d) => d.followUp && addDays(localDay(d.date), d.followUp.inDays) <= day);
+  return [...latest.values()].filter(
+    (d) => d.followUp && addDays(localDay(d.date), d.followUp.inDays) <= day,
+  );
 }
 
 /** Notification du jour `day`, ou rien s'il n'y a rien à faire. */
@@ -56,7 +64,9 @@ export function digestFor(
     const due = data.tasks.filter((t) => t.active && t.nextDue <= day && name.has(t.tankId));
     count += due.length;
     const multi = name.size > 1;
-    lines.push(...due.slice(0, 4).map((t) => `${t.label}${multi ? ` (${name.get(t.tankId) ?? ''})` : ''}`));
+    lines.push(
+      ...due.slice(0, 4).map((t) => `${t.label}${multi ? ` (${name.get(t.tankId) ?? ''})` : ''}`),
+    );
     if (due.length > 4) lines.push(`et ${due.length - 4} autre(s)`);
   }
   if (prefs.followUps) {
@@ -65,11 +75,19 @@ export function digestFor(
     lines.push(...f.map((d) => `Suivi du diagnostic : ${name.get(d.tankId)}`));
   }
   if (!count) return undefined;
-  return { title: count > 1 ? `${count} choses à faire pour tes bacs` : 'Une chose à faire pour tes bacs', body: lines.join('\n') };
+  return {
+    title: count > 1 ? `${count} choses à faire pour tes bacs` : 'Une chose à faire pour tes bacs',
+    body: lines.join('\n'),
+  };
 }
 
 /** Notifications des `days` prochains jours, à partir de `today`. */
-export function digestsAhead(today: string, data: Parameters<typeof digestFor>[1], prefs: Parameters<typeof digestFor>[2], days = DIGEST_DAYS): Record<string, Digest> {
+export function digestsAhead(
+  today: string,
+  data: Parameters<typeof digestFor>[1],
+  prefs: Parameters<typeof digestFor>[2],
+  days = DIGEST_DAYS,
+): Record<string, Digest> {
   const out: Record<string, Digest> = {};
   for (let i = 0; i < days; i++) {
     const day = addDays(today, i);
@@ -80,7 +98,11 @@ export function digestsAhead(today: string, data: Parameters<typeof digestFor>[1
 }
 
 /** Faut-il montrer la notification maintenant ? */
-export function shouldNotify(prefs: NotificationPrefs, now: Date, today: string): Digest | undefined {
+export function shouldNotify(
+  prefs: NotificationPrefs,
+  now: Date,
+  today: string,
+): Digest | undefined {
   if (!prefs.enabled || prefs.lastShown === today) return undefined;
   const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   if (hm < prefs.time) return undefined;

@@ -7,5 +7,6 @@ describe('localDay', () => {
     const late = new Date(2026, 9, 27, 0, 30); // 27 octobre, 0 h 30 heure locale
     expect(localDay(late.toISOString())).toBe('2026-10-27');
   });
-  it('lit une heure locale sans fuseau', () => expect(localDay('2026-10-26T23:50')).toBe('2026-10-26'));
+  it('lit une heure locale sans fuseau', () =>
+    expect(localDay('2026-10-26T23:50')).toBe('2026-10-26'));
 });

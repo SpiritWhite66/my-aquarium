@@ -1,5 +1,15 @@
-import type { ElementRef} from '@angular/core';
-import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, input, linkedSignal, output, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  viewChild,
+} from '@angular/core';
 import type { DoseUnit, MaintenanceTask } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { GearStore } from '../core/stores/gear.store';
@@ -86,12 +96,25 @@ export class DoseSheet {
   protected readonly val = (e: Event) => (e.target as HTMLInputElement).value;
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
-  protected readonly tankName = computed(() => this.store.tanks().find((t) => t.id === this.tankId())?.name ?? '');
-  private readonly fertilizers = computed(() => this.gearStore.consumables().filter((c) => c.category === 'fertilizer'));
-  private readonly doseLogs = computed(() => this.careStore.logs().filter((l) => l.tankId === this.tankId() && l.type === 'fertilize' && l.details?.product));
+  protected readonly tankName = computed(
+    () => this.store.tanks().find((t) => t.id === this.tankId())?.name ?? '',
+  );
+  private readonly fertilizers = computed(() =>
+    this.gearStore.consumables().filter((c) => c.category === 'fertilizer'),
+  );
+  private readonly doseLogs = computed(() =>
+    this.careStore
+      .logs()
+      .filter((l) => l.tankId === this.tankId() && l.type === 'fertilize' && l.details?.product),
+  );
 
   /** Produits proposés : engrais du stock, puis produits déjà dosés. */
-  protected readonly products = computed(() => [...new Set([...this.fertilizers().map((c) => c.name), ...this.doseLogs().map((l) => must(must(l.details).product))])]);
+  protected readonly products = computed(() => [
+    ...new Set([
+      ...this.fertilizers().map((c) => c.name),
+      ...this.doseLogs().map((l) => must(must(l.details).product)),
+    ]),
+  ]);
 
   /** Dernière session de fertilisation (même jour que la plus récente dose). */
   private readonly lastSession = computed(() => {
@@ -102,13 +125,24 @@ export class DoseSheet {
   });
   protected readonly lastLabel = computed(() => {
     const d = this.lastSession()[0]?.date;
-    return d ? new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+    return d
+      ? new Date(d).toLocaleDateString('fr-FR', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+        })
+      : '';
   });
 
   protected readonly rows = linkedSignal<Row[]>(() => {
     const last = this.lastSession();
     if (last.length) {
-      return last.map((l) => ({ product: must(must(l.details).product), amount: l.details?.amount != null ? String(l.details.amount).replace('.', ',') : '', unit: l.details?.unit ?? 'ml', consumableId: l.details?.consumableId }));
+      return last.map((l) => ({
+        product: must(must(l.details).product),
+        amount: l.details?.amount != null ? String(l.details.amount).replace('.', ',') : '',
+        unit: l.details?.unit ?? 'ml',
+        consumableId: l.details?.consumableId,
+      }));
     }
     const f = this.fertilizers().at(0);
     return [{ product: f?.name ?? '', amount: '', unit: 'ml', consumableId: f?.id }];
@@ -125,20 +159,29 @@ export class DoseSheet {
       rows.map((r, j) => {
         if (j !== i) return r;
         const next = { ...r, ...patch };
-        if (patch.product !== undefined) next.consumableId = this.fertilizers().find((c) => c.name === patch.product)?.id;
+        if (patch.product !== undefined)
+          next.consumableId = this.fertilizers().find((c) => c.name === patch.product)?.id;
         return next;
       }),
     );
   }
   protected add(): void {
-    this.rows.update((rows) => [...rows, { product: '', amount: '', unit: rows.at(-1)?.unit ?? 'ml' }]);
+    this.rows.update((rows) => [
+      ...rows,
+      { product: '', amount: '', unit: rows.at(-1)?.unit ?? 'ml' },
+    ]);
   }
   protected remove(i: number): void {
     this.rows.update((rows) => rows.filter((_, j) => j !== i));
   }
 
   protected async save(): Promise<void> {
-    const doses = this.valid().map((r) => ({ product: r.product.trim(), amount: parseNumber(r.amount), unit: r.unit, consumableId: r.consumableId }));
+    const doses = this.valid().map((r) => ({
+      product: r.product.trim(),
+      amount: parseNumber(r.amount),
+      unit: r.unit,
+      consumableId: r.consumableId,
+    }));
     await this.careRepo.logDoses(this.tankId(), doses, this.task());
     this.closed.emit();
   }

@@ -1,6 +1,7 @@
 import type { Entity } from './entity';
 
-export type EquipmentType = 'filter' | 'heater' | 'light' | 'co2' | 'pump' | 'air' | 'thermometer' | 'controller' | 'other';
+export type EquipmentType =
+  'filter' | 'heater' | 'light' | 'co2' | 'pump' | 'air' | 'thermometer' | 'controller' | 'other';
 
 /** Plage horaire quotidienne « HH:MM ». */
 export interface DailySchedule {
@@ -56,7 +57,8 @@ export interface Equipment extends Entity {
   co2?: Co2Spec;
 }
 
-export type ConsumableCategory = 'food' | 'fertilizer' | 'conditioner' | 'test_kit' | 'co2' | 'medicine' | 'substrate' | 'other';
+export type ConsumableCategory =
+  'food' | 'fertilizer' | 'conditioner' | 'test_kit' | 'co2' | 'medicine' | 'substrate' | 'other';
 export type StockLevel = 'full' | 'half' | 'low' | 'empty';
 
 export interface Consumable extends Entity {

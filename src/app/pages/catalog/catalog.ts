@@ -17,7 +17,11 @@ const FILTERS: { kind: SpeciesKind | 'all'; label: string }[] = [
   { kind: 'snail', label: 'Escargots' },
 ];
 
-const norm = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+const norm = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
 
 @Component({
   selector: 'app-catalog',
@@ -107,20 +111,27 @@ export class CatalogPage {
   protected readonly compatWith = signal('');
   protected readonly noCo2 = signal(false);
 
-  protected readonly targetTank = computed(() => this.store.tanks().find((t) => t.id === this.bac()));
-  protected readonly plantCount = computed(() => this.speciesStore.catalog().filter((s) => s.kind === 'plant').length);
+  protected readonly targetTank = computed(() =>
+    this.store.tanks().find((t) => t.id === this.bac()),
+  );
+  protected readonly plantCount = computed(
+    () => this.speciesStore.catalog().filter((s) => s.kind === 'plant').length,
+  );
 
   protected readonly results = computed(() => {
     const q = norm(this.query().trim());
     const kind = this.kind();
     const view = this.store.tankViews().find((v) => v.tank.id === this.compatWith());
-    const members = view?.members.map((m) => ({ species: m.species, quantity: m.inhabitant.quantity })) ?? [];
+    const members =
+      view?.members.map((m) => ({ species: m.species, quantity: m.inhabitant.quantity })) ?? [];
     return this.speciesStore
       .catalog()
       .filter((s) => kind === 'all' || s.kind === kind)
       .filter((s) => !q || norm([s.scientificName, ...s.commonNames].join(' ')).includes(q))
       .filter((s) => !this.noCo2() || s.kind !== 'plant' || s.flora?.co2 !== 'required')
-      .filter((s) => !view || issuesIfAdded(view.tank, members, s, s.fauna?.minGroup ?? 1).length === 0)
+      .filter(
+        (s) => !view || issuesIfAdded(view.tank, members, s, s.fauna?.minGroup ?? 1).length === 0,
+      )
       .sort((a, b) => (a.commonNames[0] ?? '').localeCompare(b.commonNames[0] ?? '', 'fr'));
   });
 }

@@ -59,15 +59,28 @@ describe('nouvelle tâche', () => {
     set('every', '10,6');
     set('next', '2026-11-05');
     save();
-    await vi.waitFor(async () => expect((await app.db.tasks.toArray()).some((t) => t.label === 'Tailler les tiges')).toBe(true));
+    await vi.waitFor(async () =>
+      expect((await app.db.tasks.toArray()).some((t) => t.label === 'Tailler les tiges')).toBe(
+        true,
+      ),
+    );
     const t = (await app.db.tasks.toArray()).find((x) => x.label === 'Tailler les tiges')!;
-    expect(t).toMatchObject({ tankId: 'a', type: 'plant_trim', everyDays: 11, nextDue: '2026-11-05', active: true });
+    expect(t).toMatchObject({
+      tankId: 'a',
+      type: 'plant_trim',
+      everyDays: 11,
+      nextDue: '2026-11-05',
+      active: true,
+    });
   });
 
   it('ne fait rien si le formulaire est invalide', async () => {
     set('every', '0');
     const before = await app.db.tasks.count();
-    app.el().querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    app
+      .el()
+      .querySelector('form')!
+      .dispatchEvent(new Event('submit', { cancelable: true }));
     await app.flush();
     expect(await app.db.tasks.count()).toBe(before);
   });

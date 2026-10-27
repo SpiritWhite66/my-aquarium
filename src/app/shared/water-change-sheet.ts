@@ -1,5 +1,15 @@
-import type { ElementRef} from '@angular/core';
-import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, input, linkedSignal, output, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  viewChild,
+} from '@angular/core';
 import type { MaintenanceTask } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { afterWaterChange, percentFromLabel } from '../core/insights';
@@ -68,7 +78,9 @@ export class WaterChangeSheet {
   protected readonly presets = [10, 20, 30, 40, 50];
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
-  private readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.task().tankId));
+  private readonly view = computed(() =>
+    this.store.tankViews().find((v) => v.tank.id === this.task().tankId),
+  );
   protected readonly tankName = computed(() => this.view()?.tank.name ?? '');
   protected readonly volume = computed(() => {
     const t = this.view()?.tank;
@@ -82,7 +94,11 @@ export class WaterChangeSheet {
     const no3 = v?.lastTest?.values.no3;
     if (no3 == null || !v) return undefined;
     const after = afterWaterChange(no3, this.percent() / 100);
-    const range = idealRange('no3', v.members.map((m) => m.species), v.tank);
+    const range = idealRange(
+      'no3',
+      v.members.map((m) => m.species),
+      v.tank,
+    );
     return { before: fmt(no3), after: fmt(after), level: levelOf('no3', after, range) };
   });
 
@@ -97,7 +113,8 @@ export class WaterChangeSheet {
 
   protected setLiters(raw: string): void {
     const l = parseNumber(raw);
-    if (l != null && this.volume()) this.percent.set(Math.min(100, Math.round((l / this.volume()) * 100)));
+    if (l != null && this.volume())
+      this.percent.set(Math.min(100, Math.round((l / this.volume()) * 100)));
   }
 
   protected async confirm(): Promise<void> {

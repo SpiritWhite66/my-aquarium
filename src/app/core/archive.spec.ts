@@ -16,7 +16,11 @@ const entry = (name: string, text: string): ArchiveEntry => ({ name, data: new B
 
 describe('archive ZIP', () => {
   it('écrit puis relit les fichiers sans rien perdre', async () => {
-    const zip = await writeZip([entry('data.json', '{"a":1}'), entry('photos/p1-full.jpg', 'IMG1'), entry('vide.txt', '')]);
+    const zip = await writeZip([
+      entry('data.json', '{"a":1}'),
+      entry('photos/p1-full.jpg', 'IMG1'),
+      entry('vide.txt', ''),
+    ]);
     expect(zip.type).toBe('application/zip');
     const files = await readZip(zip);
     expect([...files.keys()]).toEqual(['data.json', 'photos/p1-full.jpg', 'vide.txt']);
@@ -79,7 +83,9 @@ describe('archive ZIP', () => {
   });
 
   it('ignore les dossiers du ZIP', async () => {
-    const files = await readZip(await writeZip([entry('dossier/', ''), entry('dossier/f.txt', 'F')]));
+    const files = await readZip(
+      await writeZip([entry('dossier/', ''), entry('dossier/f.txt', 'F')]),
+    );
     expect([...files.keys()]).toEqual(['dossier/f.txt']);
   });
 
@@ -99,7 +105,10 @@ describe('archive ZIP', () => {
     const zip = await writeZip([entry('a.txt', 'Bonjour le monde')]);
     const bytes = new Uint8Array(await zip.arrayBuffer());
     bytes.fill(0xff, 30, 40);
-    const result = await readZip(new Blob([bytes])).then((m) => ({ m }), (e: unknown) => ({ e }));
+    const result = await readZip(new Blob([bytes])).then(
+      (m) => ({ m }),
+      (e: unknown) => ({ e }),
+    );
     if ('m' in result) expect(await result.m.get('a.txt')?.text()).not.toBe('Bonjour le monde');
     else expect(result.e).toBeDefined();
   });

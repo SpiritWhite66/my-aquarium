@@ -192,18 +192,28 @@ export class MaintenanceTab {
   protected readonly gearSummary = equipmentSummary;
   protected readonly gearTypes = EQUIPMENT_TYPES;
 
-  protected readonly gear = computed(() => this.gearStore.equipment().filter((e) => e.tankId === this.id()));
+  protected readonly gear = computed(() =>
+    this.gearStore.equipment().filter((e) => e.tankId === this.id()),
+  );
   /** Points d'attention sur le matériel du bac (éclairage long, brassage faible…). */
   protected readonly checks = computed(() => {
     const t = this.view()?.tank;
     return t ? gearChecks(t, this.gear()).filter((c) => c.level === 'warn') : [];
   });
 
-  protected readonly tankPhotos = computed(() => this.photoStore.photos().filter((p) => p.tankId === this.id() && !p.inhabitantId));
+  protected readonly tankPhotos = computed(() =>
+    this.photoStore.photos().filter((p) => p.tankId === this.id() && !p.inhabitantId),
+  );
 
   /** Changements de réglages du bac, regroupés par enregistrement, du plus récent au plus ancien. */
   protected readonly settings = computed(() =>
-    groupSettingChanges(this.gearStore.settingChanges(), this.id(), this.careStore.observations(), this.photoStore.photos(), new Date()),
+    groupSettingChanges(
+      this.gearStore.settingChanges(),
+      this.id(),
+      this.careStore.observations(),
+      this.photoStore.photos(),
+      new Date(),
+    ),
   );
 
   protected async removeSetting(changes: SettingChange[]): Promise<void> {
@@ -217,11 +227,19 @@ export class MaintenanceTab {
     else void this.careRepo.completeTask(task);
   }
 
-  protected readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.id()));
+  protected readonly view = computed(() =>
+    this.store.tankViews().find((v) => v.tank.id === this.id()),
+  );
   protected readonly tasks = computed(() => this.view()?.tasks ?? []);
 
   /** Opérations d'entretien et événements des habitants (taille, bouture…) dans une seule chronologie. */
   protected readonly history = computed(() =>
-    maintenanceTimeline(this.id(), this.careStore.logs(), this.populationStore.inhabitantEvents(), this.populationStore.inhabitants(), this.speciesStore.speciesById()),
+    maintenanceTimeline(
+      this.id(),
+      this.careStore.logs(),
+      this.populationStore.inhabitantEvents(),
+      this.populationStore.inhabitants(),
+      this.speciesStore.speciesById(),
+    ),
   );
 }

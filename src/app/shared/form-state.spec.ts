@@ -62,8 +62,18 @@ describe('defaultTank', () => {
       expect(tank()).toBe('b');
     });
     TestBed.runInInjectionContext(() => {
-      expect(defaultTank(() => ['a', 'b'], () => 'inconnu')()).toBe('a');
-      expect(defaultTank(() => ['a', 'b'], () => undefined)()).toBe('a');
+      expect(
+        defaultTank(
+          () => ['a', 'b'],
+          () => 'inconnu',
+        )(),
+      ).toBe('a');
+      expect(
+        defaultTank(
+          () => ['a', 'b'],
+          () => undefined,
+        )(),
+      ).toBe('a');
     });
   });
 
@@ -100,7 +110,11 @@ describe('defaultTank', () => {
   it('le bac d’une fiche à modifier l’emporte dès qu’il apparaît, puis la saisie reprend la main', () => {
     TestBed.runInInjectionContext(() => {
       const forced = signal<string | undefined>(undefined);
-      const tank = defaultTank(() => ['a', 'b'], () => undefined, forced);
+      const tank = defaultTank(
+        () => ['a', 'b'],
+        () => undefined,
+        forced,
+      );
       expect(tank()).toBe('a');
       forced.set('b');
       expect(tank()).toBe('b');

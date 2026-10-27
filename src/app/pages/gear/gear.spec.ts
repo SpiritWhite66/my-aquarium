@@ -16,15 +16,25 @@ describe('page matériel', () => {
     await app.go('/materiel', 'Éclairage');
     const titles = [...app.el().querySelectorAll('section h2')].map((h) => h.textContent.trim());
     expect(titles).toEqual(['Bac salon 1', 'Nano 1', 'En réserve 1']);
-    expect(app.find('a.li', 'Filtre de rechange')!.getAttribute('href')).toBe('/materiel/equipement/e3');
+    expect(app.find('a.li', 'Filtre de rechange')!.getAttribute('href')).toBe(
+      '/materiel/equipement/e3',
+    );
   });
 
   it('résume l’éclairage et indique la garantie', async () => {
     app = await bootApp(async (db) => {
       const { seedAll } = await import('../../testing/app.testing');
       await seedAll(db);
-      await db.equipment.update('e3', { purchaseDate: '2020-01-01', warrantyMonths: 12, brand: 'Eheim', model: '2213' });
-      await db.equipment.update('e2', { purchaseDate: new Date().toISOString().slice(0, 10), warrantyMonths: 24 });
+      await db.equipment.update('e3', {
+        purchaseDate: '2020-01-01',
+        warrantyMonths: 12,
+        brand: 'Eheim',
+        model: '2213',
+      });
+      await db.equipment.update('e2', {
+        purchaseDate: new Date().toISOString().slice(0, 10),
+        warrantyMonths: 24,
+      });
     });
     await app.go('/materiel', 'Hors garantie');
     expect(app.find('a.li', 'Filtre de rechange')!.textContent).toContain('Eheim 2213');
@@ -95,10 +105,32 @@ describe('formulaire d’équipement', () => {
     set('specs', '120 cm');
     set('model', 'WRGB');
     app.press('button.fill', 'Enregistrer');
-    await vi.waitFor(async () => expect((await app.db.equipment.toArray()).some((e) => e.name === 'Rampe LED')).toBe(true));
+    await vi.waitFor(async () =>
+      expect((await app.db.equipment.toArray()).some((e) => e.name === 'Rampe LED')).toBe(true),
+    );
     const e = (await app.db.equipment.toArray()).find((x) => x.name === 'Rampe LED')!;
-    expect(e).toMatchObject({ type: 'light', tankId: 'b', brand: 'Chihiros', model: 'WRGB', specs: '120 cm', price: 89.9, warrantyMonths: 24, purchaseDate: '2026-01-15', notes: 'Mat' });
-    expect(e.light).toMatchObject({ channels: ['Bleu'], schedule: { on: '10:00', off: '18:30' }, intensityPct: 70, levels: 10, rampMinutes: 30, par: 45, powerW: 36.5, lumens: 3000, kelvin: 6500 });
+    expect(e).toMatchObject({
+      type: 'light',
+      tankId: 'b',
+      brand: 'Chihiros',
+      model: 'WRGB',
+      specs: '120 cm',
+      price: 89.9,
+      warrantyMonths: 24,
+      purchaseDate: '2026-01-15',
+      notes: 'Mat',
+    });
+    expect(e.light).toMatchObject({
+      channels: ['Bleu'],
+      schedule: { on: '10:00', off: '18:30' },
+      intensityPct: 70,
+      levels: 10,
+      rampMinutes: 30,
+      par: 45,
+      powerW: 36.5,
+      lumens: 3000,
+      kelvin: 6500,
+    });
     expect(e.light?.siesta).toBeUndefined();
     expect(e.filter).toBeUndefined();
   });
@@ -111,7 +143,13 @@ describe('formulaire d’équipement', () => {
     set('f-flow', '900');
     set('f-media', 'Mousse');
     app.press('button.fill', 'Enregistrer');
-    await vi.waitFor(async () => expect((await app.db.equipment.toArray()).some((e) => e.name === 'Filtre' && e.filter?.flowLh === 900 && e.filter.media === 'Mousse')).toBe(true));
+    await vi.waitFor(async () =>
+      expect(
+        (await app.db.equipment.toArray()).some(
+          (e) => e.name === 'Filtre' && e.filter?.flowLh === 900 && e.filter.media === 'Mousse',
+        ),
+      ).toBe(true),
+    );
 
     await app.go('/materiel/equipement/nouveau', 'Nouvel équipement');
     set('name', 'Chauffage');
@@ -119,7 +157,13 @@ describe('formulaire d’équipement', () => {
     set('h-w', '100');
     set('h-c', '25,5');
     app.press('button.fill', 'Enregistrer');
-    await vi.waitFor(async () => expect((await app.db.equipment.toArray()).some((e) => e.name === 'Chauffage' && e.heater?.powerW === 100 && e.heater.setpointC === 25.5)).toBe(true));
+    await vi.waitFor(async () =>
+      expect(
+        (await app.db.equipment.toArray()).some(
+          (e) => e.name === 'Chauffage' && e.heater?.powerW === 100 && e.heater.setpointC === 25.5,
+        ),
+      ).toBe(true),
+    );
 
     await app.go('/materiel/equipement/nouveau', 'Nouvel équipement');
     set('name', 'CO2');
@@ -130,7 +174,17 @@ describe('formulaire d’équipement', () => {
     set('c-off', '17:00');
     app.click(app.find('label.check input'));
     app.press('button.fill', 'Enregistrer');
-    await vi.waitFor(async () => expect((await app.db.equipment.toArray()).some((e) => e.name === 'CO2' && e.co2?.cylinderL === 2 && e.co2.schedule?.off === '17:00' && e.co2.solenoid === true)).toBe(true));
+    await vi.waitFor(async () =>
+      expect(
+        (await app.db.equipment.toArray()).some(
+          (e) =>
+            e.name === 'CO2' &&
+            e.co2?.cylinderL === 2 &&
+            e.co2.schedule?.off === '17:00' &&
+            e.co2.solenoid === true,
+        ),
+      ).toBe(true),
+    );
   });
 
   it('modifie un équipement : le changement de réglage est proposé puis historisé', async () => {
@@ -146,7 +200,11 @@ describe('formulaire d’équipement', () => {
     app.press('button.fill', 'Enregistrer');
     await vi.waitFor(async () => expect(await app.db.settingChanges.count()).toBe(1));
     const [c] = await app.db.settingChanges.toArray();
-    expect(c).toMatchObject({ equipmentId: 'e1', field: 'light.intensityPct', note: 'Algues vertes' });
+    expect(c).toMatchObject({
+      equipmentId: 'e1',
+      field: 'light.intensityPct',
+      note: 'Algues vertes',
+    });
     expect((await app.db.equipment.get('e1'))?.light?.intensityPct).toBe(40);
   });
 
@@ -178,8 +236,18 @@ describe('formulaire de consommable', () => {
     set('price', '12,5');
     set('notes', 'Ok');
     app.press('button.fill', 'Enregistrer');
-    await vi.waitFor(async () => expect((await app.db.consumables.toArray()).some((c) => c.name === 'Test NO3')).toBe(true));
-    expect((await app.db.consumables.toArray()).find((c) => c.name === 'Test NO3')).toMatchObject({ category: 'test_kit', level: 'half', brand: 'JBL', openedDate: '2026-09-01', expiryDate: '2027-09-01', price: 12.5, notes: 'Ok' });
+    await vi.waitFor(async () =>
+      expect((await app.db.consumables.toArray()).some((c) => c.name === 'Test NO3')).toBe(true),
+    );
+    expect((await app.db.consumables.toArray()).find((c) => c.name === 'Test NO3')).toMatchObject({
+      category: 'test_kit',
+      level: 'half',
+      brand: 'JBL',
+      openedDate: '2026-09-01',
+      expiryDate: '2027-09-01',
+      price: 12.5,
+      notes: 'Ok',
+    });
   });
 
   it('modifie puis supprime un consommable', async () => {
@@ -188,7 +256,9 @@ describe('formulaire de consommable', () => {
     await app.until(() => field('name').value === 'Engrais');
     set('name', 'Engrais liquide');
     app.press('button.fill', 'Enregistrer');
-    await vi.waitFor(async () => expect((await app.db.consumables.get('c1'))?.name).toBe('Engrais liquide'));
+    await vi.waitFor(async () =>
+      expect((await app.db.consumables.get('c1'))?.name).toBe('Engrais liquide'),
+    );
     await app.go('/materiel/consommable/c1', 'Modifier');
     await app.until(() => field('name').value === 'Engrais liquide');
     app.press('button.danger', 'Supprimer');

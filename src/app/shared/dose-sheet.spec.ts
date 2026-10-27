@@ -30,7 +30,14 @@ afterEach(async () => {
   await db.delete();
 });
 
-const tank = { name: 'Salon', type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: false, archived: false } as const;
+const tank = {
+  name: 'Salon',
+  type: 'planted',
+  volumeGross: 60,
+  startDate: '2026-01-01',
+  co2: false,
+  archived: false,
+} as const;
 
 describe('saisie des doses d’engrais', () => {
   it('reprend les produits et les doses de la dernière fois', async () => {

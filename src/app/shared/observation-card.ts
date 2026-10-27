@@ -69,6 +69,8 @@ export class ObservationCard {
   protected readonly showAll = signal(false);
 
   private readonly all = computed(() => this.observation().findings.map((f, i) => ({ ...f, i })));
-  protected readonly visible = computed(() => (this.showAll() ? this.all() : this.all().filter((f) => !f.resolved)));
+  protected readonly visible = computed(() =>
+    this.showAll() ? this.all() : this.all().filter((f) => !f.resolved),
+  );
   protected readonly hidden = computed(() => this.all().length - this.visible().length);
 }

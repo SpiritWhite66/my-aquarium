@@ -1,5 +1,15 @@
-import type { ElementRef} from '@angular/core';
-import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import type { Tank } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { GearStore } from '../core/stores/gear.store';
@@ -82,9 +92,15 @@ export class PhDaySheet {
   protected readonly val = (e: Event) => (e.target as HTMLInputElement).value;
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
-  private readonly gear = computed(() => this.gearStore.equipment().filter((e) => e.tankId === this.tank().id));
-  protected readonly co2On = computed(() => this.gear().find((e) => e.co2?.schedule)?.co2?.schedule?.on ?? '');
-  protected readonly lightOff = computed(() => this.gear().find((e) => e.light?.schedule)?.light?.schedule?.off ?? '');
+  private readonly gear = computed(() =>
+    this.gearStore.equipment().filter((e) => e.tankId === this.tank().id),
+  );
+  protected readonly co2On = computed(
+    () => this.gear().find((e) => e.co2?.schedule)?.co2?.schedule?.on ?? '',
+  );
+  protected readonly lightOff = computed(
+    () => this.gear().find((e) => e.light?.schedule)?.light?.schedule?.off ?? '',
+  );
 
   protected readonly before = signal('');
   protected readonly after = signal('');
@@ -96,7 +112,10 @@ export class PhDaySheet {
     const a = parseNumber(this.after());
     const r = b != null && a != null ? co2FromPhDrop(b, a) : undefined;
     if (!r) return undefined;
-    const bpm = this.waterStore.co2Readings().filter((x) => x.tankId === this.tank().id && x.bubblesPerMinute != null).at(-1)?.bubblesPerMinute;
+    const bpm = this.waterStore
+      .co2Readings()
+      .filter((x) => x.tankId === this.tank().id && x.bubblesPerMinute != null)
+      .at(-1)?.bubblesPerMinute;
     return { ...co2Advice(r.mgL, bpm), drop: r.drop };
   });
 

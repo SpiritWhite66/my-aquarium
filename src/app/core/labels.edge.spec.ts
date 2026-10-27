@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { agoLabel, dueLabel, elapsedLabel, fmt, fmtDate, fmtLongDate, fmtRange, fmtShortDate, fmtTime, frequencyLabel, parseNumber, speciesName, unitLabel } from './labels';
+import {
+  agoLabel,
+  dueLabel,
+  elapsedLabel,
+  fmt,
+  fmtDate,
+  fmtLongDate,
+  fmtRange,
+  fmtShortDate,
+  fmtTime,
+  frequencyLabel,
+  parseNumber,
+  speciesName,
+  unitLabel,
+} from './labels';
 import type { Species } from './models';
 
 const nbsp = /[\u00a0\u202f\u0020]/g;
@@ -42,7 +56,15 @@ describe('nombres', () => {
 });
 
 describe('noms et unités', () => {
-  const species = (o: Partial<Species>) => ({ id: 's', scientificName: 'Danio margaritatus', commonNames: [], kind: 'fish', source: 'builtin', ...o }) as Species;
+  const species = (o: Partial<Species>) =>
+    ({
+      id: 's',
+      scientificName: 'Danio margaritatus',
+      commonNames: [],
+      kind: 'fish',
+      source: 'builtin',
+      ...o,
+    }) as Species;
 
   it('accorde l’unité selon la quantité', () => {
     expect(unitLabel('individual', 1)).toBe('individu');

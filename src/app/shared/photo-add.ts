@@ -44,7 +44,10 @@ export class PhotoAdd {
     this.busy.set(true);
     this.error.set('');
     try {
-      const ids = await this.photoRepo.addPhotos(files, { tankId: this.tankId(), inhabitantId: this.inhabitantId() });
+      const ids = await this.photoRepo.addPhotos(files, {
+        tankId: this.tankId(),
+        inhabitantId: this.inhabitantId(),
+      });
       this.added.emit(ids);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Impossible d’enregistrer la photo.');

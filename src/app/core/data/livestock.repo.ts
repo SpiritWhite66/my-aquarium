@@ -90,7 +90,7 @@ export class LivestockRepo {
       [this.db.inhabitants, this.db.photos, this.db.photoFiles, this.db.inhabitantEvents],
       async () => {
         await this.db.photoFiles.bulkDelete(
-          (await this.db.photos.where('inhabitantId').equals(id).primaryKeys()),
+          await this.db.photos.where('inhabitantId').equals(id).primaryKeys(),
         );
         await this.db.inhabitants.delete(id);
         await this.db.photos.where('inhabitantId').equals(id).delete();

@@ -6,7 +6,11 @@ import { computed, linkedSignal, untracked, type WritableSignal } from '@angular
  * saisit : les mises à jour de la base pendant la saisie ne l'écrasent pas.
  * `initial` : valeur sans fiche (ou fonction qui la calcule, par exemple depuis l'URL).
  */
-export function fromEntity<E extends { id: string }, T>(entity: () => E | undefined, pick: (e: E) => T, initial: T | (() => T)): WritableSignal<T> {
+export function fromEntity<E extends { id: string }, T>(
+  entity: () => E | undefined,
+  pick: (e: E) => T,
+  initial: T | (() => T),
+): WritableSignal<T> {
   // Un `computed` intermédiaire : le champ n'est recalculé que si l'identifiant change, pas à chaque mise à jour de la fiche.
   const id = computed(() => entity()?.id);
   const empty = computed(() => (typeof initial === 'function' ? (initial as () => T)() : initial));
@@ -24,12 +28,20 @@ export function fromEntity<E extends { id: string }, T>(entity: () => E | undefi
  * tant qu'il existe, même si la liste des bacs change. `forced` (le bac d'une fiche qu'on modifie) l'emporte
  * dès qu'il apparaît.
  */
-export function defaultTank(tankIds: () => string[], requested: () => string | undefined, forced: () => string | undefined = () => undefined): WritableSignal<string> {
-  return linkedSignal<{ ids: string[]; requested: string | undefined; forced: string | undefined }, string>({
+export function defaultTank(
+  tankIds: () => string[],
+  requested: () => string | undefined,
+  forced: () => string | undefined = () => undefined,
+): WritableSignal<string> {
+  return linkedSignal<
+    { ids: string[]; requested: string | undefined; forced: string | undefined },
+    string
+  >({
     source: () => ({ ids: tankIds(), requested: requested(), forced: forced() }),
     computation: ({ ids, requested, forced }, previous) => {
       if (forced && forced !== previous?.source.forced) return forced;
-      if (previous?.value && (ids.includes(previous.value) || previous.value === forced)) return previous.value;
+      if (previous?.value && (ids.includes(previous.value) || previous.value === forced))
+        return previous.value;
       return ids.find((id) => id === requested) ?? ids.at(0) ?? '';
     },
   });

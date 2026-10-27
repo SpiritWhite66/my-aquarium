@@ -9,5 +9,9 @@ export class PopulationStore {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly inhabitants = liveSignal(this.destroyRef, () => this.db.inhabitants.toArray(), []);
-  readonly inhabitantEvents = liveSignal(this.destroyRef, () => this.db.inhabitantEvents.orderBy('date').reverse().toArray(), []);
+  readonly inhabitantEvents = liveSignal(
+    this.destroyRef,
+    () => this.db.inhabitantEvents.orderBy('date').reverse().toArray(),
+    [],
+  );
 }

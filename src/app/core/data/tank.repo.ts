@@ -44,7 +44,7 @@ export class TankRepo {
       ],
       async () => {
         await this.db.photoFiles.bulkDelete(
-          (await this.db.photos.where('tankId').equals(id).primaryKeys()),
+          await this.db.photos.where('tankId').equals(id).primaryKeys(),
         );
         // Le matériel du bac est conservé, en réserve.
         await this.db.equipment.where('tankId').equals(id).modify({ tankId: undefined });

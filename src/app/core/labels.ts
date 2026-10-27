@@ -154,8 +154,16 @@ export function speciesName(s: Species | undefined): string {
   return s ? (s.commonNames[0] ?? s.scientificName) : 'Espèce inconnue';
 }
 
-const longDate = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-const shortDate = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+const longDate = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+const shortDate = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+});
 const time = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -179,7 +187,11 @@ export function dueLabel(nextDue: string, today: string): string {
   return `en retard de ${-d} j`;
 }
 
-const fullDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+const fullDate = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
 export function fmtDate(iso: string): string {
   return fullDate.format(iso.length > 10 ? new Date(iso) : parseIsoDate(iso));
 }
@@ -220,10 +232,24 @@ export function parseNumber(raw: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-export const DOSE_UNITS: Record<DoseUnit, string> = { ml: 'ml', g: 'g', pump: 'pression(s)', drop: 'goutte(s)', tab: 'comprimé(s)' };
+export const DOSE_UNITS: Record<DoseUnit, string> = {
+  ml: 'ml',
+  g: 'g',
+  pump: 'pression(s)',
+  drop: 'goutte(s)',
+  tab: 'comprimé(s)',
+};
 
 export const ALGAE_LEVELS = ['Aucune', 'Un peu', 'Moyen', 'Beaucoup'] as const;
-export const ALGAE_TYPES = ['Filamenteuses', 'Barbe noire (BBA)', 'Diatomées (brunes)', 'Cyanobactéries', 'Points verts', 'Duvet vert', 'Eau verte'] as const;
+export const ALGAE_TYPES = [
+  'Filamenteuses',
+  'Barbe noire (BBA)',
+  'Diatomées (brunes)',
+  'Cyanobactéries',
+  'Points verts',
+  'Duvet vert',
+  'Eau verte',
+] as const;
 
 /** Les tâches liées aux plantes sont en vert, les autres en bleu (comme la maquette). */
 export function isPlantTask(type: TaskType): boolean {

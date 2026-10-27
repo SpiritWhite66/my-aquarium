@@ -36,14 +36,42 @@ afterEach(async () => {
   await db.delete();
 });
 
-const tankData = (name: string, o: Partial<Tank> = {}): Omit<Tank, 'id' | 'updatedAt'> => ({ name, type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: false, archived: false, ...o });
-const fish = (tankId: string, quantity = 5, o: Partial<Inhabitant> = {}): Omit<Inhabitant, 'id' | 'updatedAt'> => ({ tankId, speciesId: 'neon', quantity, unit: 'individual', addedDate: '2026-10-01', status: 'healthy', ...o });
+const tankData = (name: string, o: Partial<Tank> = {}): Omit<Tank, 'id' | 'updatedAt'> => ({
+  name,
+  type: 'planted',
+  volumeGross: 60,
+  startDate: '2026-01-01',
+  co2: false,
+  archived: false,
+  ...o,
+});
+const fish = (
+  tankId: string,
+  quantity = 5,
+  o: Partial<Inhabitant> = {},
+): Omit<Inhabitant, 'id' | 'updatedAt'> => ({
+  tankId,
+  speciesId: 'neon',
+  quantity,
+  unit: 'individual',
+  addedDate: '2026-10-01',
+  status: 'healthy',
+  ...o,
+});
 
 describe('TankRepo', () => {
   it('crée un bac avec les tâches habituelles selon son type et le CO2', async () => {
     const id = await inject(TankRepo).saveTank(tankData('Salon', { co2: true }), true);
     const types = (await db.tasks.where('tankId').equals(id).toArray()).map((t) => t.type).sort();
-    expect(types).toEqual(['co2_refill', 'fertilize', 'filter_clean', 'glass_clean', 'plant_trim', 'water_change', 'water_test']);
+    expect(types).toEqual([
+      'co2_refill',
+      'fertilize',
+      'filter_clean',
+      'glass_clean',
+      'plant_trim',
+      'water_change',
+      'water_test',
+    ]);
   });
 
   it('ne crée pas de tâches si on ne les demande pas', async () => {
@@ -54,7 +82,12 @@ describe('TankRepo', () => {
 
   it('defaultTasks : un bac de quarantaine n’a ni engrais ni taille, les échéances partent d’aujourd’hui', () => {
     const list = defaultTasks('t', 'quarantine', false, '2026-10-01');
-    expect(list.map((t) => t.type)).toEqual(['water_change', 'water_test', 'glass_clean', 'filter_clean']);
+    expect(list.map((t) => t.type)).toEqual([
+      'water_change',
+      'water_test',
+      'glass_clean',
+      'filter_clean',
+    ]);
     expect(list.find((t) => t.type === 'filter_clean')?.nextDue).toBe('2026-10-31');
     expect(list[0].label).toBe('Changement d’eau 30 %');
     expect(list.every((t) => t.active && t.tankId === 't')).toBe(true);
@@ -75,13 +108,37 @@ describe('TankRepo', () => {
     const b = await tanks.saveTank(tankData('B'));
     for (const t of [a, b]) {
       await inject(LivestockRepo).addInhabitant(fish(t));
-      await inject(CareRepo).addWaterTest({ tankId: t, date: '2026-10-01T10:00:00Z', values: { ph: 7 } });
-      await inject(CareRepo).addLog({ tankId: t, type: 'custom', label: 'x', date: '2026-10-01T10:00:00Z' });
-      await db.photos.put({ id: `p${t}`, updatedAt: '', tankId: t, date: '2026-10-01', width: 1, height: 1 });
+      await inject(CareRepo).addWaterTest({
+        tankId: t,
+        date: '2026-10-01T10:00:00Z',
+        values: { ph: 7 },
+      });
+      await inject(CareRepo).addLog({
+        tankId: t,
+        type: 'custom',
+        label: 'x',
+        date: '2026-10-01T10:00:00Z',
+      });
+      await db.photos.put({
+        id: `p${t}`,
+        updatedAt: '',
+        tankId: t,
+        date: '2026-10-01',
+        width: 1,
+        height: 1,
+      });
       await db.photoFiles.put({ id: `p${t}`, full: new Blob(['x']), thumb: new Blob(['x']) });
     }
     const eq = await inject(GearRepo).saveEquipment({ tankId: a, type: 'filter', name: 'Filtre' });
-    await db.settingChanges.put({ id: 's', updatedAt: '', tankId: a, equipmentId: eq, equipmentName: 'Filtre', date: '2026-10-01', field: 'light.intensityPct' } as never);
+    await db.settingChanges.put({
+      id: 's',
+      updatedAt: '',
+      tankId: a,
+      equipmentId: eq,
+      equipmentName: 'Filtre',
+      date: '2026-10-01',
+      field: 'light.intensityPct',
+    } as never);
 
     await tanks.deleteTank(a);
 
@@ -152,7 +209,15 @@ describe('LivestockRepo', () => {
     const a = await tanks.saveTank(tankData('Salon'));
     const b = await tanks.saveTank(tankData('Quarantaine'));
     const id = await repo.addInhabitant(fish(a, 3));
-    await db.photos.put({ id: 'p', updatedAt: '', tankId: a, inhabitantId: id, date: '2026-10-01', width: 1, height: 1 });
+    await db.photos.put({
+      id: 'p',
+      updatedAt: '',
+      tankId: a,
+      inhabitantId: id,
+      date: '2026-10-01',
+      width: 1,
+      height: 1,
+    });
     await repo.moveInhabitant((await db.inhabitants.get(id))!, b);
     expect((await db.inhabitants.get(id))?.tankId).toBe(b);
     expect((await db.photos.get('p'))?.tankId).toBe(b);
@@ -188,7 +253,12 @@ describe('LivestockRepo', () => {
   it('crée la fiche personnelle puis la remplace par la fiche intégrée à la suppression', async () => {
     const repo = inject(LivestockRepo);
     const t = await inject(TankRepo).saveTank(tankData('A'));
-    const sp = await repo.saveSpecies({ scientificName: 'Perso', kind: 'fish', commonNames: ['Perso'], overrides: 'neon' });
+    const sp = await repo.saveSpecies({
+      scientificName: 'Perso',
+      kind: 'fish',
+      commonNames: ['Perso'],
+      overrides: 'neon',
+    });
     expect(sp.startsWith('custom-')).toBe(true);
     expect((await db.species.get(sp))?.source).toBe('custom');
     const id = await repo.addInhabitant(fish(t, 2, { speciesId: sp }));
@@ -199,7 +269,13 @@ describe('LivestockRepo', () => {
 
   it('ne supprime jamais une fiche intégrée', async () => {
     const repo = inject(LivestockRepo);
-    await db.species.put({ id: 'builtin', source: 'builtin', scientificName: 'x', kind: 'fish', commonNames: ['x'] } as never);
+    await db.species.put({
+      id: 'builtin',
+      source: 'builtin',
+      scientificName: 'x',
+      kind: 'fish',
+      commonNames: ['x'],
+    } as never);
     await repo.deleteSpecies('builtin');
     await repo.deleteSpecies('absente');
     expect(await db.species.get('builtin')).toBeDefined();
@@ -213,9 +289,18 @@ describe('GearRepo', () => {
     const base = { tankId: t, type: 'light' as const, name: 'Rampe', light: { intensityPct: 80 } };
     const id = await repo.saveEquipment(base);
     expect(await db.settingChanges.count()).toBe(0);
-    await repo.saveEquipment({ ...base, id, light: { intensityPct: 60 } }, { effective: '2026-10-05', note: '  moins de lumière ' });
+    await repo.saveEquipment(
+      { ...base, id, light: { intensityPct: 60 } },
+      { effective: '2026-10-05', note: '  moins de lumière ' },
+    );
     const [c] = await db.settingChanges.toArray();
-    expect(c).toMatchObject({ field: 'light.intensityPct', equipmentId: id, equipmentName: 'Rampe', tankId: t, note: 'moins de lumière' });
+    expect(c).toMatchObject({
+      field: 'light.intensityPct',
+      equipmentId: id,
+      equipmentName: 'Rampe',
+      tankId: t,
+      note: 'moins de lumière',
+    });
     expect(new Date(c.date).getTime()).toBe(new Date('2026-10-05T12:00').getTime());
   });
 
@@ -256,7 +341,12 @@ describe('GearRepo', () => {
   it('mesures CO2 : ajout et suppression', async () => {
     const repo = inject(GearRepo);
     const t = await inject(TankRepo).saveTank(tankData('A'));
-    await repo.addCo2Reading({ id: 'r', tankId: t, date: '2026-10-01T10:00:00Z', bubblesPerMinute: 2 });
+    await repo.addCo2Reading({
+      id: 'r',
+      tankId: t,
+      date: '2026-10-01T10:00:00Z',
+      bubblesPerMinute: 2,
+    });
     expect((await db.co2Readings.get('r'))?.bubblesPerMinute).toBe(2);
     await repo.deleteCo2Reading('r');
     expect(await db.co2Readings.count()).toBe(0);
@@ -264,7 +354,13 @@ describe('GearRepo', () => {
 });
 
 describe('CareRepo', () => {
-  const taskBase = { type: 'water_change' as const, label: 'Eau', everyDays: 7, nextDue: '2020-01-01', active: true };
+  const taskBase = {
+    type: 'water_change' as const,
+    label: 'Eau',
+    everyDays: 7,
+    nextDue: '2020-01-01',
+    active: true,
+  };
 
   it('terminer une tâche récurrente reporte l’échéance de sa fréquence et journalise', async () => {
     const care = inject(CareRepo);
@@ -277,7 +373,13 @@ describe('CareRepo', () => {
     expect(new Date(task.nextDue + 'T00:00').getTime()).toBe(expected.getTime());
     expect(task.active).toBe(true);
     const [log] = await db.logs.toArray();
-    expect(log).toMatchObject({ taskId: 'k', label: 'Eau', note: 'ok', type: 'water_change', details: { waterChangedLiters: 20 } });
+    expect(log).toMatchObject({
+      taskId: 'k',
+      label: 'Eau',
+      note: 'ok',
+      type: 'water_change',
+      details: { waterChangedLiters: 20 },
+    });
   });
 
   it('terminer une tâche unique la désactive', async () => {
@@ -291,7 +393,13 @@ describe('CareRepo', () => {
   it('un relevé ne valide pas une tâche pas encore due ni inactive', async () => {
     const care = inject(CareRepo);
     const t = await inject(TankRepo).saveTank(tankData('A'));
-    await care.saveTask({ ...taskBase, type: 'water_test', id: 'futur', tankId: t, nextDue: '2999-01-01' });
+    await care.saveTask({
+      ...taskBase,
+      type: 'water_test',
+      id: 'futur',
+      tankId: t,
+      nextDue: '2999-01-01',
+    });
     await care.saveTask({ ...taskBase, type: 'water_test', id: 'off', tankId: t, active: false });
     await care.addWaterTest({ tankId: t, date: '2026-10-01T10:00:00Z', values: { ph: 7 } });
     expect(await db.logs.count()).toBe(0);
@@ -300,7 +408,12 @@ describe('CareRepo', () => {
   it('modifie et supprime un relevé', async () => {
     const care = inject(CareRepo);
     const t = await inject(TankRepo).saveTank(tankData('A'));
-    await care.addWaterTest({ id: 'w', tankId: t, date: '2026-10-01T10:00:00Z', values: { ph: 7 } });
+    await care.addWaterTest({
+      id: 'w',
+      tankId: t,
+      date: '2026-10-01T10:00:00Z',
+      values: { ph: 7 },
+    });
     await care.updateWaterTest({ ...(await db.waterTests.get('w'))!, values: { ph: 6.5 } });
     expect((await db.waterTests.get('w'))?.values.ph).toBe(6.5);
     await care.deleteWaterTest('w');
@@ -316,10 +429,25 @@ describe('CareRepo', () => {
 
   it('doses d’engrais : une ligne par produit, libellé avec la dose, ordre conservé', async () => {
     const care = inject(CareRepo);
-    await care.logDoses('t', [{ product: 'NPK', amount: 2.5, unit: 'ml' }, { product: 'Fer' }, { product: 'Pompe', amount: 1, unit: 'pump', consumableId: 'c' }], undefined, 'matin');
+    await care.logDoses(
+      't',
+      [
+        { product: 'NPK', amount: 2.5, unit: 'ml' },
+        { product: 'Fer' },
+        { product: 'Pompe', amount: 1, unit: 'pump', consumableId: 'c' },
+      ],
+      undefined,
+      'matin',
+    );
     const logs = (await db.logs.toArray()).sort((a, b) => a.date.localeCompare(b.date));
-    expect(logs.map((l) => l.label)).toEqual(['Engrais — NPK 2,5 ml', 'Engrais — Fer', 'Engrais — Pompe 1 pression(s)']);
-    expect(logs.every((l) => l.type === 'fertilize' && l.note === 'matin' && l.tankId === 't')).toBe(true);
+    expect(logs.map((l) => l.label)).toEqual([
+      'Engrais — NPK 2,5 ml',
+      'Engrais — Fer',
+      'Engrais — Pompe 1 pression(s)',
+    ]);
+    expect(
+      logs.every((l) => l.type === 'fertilize' && l.note === 'matin' && l.tankId === 't'),
+    ).toBe(true);
     expect(logs[2].details?.consumableId).toBe('c');
   });
 
@@ -336,7 +464,13 @@ describe('CareRepo', () => {
     const care = inject(CareRepo);
     await care.saveTask({ ...taskBase, id: 'a', tankId: 't', nextDue: '2026-10-05' });
     await care.saveTask({ ...taskBase, id: 'b', tankId: 't', nextDue: '2026-10-20' });
-    await care.saveTask({ ...taskBase, id: 'c', tankId: 't', nextDue: '2026-10-05', active: false });
+    await care.saveTask({
+      ...taskBase,
+      id: 'c',
+      tankId: 't',
+      nextDue: '2026-10-05',
+      active: false,
+    });
     const moved = await care.postponeTasks('2026-10-10');
     expect(moved).toBe(1);
     expect((await db.tasks.get('a'))?.nextDue).toBe('2026-10-10');
@@ -348,9 +482,16 @@ describe('CareRepo', () => {
     const care = inject(CareRepo);
     const id = await care.addDiagnosis(
       {
-        tankId: 't', date: '2026-10-01T10:00:00Z', summary: 's', hypotheses: [],
+        tankId: 't',
+        date: '2026-10-01T10:00:00Z',
+        summary: 's',
+        hypotheses: [],
         actions: [
-          { title: 'A', priority: 'now', task: { type: 'plant_trim', label: 'Tailler', everyDays: 14, inDays: 2 } },
+          {
+            title: 'A',
+            priority: 'now',
+            task: { type: 'plant_trim', label: 'Tailler', everyDays: 14, inDays: 2 },
+          },
           { title: 'B', priority: 'soon', task: { type: 'custom', label: 'Ponctuel' } },
           { title: 'C', priority: 'later', task: { type: 'custom', label: 'Non coché' } },
           { title: 'D', priority: 'later' },
@@ -370,7 +511,19 @@ describe('CareRepo', () => {
 
   it('coche une action, supprime un diagnostic', async () => {
     const care = inject(CareRepo);
-    const id = await care.addDiagnosis({ tankId: 't', date: '2026-10-01T10:00:00Z', summary: 's', hypotheses: [], actions: [{ title: 'A', priority: 'now' }, { title: 'B', priority: 'now' }] }, []);
+    const id = await care.addDiagnosis(
+      {
+        tankId: 't',
+        date: '2026-10-01T10:00:00Z',
+        summary: 's',
+        hypotheses: [],
+        actions: [
+          { title: 'A', priority: 'now' },
+          { title: 'B', priority: 'now' },
+        ],
+      },
+      [],
+    );
     await care.setActionDone((await db.diagnoses.get(id))!, 1, true);
     expect((await db.diagnoses.get(id))!.actions.map((a) => !!a.done)).toEqual([false, true]);
     await care.deleteDiagnosis(id);
@@ -379,9 +532,22 @@ describe('CareRepo', () => {
 
   it('bilans visuels : ajout, résolution d’un constat, suppression', async () => {
     const care = inject(CareRepo);
-    await care.addObservation({ id: 'o', tankId: 't', date: '2026-10-01T10:00:00Z', overall: 'watch', findings: [{ kind: 'algae', label: 'a' }, { kind: 'algae', label: 'b' }] });
+    await care.addObservation({
+      id: 'o',
+      tankId: 't',
+      date: '2026-10-01T10:00:00Z',
+      overall: 'watch',
+      findings: [
+        { kind: 'algae', label: 'a' },
+        { kind: 'algae', label: 'b' },
+      ],
+    });
     await care.setFindingResolved((await db.observations.get('o'))!, 0, true);
-    expect((await db.observations.get('o'))!.findings.map((f) => !!(f as { resolved?: boolean }).resolved)).toEqual([true, false]);
+    expect(
+      (await db.observations.get('o'))!.findings.map(
+        (f) => !!(f as { resolved?: boolean }).resolved,
+      ),
+    ).toEqual([true, false]);
     await care.deleteObservation('o');
     expect(await db.observations.count()).toBe(0);
   });
@@ -390,20 +556,40 @@ describe('CareRepo', () => {
 describe('PhotoRepo', () => {
   function stubImaging(width = 3000, height = 2000) {
     vi.stubGlobal('createImageBitmap', async () => ({ width, height, close: vi.fn() }));
-    vi.stubGlobal('OffscreenCanvas', class {
-      constructor(public w: number, public h: number) {}
-      getContext() { return { drawImage: vi.fn() }; }
-      async convertToBlob() { return new Blob([`${this.w}x${this.h}`], { type: 'image/jpeg' }); }
-    });
+    vi.stubGlobal(
+      'OffscreenCanvas',
+      class {
+        constructor(
+          public w: number,
+          public h: number,
+        ) {}
+        getContext() {
+          return { drawImage: vi.fn() };
+        }
+        async convertToBlob() {
+          return new Blob([`${this.w}x${this.h}`], { type: 'image/jpeg' });
+        }
+      },
+    );
   }
-  const file = (name = 'a.jpg', type = 'image/jpeg', lastModified = Date.parse('2026-10-01T10:00:00Z')) => new File(['x'], name, { type, lastModified });
+  const file = (
+    name = 'a.jpg',
+    type = 'image/jpeg',
+    lastModified = Date.parse('2026-10-01T10:00:00Z'),
+  ) => new File(['x'], name, { type, lastModified });
 
   it('réduit la photo (grand côté 1600, vignette 400) et la range à part', async () => {
     stubImaging();
     const t = await inject(TankRepo).saveTank(tankData('A'));
     const [id] = await inject(PhotoRepo).addPhotos([file()], { tankId: t }, 'légende');
     const meta = (await db.photos.get(id))!;
-    expect(meta).toMatchObject({ tankId: t, width: 3000, height: 2000, caption: 'légende', date: '2026-10-01T10:00:00.000Z' });
+    expect(meta).toMatchObject({
+      tankId: t,
+      width: 3000,
+      height: 2000,
+      caption: 'légende',
+      date: '2026-10-01T10:00:00.000Z',
+    });
     const files = (await inject(PhotoRepo).photoFile(id))!;
     expect(await files.full.text()).toBe('1600x1067');
     expect(await files.thumb.text()).toBe('400x267');
@@ -427,17 +613,28 @@ describe('PhotoRepo', () => {
     const t = await inject(TankRepo).saveTank(tankData('A'));
     const repo = inject(PhotoRepo);
     const [a] = await repo.addPhotos([file('a.jpg', 'image/jpeg', 0)], { tankId: t });
-    const [b] = await repo.addPhotos([file('b.jpg', 'image/jpeg', Date.now() + 86_400_000)], { tankId: t });
-    for (const id of [a, b]) expect(Math.abs(Date.now() - new Date((await db.photos.get(id))!.date).getTime())).toBeLessThan(5000);
+    const [b] = await repo.addPhotos([file('b.jpg', 'image/jpeg', Date.now() + 86_400_000)], {
+      tankId: t,
+    });
+    for (const id of [a, b])
+      expect(
+        Math.abs(Date.now() - new Date((await db.photos.get(id))!.date).getTime()),
+      ).toBeLessThan(5000);
     expect(await (await repo.photoFile(a))!.full.text()).toBe('100x50');
   });
 
   it('refuse un fichier qui n’est pas une image ou illisible', async () => {
     stubImaging();
     const t = await inject(TankRepo).saveTank(tankData('A'));
-    await expect(inject(PhotoRepo).addPhotos([file('a.txt', 'text/plain')], { tankId: t })).rejects.toThrow('pas une image');
-    vi.stubGlobal('createImageBitmap', async () => { throw new Error('x'); });
-    await expect(inject(PhotoRepo).addPhotos([file()], { tankId: t })).rejects.toThrow('Format d’image');
+    await expect(
+      inject(PhotoRepo).addPhotos([file('a.txt', 'text/plain')], { tankId: t }),
+    ).rejects.toThrow('pas une image');
+    vi.stubGlobal('createImageBitmap', async () => {
+      throw new Error('x');
+    });
+    await expect(inject(PhotoRepo).addPhotos([file()], { tankId: t })).rejects.toThrow(
+      'Format d’image',
+    );
     expect(await db.photos.count()).toBe(0);
   });
 
@@ -445,8 +642,14 @@ describe('PhotoRepo', () => {
     stubImaging();
     const repo = inject(PhotoRepo);
     const t = await inject(TankRepo).saveTank(tankData('A'));
-    const [p1] = await repo.addPhotos([file('1.jpg', 'image/jpeg', Date.parse('2026-10-01T10:00:00Z'))], { tankId: t });
-    const [p2] = await repo.addPhotos([file('2.jpg', 'image/jpeg', Date.parse('2026-10-02T10:00:00Z'))], { tankId: t });
+    const [p1] = await repo.addPhotos(
+      [file('1.jpg', 'image/jpeg', Date.parse('2026-10-01T10:00:00Z'))],
+      { tankId: t },
+    );
+    const [p2] = await repo.addPhotos(
+      [file('2.jpg', 'image/jpeg', Date.parse('2026-10-02T10:00:00Z'))],
+      { tankId: t },
+    );
     await repo.setCaption(p2, '  belle ');
     expect((await db.photos.get(p2))?.caption).toBe('belle');
     await repo.setCaption(p2, '   ');

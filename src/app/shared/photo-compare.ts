@@ -1,5 +1,16 @@
-import type { ElementRef} from '@angular/core';
-import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, input, linkedSignal, output, signal, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import type { Photo } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { PopulationStore } from '../core/stores/population.store';
@@ -123,10 +134,14 @@ export class PhotoCompare {
   protected readonly mode = signal<'slider' | 'side'>('slider');
   protected readonly pos = signal(50);
 
-  private readonly sorted = computed(() => [...this.photos()].sort((a, b) => a.date.localeCompare(b.date)));
+  private readonly sorted = computed(() =>
+    [...this.photos()].sort((a, b) => a.date.localeCompare(b.date)),
+  );
   // Par défaut : la plus ancienne et la plus récente.
   protected readonly firstId = linkedSignal(() => this.initialFirst() ?? this.sorted()[0]?.id);
-  protected readonly secondId = linkedSignal(() => this.initialSecond() ?? this.sorted().at(-1)?.id);
+  protected readonly secondId = linkedSignal(
+    () => this.initialSecond() ?? this.sorted().at(-1)?.id,
+  );
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
   /** [avant, après] : toujours dans l'ordre des dates, quel que soit l'ordre des choix. */
@@ -139,7 +154,9 @@ export class PhotoCompare {
   });
 
   protected readonly options = computed(() =>
-    [...this.sorted()].reverse().map((p) => ({ id: p.id, label: `${fmtDate(p.date)}${p.caption ? ' · ' + p.caption : ''}` })),
+    [...this.sorted()]
+      .reverse()
+      .map((p) => ({ id: p.id, label: `${fmtDate(p.date)}${p.caption ? ' · ' + p.caption : ''}` })),
   );
 
   protected readonly ratio = computed(() => {
@@ -160,7 +177,10 @@ export class PhotoCompare {
     return this.populationStore
       .inhabitants()
       .filter((i) => i.tankId === this.tankId() && i.addedDate > from && i.addedDate <= to)
-      .map((i) => `${speciesName(this.speciesStore.speciesById().get(i.speciesId))} (${i.quantity} ${unitLabel(i.unit, i.quantity)})`);
+      .map(
+        (i) =>
+          `${speciesName(this.speciesStore.speciesById().get(i.speciesId))} (${i.quantity} ${unitLabel(i.unit, i.quantity)})`,
+      );
   });
 
   constructor() {

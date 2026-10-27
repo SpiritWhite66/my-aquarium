@@ -65,7 +65,9 @@ export class TankDetailPage {
   protected readonly types = TANK_TYPES;
   protected readonly urls = inject(PhotoUrls);
   readonly id = input.required<string>();
-  protected readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.id()));
+  protected readonly view = computed(() =>
+    this.store.tankViews().find((v) => v.tank.id === this.id()),
+  );
   protected readonly planted = computed(() => {
     const v = this.view();
     return !!v && (v.tank.type === 'planted' || v.plants.length > 0);

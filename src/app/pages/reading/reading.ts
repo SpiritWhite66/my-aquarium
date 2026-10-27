@@ -3,9 +3,15 @@ import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
 import { WaterStore } from '../../core/stores/water.store';
 import { ALGAE_LEVELS, ALGAE_TYPES } from '../../core/labels';
-import type {
-  AlgaeLevel, ParamKey, WaterTest } from '../../core/models';
-import { EXTRA_PARAMS, MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf, measuredParams } from '../../core/rules';
+import type { AlgaeLevel, ParamKey, WaterTest } from '../../core/models';
+import {
+  EXTRA_PARAMS,
+  MAIN_PARAMS,
+  PARAM_BY_KEY,
+  idealRange,
+  levelOf,
+  measuredParams,
+} from '../../core/rules';
 import { fmt, fmtRange, fmtShortDate, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { defaultTank, fromEntity } from '../../shared/form-state';
@@ -121,14 +127,23 @@ export class ReadingPage {
   readonly edit = input<string>();
 
   protected readonly nowLocal = toLocalInput(new Date().toISOString());
-  protected readonly editing = computed(() => this.waterStore.waterTests().find((t) => t.id === this.edit()));
+  protected readonly editing = computed(() =>
+    this.waterStore.waterTests().find((t) => t.id === this.edit()),
+  );
   // En correction, les champs prennent les valeurs du relevé enregistré, puis appartiennent à la saisie.
   protected readonly when = fromEntity(this.editing, (t) => toLocalInput(t.date), this.nowLocal);
   /** Bac du relevé corrigé ; sinon celui de l'URL, sinon le premier. */
-  protected readonly tankId = defaultTank(() => this.store.tankViews().map((v) => v.tank.id), this.bac, () => this.editing()?.tankId);
+  protected readonly tankId = defaultTank(
+    () => this.store.tankViews().map((v) => v.tank.id),
+    this.bac,
+    () => this.editing()?.tankId,
+  );
   protected readonly raw = fromEntity<WaterTest, Partial<Record<ParamKey, string>>>(
     this.editing,
-    (t) => Object.fromEntries(Object.entries(t.values).map(([k, v]) => [k, String(v).replace('.', ',')])),
+    (t) =>
+      Object.fromEntries(
+        Object.entries(t.values).map(([k, v]) => [k, String(v).replace('.', ',')]),
+      ),
     {},
   );
   protected readonly note = fromEntity(this.editing, (t) => t.note ?? '', '');
@@ -139,7 +154,9 @@ export class ReadingPage {
     return EXTRA_PARAMS.filter((k) => !shown.has(k)).map((k) => PARAM_BY_KEY[k].short);
   });
 
-  private readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.tankId()));
+  private readonly view = computed(() =>
+    this.store.tankViews().find((v) => v.tank.id === this.tankId()),
+  );
   private readonly species = computed(() => this.view()?.members.map((m) => m.species) ?? []);
   protected readonly prevDate = computed(() => {
     const d = this.view()?.lastTest?.date;
@@ -148,7 +165,9 @@ export class ReadingPage {
 
   protected readonly fields = computed(() => {
     const last = this.view()?.lastTest?.values ?? {};
-    const keys = this.showExtra() ? [...MAIN_PARAMS, ...EXTRA_PARAMS] : measuredParams(this.view()?.tests ?? []);
+    const keys = this.showExtra()
+      ? [...MAIN_PARAMS, ...EXTRA_PARAMS]
+      : measuredParams(this.view()?.tests ?? []);
     return keys.map((key) => {
       const def = PARAM_BY_KEY[key];
       const value = parseNumber(this.raw()[key] ?? '');
@@ -156,7 +175,10 @@ export class ReadingPage {
         key,
         label: `${def.short}${def.unit ? ' ' + def.unit : ''}`,
         prev: last[key] != null ? fmt(last[key]) : undefined,
-        level: value == null ? 'ok' : levelOf(key, value, idealRange(key, this.species(), this.view()?.tank)),
+        level:
+          value == null
+            ? 'ok'
+            : levelOf(key, value, idealRange(key, this.species(), this.view()?.tank)),
       };
     });
   });
@@ -178,7 +200,9 @@ export class ReadingPage {
     return out;
   });
 
-  private readonly hasWater = computed(() => Object.values(this.raw()).some((v) => parseNumber(v) != null));
+  private readonly hasWater = computed(() =>
+    Object.values(this.raw()).some((v) => parseNumber(v) != null),
+  );
   protected readonly hasValue = computed(() => this.hasWater() || this.algae() != null);
 
   protected readonly algaeLevels = ALGAE_LEVELS;
@@ -208,8 +232,10 @@ export class ReadingPage {
     const date = this.when() ? new Date(this.when()).toISOString() : new Date().toISOString();
     const note = this.note().trim() || undefined;
     const prev = this.editing();
-    if (prev) await this.careRepo.updateWaterTest({ ...prev, tankId: this.tankId(), date, values, note });
-    else if (this.hasWater()) await this.careRepo.addWaterTest({ tankId: this.tankId(), date, values, note });
+    if (prev)
+      await this.careRepo.updateWaterTest({ ...prev, tankId: this.tankId(), date, values, note });
+    else if (this.hasWater())
+      await this.careRepo.addWaterTest({ tankId: this.tankId(), date, values, note });
     const level = this.algae();
     if (level != null && !prev) {
       const types = [...this.algaeTypes()];

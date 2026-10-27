@@ -26,7 +26,10 @@ export class BackupRepo {
     return { exportedAt };
   }
 
-  private async archiveEntries(): Promise<{ entries: AsyncGenerator<ArchiveEntry>; exportedAt: string }> {
+  private async archiveEntries(): Promise<{
+    entries: AsyncGenerator<ArchiveEntry>;
+    exportedAt: string;
+  }> {
     const exportedAt = now();
     const data: Record<string, unknown> = {};
     for (const table of BACKUP_TABLES) {
@@ -41,10 +44,13 @@ export class BackupRepo {
       exportedAt,
       data: data as ExportFile['data'],
     };
-    const ids = (await this.db.photos.toCollection().primaryKeys());
+    const ids = await this.db.photos.toCollection().primaryKeys();
     const db = this.db;
     async function* entries(): AsyncGenerator<ArchiveEntry> {
-      yield { name: 'data.json', data: new Blob([JSON.stringify(file)], { type: 'application/json' }) };
+      yield {
+        name: 'data.json',
+        data: new Blob([JSON.stringify(file)], { type: 'application/json' }),
+      };
       for (const id of ids) {
         const img = await db.photoFiles.get(id);
         if (!img) continue;

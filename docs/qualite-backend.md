@@ -109,4 +109,8 @@ Une vulnérabilité sans correctif disponible peut être acceptée temporairemen
 - [ ] Étape 1 du plan backend : ESLint strict, Prettier, knip, tsc strict, Vitest + seuils, Stryker, Postgres + MinIO en CI, gitleaks, Trivy, tests de fumée.
 - [ ] Étape 1 : squelette des tests E2E de l'API et génération OpenAPI.
 - [ ] Chaque étape suivante : ses tests E2E de l'API et d'isolation avant d'être déclarée terminée.
-- [ ] Appli Angular : ajouter ESLint (`angular-eslint` + mêmes règles) et le seuil 0 avertissement ; corriger l'existant dans une PR dédiée.
+- [x] Appli Angular : ESLint (`angular-eslint` + typescript-eslint strict avec types + sécurité), 0 avertissement, Prettier et knip vérifiés en CI (fait avant le backend).
+  - Désactivations assumées, à reprendre dans l'API : `security/detect-object-injection` (faux positifs en masse ; couvert par le typage et CodeQL), règles `no-unsafe-*` et `require-await` dans les tests seulement (simulacres et `JSON.parse`).
+  - Les assertions non nulles `!` sont remplacées par `must()` (échec explicite si la valeur manque).
+  - Prettier est configuré sans formatage des modèles Angular en ligne (il y ajoutait des espaces visibles) ; `catalog.ts` (lu par regex par `build-ai`) et `app.html` sont ignorés.
+  - Pas encore activé dans l'appli : `noUncheckedIndexedAccess` (à prévoir dans l'API dès le départ).

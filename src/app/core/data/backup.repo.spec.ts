@@ -32,13 +32,34 @@ afterEach(async () => {
   await db.delete();
 });
 
-const tank = { name: 'Salon', type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: false, archived: false } as const;
+const tank = {
+  name: 'Salon',
+  type: 'planted',
+  volumeGross: 60,
+  startDate: '2026-01-01',
+  co2: false,
+  archived: false,
+} as const;
 const jpg = (s: string) => new Blob([s], { type: 'image/jpeg' });
 async function seed() {
   const t = await TestBed.inject(TankRepo).saveTank(tank);
   await db.species.bulkPut([
-    { id: 'builtin-1', source: 'builtin', scientificName: 'Intégrée', commonNames: ['Intégrée'], kind: 'fish', updatedAt: '' } as never,
-    { id: 'custom-1', source: 'custom', scientificName: 'Perso', commonNames: ['Perso'], kind: 'fish', updatedAt: '' } as never,
+    {
+      id: 'builtin-1',
+      source: 'builtin',
+      scientificName: 'Intégrée',
+      commonNames: ['Intégrée'],
+      kind: 'fish',
+      updatedAt: '',
+    } as never,
+    {
+      id: 'custom-1',
+      source: 'custom',
+      scientificName: 'Perso',
+      commonNames: ['Perso'],
+      kind: 'fish',
+      updatedAt: '',
+    } as never,
   ]);
   await db.photos.bulkPut([
     { id: 'p1', updatedAt: '', tankId: t, date: '2026-10-01T10:00:00Z', width: 1, height: 1 },
@@ -55,7 +76,11 @@ describe('export', () => {
     const { blob, exportedAt } = await repo.exportArchive();
     expect(blob.type).toBe('application/zip');
     const files = await readZip(blob);
-    expect([...files.keys()].sort()).toEqual(['data.json', 'photos/p1-full.jpg', 'photos/p1-thumb.jpg']);
+    expect([...files.keys()].sort()).toEqual([
+      'data.json',
+      'photos/p1-full.jpg',
+      'photos/p1-thumb.jpg',
+    ]);
     const json = JSON.parse(await files.get('data.json')!.text());
     expect(json).toMatchObject({ format: 'my-aquarium', version: 2, exportedAt });
     expect(Object.keys(json.data)).toHaveLength(14);
@@ -95,14 +120,41 @@ describe('export', () => {
 });
 
 describe('import', () => {
-  const backup = (data: Record<string, unknown>) => ({ format: 'my-aquarium', version: 2, exportedAt: '', data });
+  const backup = (data: Record<string, unknown>) => ({
+    format: 'my-aquarium',
+    version: 2,
+    exportedAt: '',
+    data,
+  });
   const zipOf = (json: unknown, extra: Record<string, string> = {}) =>
-    writeZip([{ name: 'data.json', data: new Blob([JSON.stringify(json)]) }, ...Object.entries(extra).map(([name, text]) => ({ name, data: new Blob([text]) }))]);
+    writeZip([
+      { name: 'data.json', data: new Blob([JSON.stringify(json)]) },
+      ...Object.entries(extra).map(([name, text]) => ({ name, data: new Blob([text]) })),
+    ]);
 
   it('remplace tout, garde les fiches intégrées et recrée les fiches personnelles', async () => {
     await seed();
-    const t = { id: 'new', updatedAt: '', name: 'Importé', type: 'planted', volumeGross: 10, archived: false };
-    const file = backup({ tanks: [t], species: [{ id: 'custom-2', updatedAt: '', scientificName: 'Nouvelle', commonNames: ['N'], kind: 'fish', source: 'builtin' }] });
+    const t = {
+      id: 'new',
+      updatedAt: '',
+      name: 'Importé',
+      type: 'planted',
+      volumeGross: 10,
+      archived: false,
+    };
+    const file = backup({
+      tanks: [t],
+      species: [
+        {
+          id: 'custom-2',
+          updatedAt: '',
+          scientificName: 'Nouvelle',
+          commonNames: ['N'],
+          kind: 'fish',
+          source: 'builtin',
+        },
+      ],
+    });
     expect(await repo.importBackup(await zipOf(file))).toEqual([]);
     expect((await db.tanks.toArray()).map((x) => x.id)).toEqual(['new']);
     expect(await db.photos.count()).toBe(0);
@@ -120,47 +172,82 @@ describe('import', () => {
 
   it('range les images du ZIP à côté de leur photo', async () => {
     const file = backup({
-      tanks: [{ id: 't', updatedAt: '', name: 'A', type: 'planted', volumeGross: 10, archived: false }],
+      tanks: [
+        { id: 't', updatedAt: '', name: 'A', type: 'planted', volumeGross: 10, archived: false },
+      ],
       photos: [{ id: 'p', updatedAt: '', tankId: 't', date: '2026-10-01', width: 1, height: 1 }],
     });
-    await repo.importBackup(await zipOf(file, { 'photos/p-full.jpg': 'F', 'photos/p-thumb.jpg': 'T' }));
+    await repo.importBackup(
+      await zipOf(file, { 'photos/p-full.jpg': 'F', 'photos/p-thumb.jpg': 'T' }),
+    );
     const img = (await db.photoFiles.get('p'))!;
     expect(await img.full.text()).toBe('F');
     expect(await img.thumb.text()).toBe('T');
   });
 
   it('lit une ancienne sauvegarde JSON', async () => {
-    const file = { ...backup({ tanks: [{ id: 'old', updatedAt: '', name: 'Ancien', type: 'planted', volumeGross: 10, archived: false }] }), version: 1 };
+    const file = {
+      ...backup({
+        tanks: [
+          {
+            id: 'old',
+            updatedAt: '',
+            name: 'Ancien',
+            type: 'planted',
+            volumeGross: 10,
+            archived: false,
+          },
+        ],
+      }),
+      version: 1,
+    };
     await repo.importBackup(new Blob([JSON.stringify(file)]));
     expect((await db.tanks.get('old'))?.name).toBe('Ancien');
   });
 
   it('renvoie les remarques sans gravité', async () => {
-    const file = backup({ tanks: [], waterTests: [{ id: 'w', tankId: 'x', date: 'd', values: {}, updatedAt: '' }] });
+    const file = backup({
+      tanks: [],
+      waterTests: [{ id: 'w', tankId: 'x', date: 'd', values: {}, updatedAt: '' }],
+    });
     expect(await repo.importBackup(await zipOf(file))).toEqual(['1 relevés sans bac écarté(s)']);
   });
 
   it.each([
     ['un ZIP sans data.json', () => writeZip([{ name: 'autre.txt', data: new Blob(['x']) }])],
     ['un texte quelconque', () => Promise.resolve(new Blob(['pas du json']))],
-    ['un JSON cassé dans le ZIP', () => writeZip([{ name: 'data.json', data: new Blob(['{ cassé']) }])],
+    [
+      'un JSON cassé dans le ZIP',
+      () => writeZip([{ name: 'data.json', data: new Blob(['{ cassé']) }]),
+    ],
   ])('refuse %s sans rien effacer', async (_name, make) => {
     await seed();
-    await expect(repo.importBackup(await make())).rejects.toThrow('Fichier illisible : ce n’est pas une sauvegarde Mes aquariums.');
+    await expect(repo.importBackup(await make())).rejects.toThrow(
+      'Fichier illisible : ce n’est pas une sauvegarde Mes aquariums.',
+    );
     expect(await db.tanks.count()).toBe(1);
     expect(await db.photoFiles.count()).toBe(1);
   });
 
   it('refuse un contenu abîmé sans rien effacer', async () => {
     await seed();
-    await expect(repo.importBackup(await zipOf(backup({ tanks: [{ id: 'x', name: 3 }] })))).rejects.toThrow('Sauvegarde abîmée');
+    await expect(
+      repo.importBackup(await zipOf(backup({ tanks: [{ id: 'x', name: 3 }] }))),
+    ).rejects.toThrow('Sauvegarde abîmée');
     expect(await db.tanks.count()).toBe(1);
     expect(await db.species.count()).toBe(2);
   });
 
   it('un export puis un import redonnent les mêmes données', async () => {
     const t = await seed();
-    await TestBed.inject(LivestockRepo).addInhabitant({ tankId: t, speciesId: 'custom-1', quantity: 3, unit: 'individual', addedDate: '2026-10-01', status: 'healthy' });
+    await TestBed.inject(LivestockRepo).addInhabitant({
+      tankId: t,
+      speciesId: 'custom-1',
+      quantity: 3,
+      unit: 'individual',
+      addedDate: '2026-10-01',
+      status: 'healthy',
+    });
     const { blob } = await repo.exportArchive();
     await repo.importBackup(blob);
     expect((await db.tanks.toArray()).map((x) => x.id)).toEqual([t]);

@@ -8,7 +8,8 @@ import { readPref, writePref } from './local-prefs';
 export const BACKUP_REMINDER_DAYS = 14;
 
 /** `navigator.storage` manque sur certains navigateurs (anciens, ou navigation privée). */
-const maybeStorage = (): Partial<StorageManager> | undefined => (navigator as { storage?: StorageManager }).storage;
+const maybeStorage = (): Partial<StorageManager> | undefined =>
+  (navigator as { storage?: StorageManager }).storage;
 
 /**
  * Protection des données locales :
@@ -71,20 +72,26 @@ export class BackupService {
   /** Télécharge la sauvegarde complète (photos comprises). */
   async exportNow(): Promise<void> {
     const name = `my-aquarium-${this.store.today()}.zip`;
-    const picker = (window as unknown as { showSaveFilePicker?: SaveFilePicker }).showSaveFilePicker;
+    const picker = (window as unknown as { showSaveFilePicker?: SaveFilePicker })
+      .showSaveFilePicker;
     let exportedAt: string;
     if (picker) {
       // Chrome sur ordinateur : le fichier s'écrit directement sur le disque, même avec des centaines de photos.
       // Le choix du fichier doit venir avant tout traitement long (il exige le clic de l'utilisateur).
       let handle: FileHandle;
       try {
-        handle = await picker({ suggestedName: name, types: [{ description: 'Sauvegarde ZIP', accept: { 'application/zip': ['.zip'] } }] });
+        handle = await picker({
+          suggestedName: name,
+          types: [{ description: 'Sauvegarde ZIP', accept: { 'application/zip': ['.zip'] } }],
+        });
       } catch {
         return; // fenêtre fermée sans choisir de fichier
       }
       const out = await handle.createWritable();
       try {
-        ({ exportedAt } = await this.backupRepo.exportArchiveTo({ write: (chunk) => out.write(chunk) }));
+        ({ exportedAt } = await this.backupRepo.exportArchiveTo({
+          write: (chunk) => out.write(chunk),
+        }));
         await out.close();
       } catch (err) {
         await out.abort().catch(() => undefined);
@@ -98,7 +105,9 @@ export class BackupService {
       a.href = url;
       a.download = name;
       a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); }, 60_000);
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 60_000);
     }
     writePref('lastBackup', exportedAt);
     this.lastBackup.set(exportedAt);
@@ -122,7 +131,11 @@ export function fmtBytes(n: number): string {
 
 /** API d'écriture de fichiers (Chrome, ordinateur), absente des types standard. */
 interface FileHandle {
-  createWritable(): Promise<{ write(chunk: Uint8Array): Promise<void>; close(): Promise<void>; abort(): Promise<void> }>;
+  createWritable(): Promise<{
+    write(chunk: Uint8Array): Promise<void>;
+    close(): Promise<void>;
+    abort(): Promise<void>;
+  }>;
 }
 type SaveFilePicker = (options: {
   suggestedName: string;

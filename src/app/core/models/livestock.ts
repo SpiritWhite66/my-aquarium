@@ -17,15 +17,7 @@ export interface Inhabitant extends Entity {
 }
 
 export type InhabitantEventType =
-  | 'added'
-  | 'birth'
-  | 'death'
-  | 'disease'
-  | 'treatment'
-  | 'trim'
-  | 'propagated'
-  | 'moved'
-  | 'note';
+  'added' | 'birth' | 'death' | 'disease' | 'treatment' | 'trim' | 'propagated' | 'moved' | 'note';
 
 export interface InhabitantEvent extends Entity {
   inhabitantId: string;

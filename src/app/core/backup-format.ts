@@ -15,10 +15,23 @@ type Shape = Record<string, Kind>;
 const SHAPES = {
   tanks: { name: 'string', type: 'string', volumeGross: 'number', archived: 'boolean' },
   species: { scientificName: 'string', kind: 'string' },
-  inhabitants: { tankId: 'string', speciesId: 'string', quantity: 'number', unit: 'string', status: 'string' },
+  inhabitants: {
+    tankId: 'string',
+    speciesId: 'string',
+    quantity: 'number',
+    unit: 'string',
+    status: 'string',
+  },
   inhabitantEvents: { inhabitantId: 'string', tankId: 'string', date: 'string', type: 'string' },
   waterTests: { tankId: 'string', date: 'string', values: 'object' },
-  tasks: { tankId: 'string', type: 'string', label: 'string', everyDays: 'number', nextDue: 'string', active: 'boolean' },
+  tasks: {
+    tankId: 'string',
+    type: 'string',
+    label: 'string',
+    everyDays: 'number',
+    nextDue: 'string',
+    active: 'boolean',
+  },
   logs: { tankId: 'string', type: 'string', label: 'string', date: 'string' },
   observations: { tankId: 'string', date: 'string', findings: 'array' },
   photos: { tankId: 'string', date: 'string' },
@@ -33,7 +46,17 @@ export type BackupTable = keyof typeof SHAPES;
 export const BACKUP_TABLES = Object.keys(SHAPES) as BackupTable[];
 
 /** Tables rattachées à un bac : une ligne dont le bac n'existe pas est écartée. */
-const BY_TANK: BackupTable[] = ['inhabitants', 'inhabitantEvents', 'waterTests', 'tasks', 'logs', 'observations', 'photos', 'co2Readings', 'diagnoses'];
+const BY_TANK: BackupTable[] = [
+  'inhabitants',
+  'inhabitantEvents',
+  'waterTests',
+  'tasks',
+  'logs',
+  'observations',
+  'photos',
+  'co2Readings',
+  'diagnoses',
+];
 
 export interface CheckedBackup {
   data: ExportFile['data'];
@@ -43,9 +66,20 @@ export interface CheckedBackup {
 }
 
 const LABELS: Record<BackupTable, string> = {
-  tanks: 'bacs', species: 'fiches', inhabitants: 'habitants', inhabitantEvents: 'événements', waterTests: 'relevés',
-  tasks: 'tâches', logs: 'journal', observations: 'bilans', photos: 'photos', equipment: 'matériel',
-  consumables: 'consommables', co2Readings: 'mesures CO2', settingChanges: 'réglages', diagnoses: 'diagnostics',
+  tanks: 'bacs',
+  species: 'fiches',
+  inhabitants: 'habitants',
+  inhabitantEvents: 'événements',
+  waterTests: 'relevés',
+  tasks: 'tâches',
+  logs: 'journal',
+  observations: 'bilans',
+  photos: 'photos',
+  equipment: 'matériel',
+  consumables: 'consommables',
+  co2Readings: 'mesures CO2',
+  settingChanges: 'réglages',
+  diagnoses: 'diagnostics',
 };
 
 const kindOf = (v: unknown): Kind | 'other' =>
@@ -57,11 +91,19 @@ const kindOf = (v: unknown): Kind | 'other' =>
  */
 export function checkBackup(raw: unknown, images?: Map<string, Blob>): CheckedBackup {
   const f = raw as Partial<ExportFile> | null;
-  if (!f || typeof f !== 'object' || f.format !== 'my-aquarium' || !f.data || typeof f.data !== 'object') {
+  if (
+    !f ||
+    typeof f !== 'object' ||
+    f.format !== 'my-aquarium' ||
+    !f.data ||
+    typeof f.data !== 'object'
+  ) {
     throw new Error('Ce fichier n’est pas une sauvegarde Mes aquariums.');
   }
   if (f.version !== 1 && f.version !== 2) {
-    throw new Error(`Sauvegarde en version ${String(f.version)} : mets l’appli à jour avant de la restaurer.`);
+    throw new Error(
+      `Sauvegarde en version ${String(f.version)} : mets l’appli à jour avant de la restaurer.`,
+    );
   }
   const src = f.data as Record<string, unknown>;
   const errors: string[] = [];
@@ -85,15 +127,22 @@ export function checkBackup(raw: unknown, images?: Map<string, Blob>): CheckedBa
       for (const [k, kind] of Object.entries(shape)) {
         if (kindOf(r[k]) !== kind) errors.push(`${LABELS[table]} n°${i + 1} : « ${k} » invalide`);
       }
-      if (table === 'tasks' && !(Number.isInteger(r['everyDays']) && (r['everyDays'] as number) >= 1)) errors.push(`${LABELS[table]} n°${i + 1} : « everyDays » doit être un entier ≥ 1`);
-      if (ids.has(r['id'] as string)) warnings.push(`${LABELS[table]} : doublon ${r['id'] as string} ignoré`);
+      if (
+        table === 'tasks' &&
+        !(Number.isInteger(r['everyDays']) && (r['everyDays'] as number) >= 1)
+      )
+        errors.push(`${LABELS[table]} n°${i + 1} : « everyDays » doit être un entier ≥ 1`);
+      if (ids.has(r['id'] as string))
+        warnings.push(`${LABELS[table]} : doublon ${r['id'] as string} ignoré`);
       ids.add(r['id'] as string);
     });
     data[table] = list as { id: string }[];
   }
   if (errors.length) {
     const more = errors.length > 5 ? ` (et ${errors.length - 5} autre(s))` : '';
-    throw new Error(`Sauvegarde abîmée, rien n’a été modifié : ${errors.slice(0, 5).join(' ; ')}${more}.`);
+    throw new Error(
+      `Sauvegarde abîmée, rien n’a été modifié : ${errors.slice(0, 5).join(' ; ')}${more}.`,
+    );
   }
 
   // Lignes rattachées à un bac absent : écartées.
@@ -108,7 +157,8 @@ export function checkBackup(raw: unknown, images?: Map<string, Blob>): CheckedBa
   // Images : dans le ZIP (v2) ou en data URL dans le JSON (v1).
   const files = new Map<string, Omit<PhotoFile, 'id'>>();
   const photos: Photo[] = [];
-  for (const p of data.photos as unknown as (Photo & Partial<Pick<ExportedPhoto, 'full' | 'thumb'>>)[]) {
+  for (const p of data.photos as unknown as (Photo &
+    Partial<Pick<ExportedPhoto, 'full' | 'thumb'>>)[]) {
     const { full, thumb, ...meta } = p;
     let img: Omit<PhotoFile, 'id'> | undefined;
     if (typeof full === 'string' && typeof thumb === 'string') {

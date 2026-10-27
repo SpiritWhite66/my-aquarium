@@ -26,8 +26,13 @@ function fakeNotification(permission: string, request = permission) {
   return FakeNotification;
 }
 
-function fakeServiceWorker(reg: Partial<{ showNotification: unknown; periodicSync: unknown }> | null) {
-  Object.defineProperty(navigator, 'serviceWorker', { value: { getRegistration: async () => reg }, configurable: true });
+function fakeServiceWorker(
+  reg: Partial<{ showNotification: unknown; periodicSync: unknown }> | null,
+) {
+  Object.defineProperty(navigator, 'serviceWorker', {
+    value: { getRegistration: async () => reg },
+    configurable: true,
+  });
 }
 
 beforeEach(() => {
@@ -46,14 +51,35 @@ afterEach(async () => {
 });
 
 async function seedDue(prefs: Record<string, unknown> = { enabled: true, time: '00:00' }) {
-  const tankId = await TestBed.inject(TankRepo).saveTank({ name: 'Salon', type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: false, archived: false });
-  await TestBed.inject(CareRepo).saveTask({ tankId, type: 'water_test', label: 'Test', everyDays: 7, nextDue: '2020-01-01', active: true });
+  const tankId = await TestBed.inject(TankRepo).saveTank({
+    name: 'Salon',
+    type: 'planted',
+    volumeGross: 60,
+    startDate: '2026-01-01',
+    co2: false,
+    archived: false,
+  });
+  await TestBed.inject(CareRepo).saveTask({
+    tankId,
+    type: 'water_test',
+    label: 'Test',
+    everyDays: 7,
+    nextDue: '2020-01-01',
+    active: true,
+  });
   await TestBed.inject(PrefsRepo).saveNotificationPrefs(prefs);
   const store = TestBed.inject(AquariumStore);
   const service = TestBed.inject(NotificationService);
   return { store, service };
 }
-const prepared = (store: AquariumStore) => waitFor(() => store.ready() && store.dueTasks().length === 1 && TestBed.inject(PrefsStore).notificationPrefs().enabled && Object.keys(TestBed.inject(PrefsStore).notificationPrefs().digests ?? {}).length > 0);
+const prepared = (store: AquariumStore) =>
+  waitFor(
+    () =>
+      store.ready() &&
+      store.dueTasks().length === 1 &&
+      TestBed.inject(PrefsStore).notificationPrefs().enabled &&
+      Object.keys(TestBed.inject(PrefsStore).notificationPrefs().digests ?? {}).length > 0,
+  );
 
 describe('prise en charge', () => {
   it('est désactivé sans Notification dans le navigateur', () => {
@@ -88,7 +114,9 @@ describe('enable / disable', () => {
     expect(await service.enable()).toBe(true);
     expect(N.requestPermission).toHaveBeenCalledTimes(1);
     expect(service.permission()).toBe('granted');
-    expect((await db.prefs.get('notifications')) as { enabled: boolean }).toMatchObject({ enabled: true });
+    expect((await db.prefs.get('notifications')) as { enabled: boolean }).toMatchObject({
+      enabled: true,
+    });
   });
 
   it('n’active rien si l’autorisation est refusée', async () => {
@@ -100,8 +128,16 @@ describe('enable / disable', () => {
   });
 
   describe('synchronisation en arrière-plan', () => {
-    const periodic = () => ({ register: vi.fn(async () => undefined), unregister: vi.fn(async () => undefined), getTags: vi.fn(async () => [] as string[]) });
-    const permissionState = (state: string) => Object.defineProperty(navigator, 'permissions', { value: { query: vi.fn(async () => ({ state })) }, configurable: true });
+    const periodic = () => ({
+      register: vi.fn(async () => undefined),
+      unregister: vi.fn(async () => undefined),
+      getTags: vi.fn(async () => [] as string[]),
+    });
+    const permissionState = (state: string) =>
+      Object.defineProperty(navigator, 'permissions', {
+        value: { query: vi.fn(async () => ({ state })) },
+        configurable: true,
+      });
 
     it('s’enregistre toutes les 6 heures quand elle est autorisée', async () => {
       fakeNotification('default', 'granted');
@@ -110,7 +146,9 @@ describe('enable / disable', () => {
       permissionState('granted');
       const service = TestBed.inject(NotificationService);
       await service.enable();
-      expect(sync.register).toHaveBeenCalledWith('aquarium-reminders', { minInterval: 6 * 3600_000 });
+      expect(sync.register).toHaveBeenCalledWith('aquarium-reminders', {
+        minInterval: 6 * 3600_000,
+      });
       expect(service.background()).toBe(true);
     });
 
@@ -129,7 +167,14 @@ describe('enable / disable', () => {
       expect(service.background()).toBe(false);
 
       fakeServiceWorker({ periodicSync: sync });
-      Object.defineProperty(navigator, 'permissions', { value: { query: async () => { throw new Error('non pris en charge'); } }, configurable: true });
+      Object.defineProperty(navigator, 'permissions', {
+        value: {
+          query: async () => {
+            throw new Error('non pris en charge');
+          },
+        },
+        configurable: true,
+      });
       expect(await service.enable()).toBe(true);
       expect(service.background()).toBe(false);
     });
@@ -144,7 +189,9 @@ describe('enable / disable', () => {
       await service.disable();
       expect(sync.unregister).toHaveBeenCalledWith('aquarium-reminders');
       expect(service.background()).toBe(false);
-      expect((await db.prefs.get('notifications')) as { enabled: boolean }).toMatchObject({ enabled: false });
+      expect((await db.prefs.get('notifications')) as { enabled: boolean }).toMatchObject({
+        enabled: false,
+      });
 
       sync.unregister.mockRejectedValue(new Error('x'));
       await expect(service.disable()).resolves.toBeUndefined();
@@ -154,7 +201,9 @@ describe('enable / disable', () => {
       fakeNotification('granted');
       const service = TestBed.inject(NotificationService);
       await service.disable();
-      expect((await db.prefs.get('notifications')) as { enabled: boolean }).toMatchObject({ enabled: false });
+      expect((await db.prefs.get('notifications')) as { enabled: boolean }).toMatchObject({
+        enabled: false,
+      });
     });
 
     it('reconnaît au démarrage une synchronisation déjà enregistrée, ou non', async () => {
@@ -184,7 +233,12 @@ describe('affichage', () => {
     await prepared(store);
     await service.check();
     expect(showNotification).toHaveBeenCalledTimes(1);
-    expect(showNotification).toHaveBeenCalledWith('Une chose à faire pour tes bacs', { body: 'Test', icon: 'icons/icon-192x192.png', badge: 'icons/icon-192x192.png', tag: 'aquarium-daily' });
+    expect(showNotification).toHaveBeenCalledWith('Une chose à faire pour tes bacs', {
+      body: 'Test',
+      icon: 'icons/icon-192x192.png',
+      badge: 'icons/icon-192x192.png',
+      tag: 'aquarium-daily',
+    });
     expect(shown).toEqual([]);
   });
 
@@ -228,12 +282,31 @@ describe('affichage', () => {
 
   it('ne dit rien si rien n’est à faire ce jour-là', async () => {
     fakeNotification('granted');
-    const tankId = await TestBed.inject(TankRepo).saveTank({ name: 'Salon', type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: false, archived: false });
-    await TestBed.inject(CareRepo).saveTask({ tankId, type: 'water_test', label: 'Test', everyDays: 7, nextDue: '2999-01-01', active: true });
+    const tankId = await TestBed.inject(TankRepo).saveTank({
+      name: 'Salon',
+      type: 'planted',
+      volumeGross: 60,
+      startDate: '2026-01-01',
+      co2: false,
+      archived: false,
+    });
+    await TestBed.inject(CareRepo).saveTask({
+      tankId,
+      type: 'water_test',
+      label: 'Test',
+      everyDays: 7,
+      nextDue: '2999-01-01',
+      active: true,
+    });
     await TestBed.inject(PrefsRepo).saveNotificationPrefs({ enabled: true, time: '00:00' });
     const store = TestBed.inject(AquariumStore);
     const service = TestBed.inject(NotificationService);
-    await waitFor(() => store.ready() && TestBed.inject(PrefsStore).notificationPrefs().enabled && TestBed.inject(PrefsStore).notificationPrefs().digestsUntil !== undefined);
+    await waitFor(
+      () =>
+        store.ready() &&
+        TestBed.inject(PrefsStore).notificationPrefs().enabled &&
+        TestBed.inject(PrefsStore).notificationPrefs().digestsUntil !== undefined,
+    );
     await service.check();
     expect(shown).toEqual([]);
   });
@@ -246,9 +319,14 @@ describe('affichage', () => {
     expect(shown[0].title).toBe('Une chose à faire pour tes bacs');
     TestBed.resetTestingModule();
     shown.length = 0;
-    TestBed.configureTestingModule({ providers: [{ provide: AQUARIUM_DB, useValue: new AquariumDb(`notif-edge-${n++}`) }] });
+    TestBed.configureTestingModule({
+      providers: [{ provide: AQUARIUM_DB, useValue: new AquariumDb(`notif-edge-${n++}`) }],
+    });
     await TestBed.inject(NotificationService).test();
-    expect(shown[0]).toMatchObject({ title: 'Rappels activés', options: { body: expect.stringContaining('Rien à faire aujourd’hui') } });
+    expect(shown[0]).toMatchObject({
+      title: 'Rappels activés',
+      options: { body: expect.stringContaining('Rien à faire aujourd’hui') },
+    });
   });
 
   it('revient à l’écran : vérifie aussitôt si la page est visible, pas si elle est cachée', async () => {

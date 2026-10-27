@@ -7,10 +7,28 @@ import { WaterStore } from '../../core/stores/water.store';
 import { agoLabel, fmt, fmtShortDate } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { ParamChart } from '../../shared/param-chart';
-import { CYCLING_LABELS, CO2_TARGET, DROP_CHECKER, co2Status, cyclingPhase } from '../../core/insights';
+import {
+  CYCLING_LABELS,
+  CO2_TARGET,
+  DROP_CHECKER,
+  co2Status,
+  cyclingPhase,
+} from '../../core/insights';
 import { Co2Counter } from '../../shared/co2-counter';
 import { PhDaySheet } from '../../shared/ph-day-sheet';
-import { algaeNotes, co2Estimate, co2HistoryLabel, fertilizerDoses, lastCo2Reading, paramCells, paramCharts, phDayReading, recentTests, settingMarks, testSummary } from '../../core/water-view';
+import {
+  algaeNotes,
+  co2Estimate,
+  co2HistoryLabel,
+  fertilizerDoses,
+  lastCo2Reading,
+  paramCells,
+  paramCharts,
+  phDayReading,
+  recentTests,
+  settingMarks,
+  testSummary,
+} from '../../core/water-view';
 import { ALGAE_LEVELS } from '../../core/labels';
 import { CareRepo } from '../../core/data/care.repo';
 import { TankRepo } from '../../core/data/tank.repo';
@@ -226,12 +244,16 @@ import { TankRepo } from '../../core/data/tank.repo';
 export class WaterTab {
   protected readonly algaeLabels = ALGAE_LEVELS;
   /** Niveau d'algues des 16 dernières notes (rapides ou bilans visuels). */
-  protected readonly algaeNotes = computed(() => algaeNotes(this.careStore.observations(), this.id()));
+  protected readonly algaeNotes = computed(() =>
+    algaeNotes(this.careStore.observations(), this.id()),
+  );
   protected readonly nutrient = new Set<string>(['no3', 'po4', 'k', 'fe', 'mg']);
   /** Doses d'engrais du bac, repérées sur les courbes des nutriments. */
   protected readonly doses = computed(() => fertilizerDoses(this.careStore.logs(), this.id()));
   /** Changements de réglages du matériel, repérés sur les courbes. */
-  protected readonly marks = computed(() => settingMarks(this.gearStore.settingChanges(), this.id()));
+  protected readonly marks = computed(() =>
+    settingMarks(this.gearStore.settingChanges(), this.id()),
+  );
   protected readonly store = inject(AquariumStore);
   protected readonly careStore = inject(CareStore);
   protected readonly gearStore = inject(GearStore);
@@ -243,7 +265,9 @@ export class WaterTab {
   protected readonly ago = agoLabel;
   protected readonly shortDate = fmtShortDate;
 
-  protected readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.id()));
+  protected readonly view = computed(() =>
+    this.store.tankViews().find((v) => v.tank.id === this.id()),
+  );
   private readonly species = computed(() => this.view()?.members.map((m) => m.species) ?? []);
 
   protected readonly cells = computed(() => paramCells(this.view(), this.species()));
@@ -253,18 +277,26 @@ export class WaterTab {
   protected readonly fmtN = fmt;
   protected readonly dropInfo = DROP_CHECKER;
   protected readonly counting = signal(false);
-  private readonly co2List = computed(() => this.waterStore.co2Readings().filter((r) => r.tankId === this.id()));
+  private readonly co2List = computed(() =>
+    this.waterStore.co2Readings().filter((r) => r.tankId === this.id()),
+  );
   protected readonly co2Last = computed(() => lastCo2Reading(this.co2List()));
   protected readonly phSheet = signal(false);
   /** Dernière mesure de pH sur la journée (moins de 14 jours), avec conseil de débit. */
-  protected readonly phDay = computed(() => phDayReading(this.co2List(), this.co2Last()?.bubblesPerMinute));
+  protected readonly phDay = computed(() =>
+    phDayReading(this.co2List(), this.co2Last()?.bubblesPerMinute),
+  );
   protected readonly co2State = computed(() => {
     const r = this.co2Last();
-    return r?.bubblesPerMinute != null ? co2Status(r.bubblesPerMinute, this.view()?.tank.co2Target) : undefined;
+    return r?.bubblesPerMinute != null
+      ? co2Status(r.bubblesPerMinute, this.view()?.tank.co2Target)
+      : undefined;
   });
   protected readonly co2Target = CO2_TARGET;
   /** CO2 dissous estimé à partir du dernier KH + pH, avec conseil de débit. */
-  protected readonly co2Est = computed(() => co2Estimate(this.view()?.tests ?? [], this.co2Last()?.bubblesPerMinute));
+  protected readonly co2Est = computed(() =>
+    co2Estimate(this.view()?.tests ?? [], this.co2Last()?.bubblesPerMinute),
+  );
   protected readonly co2History = computed(() => co2HistoryLabel(this.co2List()));
   protected readonly cyclingLabels = CYCLING_LABELS;
   protected readonly cyclingSteps = [

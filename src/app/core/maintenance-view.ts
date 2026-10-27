@@ -34,13 +34,25 @@ export function maintenanceTimeline(
   const byInhabitant = new Map(inhabitants.map((i) => [i.id, i]));
   const fromLogs = logs
     .filter((l) => l.tankId === tankId)
-    .map((l) => ({ id: l.id, date: l.date, title: l.label, note: l.note, plant: isPlantTask(l.type) }));
+    .map((l) => ({
+      id: l.id,
+      date: l.date,
+      title: l.label,
+      note: l.note,
+      plant: isPlantTask(l.type),
+    }));
   const fromEvents = events
     .filter((e) => e.tankId === tankId)
     .map((e) => {
       const sp = speciesById.get(byInhabitant.get(e.inhabitantId)?.speciesId ?? '');
       const delta = e.quantityDelta ? ` (${e.quantityDelta > 0 ? '+' : ''}${e.quantityDelta})` : '';
-      return { id: e.id, date: e.date, title: `${TIMELINE_EVENT_LABELS[e.type]} — ${speciesName(sp)}${delta}`, note: e.note, plant: sp?.kind === 'plant' };
+      return {
+        id: e.id,
+        date: e.date,
+        title: `${TIMELINE_EVENT_LABELS[e.type]} — ${speciesName(sp)}${delta}`,
+        note: e.note,
+        plant: sp?.kind === 'plant',
+      };
     });
   return [...fromLogs, ...fromEvents].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30);
 }

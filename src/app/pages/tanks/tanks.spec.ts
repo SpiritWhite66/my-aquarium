@@ -8,7 +8,16 @@ describe('liste des bacs', () => {
   it('montre une carte par bac actif et les bacs archivés à part', async () => {
     app = await bootApp(async (db) => {
       await seedAll(db);
-      await db.tanks.put({ id: 'z', updatedAt: '', name: 'Vieux bac', type: 'planted', volumeGross: 20, startDate: '2025-01-01', co2: false, archived: true });
+      await db.tanks.put({
+        id: 'z',
+        updatedAt: '',
+        name: 'Vieux bac',
+        type: 'planted',
+        volumeGross: 20,
+        startDate: '2025-01-01',
+        co2: false,
+        archived: true,
+      });
     });
     await app.go('/bacs', 'Archivés');
     expect(app.el().querySelectorAll('app-tank-card')).toHaveLength(2);

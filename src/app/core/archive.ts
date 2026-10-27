@@ -46,7 +46,9 @@ export async function streamZip(
 }
 
 /** Assemble un ZIP en mémoire (petites sauvegardes, navigateurs sans écriture directe sur le disque). */
-export async function writeZip(entries: AsyncIterable<ArchiveEntry> | Iterable<ArchiveEntry>): Promise<Blob> {
+export async function writeZip(
+  entries: AsyncIterable<ArchiveEntry> | Iterable<ArchiveEntry>,
+): Promise<Blob> {
   const parts: BlobPart[] = [];
   await streamZip(entries, (chunk) => void parts.push(chunk));
   return new Blob(parts, { type: 'application/zip' });

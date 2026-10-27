@@ -41,15 +41,28 @@ test.describe('sauvegarde et restauration', () => {
 
   test('refuse une sauvegarde abîmée sans rien effacer', async ({ app }) => {
     await app.seed();
-    const bad = { format: 'my-aquarium', version: 2, exportedAt: '', data: { tanks: [{ id: 'x', name: 3 }] } };
-    await app.importFile({ name: 'abimee.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
+    const bad = {
+      format: 'my-aquarium',
+      version: 2,
+      exportedAt: '',
+      data: { tanks: [{ id: 'x', name: 3 }] },
+    };
+    await app.importFile({
+      name: 'abimee.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(bad)),
+    });
     await expect(app.status()).toContainText('abîmée');
     await expect(await app.tankLink('Salon')).toBeVisible();
   });
 
   test('refuse un fichier qui n’est pas une sauvegarde', async ({ app }) => {
     await app.seed();
-    await app.importFile({ name: 'photo.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(JPEG_B64, 'base64') });
+    await app.importFile({
+      name: 'photo.jpg',
+      mimeType: 'image/jpeg',
+      buffer: Buffer.from(JPEG_B64, 'base64'),
+    });
     await expect(app.status()).not.toContainText('Données importées');
     await expect(await app.tankLink('Salon')).toBeVisible();
   });
@@ -57,24 +70,45 @@ test.describe('sauvegarde et restauration', () => {
   test('écarte les lignes orphelines et le signale', async ({ app }) => {
     const data = sampleBackup();
     data.data.waterTests.push({ ...data.data.waterTests[0], id: 'w9', tankId: 'disparu' });
-    await app.importFile({ name: 's.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(data)) });
+    await app.importFile({
+      name: 's.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(data)),
+    });
     await expect(app.status()).toContainText('relevés sans bac');
   });
 });
 
-test('reprend une base de l’ancienne version (v7, images dans la table des photos)', async ({ app, page }) => {
+test('reprend une base de l’ancienne version (v7, images dans la table des photos)', async ({
+  app,
+  page,
+}) => {
   // Page vide sur la même origine, pour créer la base avant que l'appli ne l'ouvre.
-  await page.route('**/vide', (r) => r.fulfill({ contentType: 'text/html', body: '<!doctype html><title>vide</title>' }));
+  await page.route('**/vide', (r) =>
+    r.fulfill({ contentType: 'text/html', body: '<!doctype html><title>vide</title>' }),
+  );
   await page.goto('/vide');
   await page.evaluate(async (b64) => {
     const stores: Record<string, string[]> = {
-      tanks: ['archived'], species: ['kind', 'source', 'scientificName'], inhabitants: ['tankId', 'speciesId'],
-      inhabitantEvents: ['inhabitantId', 'tankId', 'date'], waterTests: ['tankId', 'date'], tasks: ['tankId', 'nextDue'],
-      logs: ['tankId', 'taskId', 'date'], observations: ['tankId', 'date'], photos: ['tankId', 'inhabitantId', 'date'],
-      equipment: ['tankId', 'type'], consumables: ['category', 'expiryDate'], co2Readings: ['tankId', 'date'],
-      diagnoses: ['tankId', 'date'], settingChanges: ['tankId', 'equipmentId', 'date'], prefs: [],
+      tanks: ['archived'],
+      species: ['kind', 'source', 'scientificName'],
+      inhabitants: ['tankId', 'speciesId'],
+      inhabitantEvents: ['inhabitantId', 'tankId', 'date'],
+      waterTests: ['tankId', 'date'],
+      tasks: ['tankId', 'nextDue'],
+      logs: ['tankId', 'taskId', 'date'],
+      observations: ['tankId', 'date'],
+      photos: ['tankId', 'inhabitantId', 'date'],
+      equipment: ['tankId', 'type'],
+      consumables: ['category', 'expiryDate'],
+      co2Readings: ['tankId', 'date'],
+      diagnoses: ['tankId', 'date'],
+      settingChanges: ['tankId', 'equipmentId', 'date'],
+      prefs: [],
     };
-    const jpeg = new Blob([Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))], { type: 'image/jpeg' });
+    const jpeg = new Blob([Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))], {
+      type: 'image/jpeg',
+    });
     const db = await new Promise<IDBDatabase>((ok, ko) => {
       const req = indexedDB.open('my-aquarium', 70); // Dexie : version 7 × 10
       req.onupgradeneeded = () => {
@@ -83,12 +117,36 @@ test('reprend une base de l’ancienne version (v7, images dans la table des pho
           idx.forEach((i) => s.createIndex(i, i));
         }
       };
-      req.onsuccess = () => { ok(req.result); };
-      req.onerror = () => { ko(req.error ?? new Error('Ouverture de la base impossible')); };
+      req.onsuccess = () => {
+        ok(req.result);
+      };
+      req.onerror = () => {
+        ko(req.error ?? new Error('Ouverture de la base impossible'));
+      };
     });
     const tx = db.transaction(['tanks', 'photos'], 'readwrite');
-    tx.objectStore('tanks').put({ id: 'old', updatedAt: '', name: 'Ancien bac', type: 'planted', volumeGross: 60, startDate: '2025-01-01', co2: false, archived: false, coverPhotoId: 'a' });
-    tx.objectStore('photos').put({ id: 'a', updatedAt: '', tankId: 'old', date: '2025-06-01T10:00:00Z', width: 1, height: 1, caption: 'Avant migration', full: jpeg, thumb: jpeg });
+    tx.objectStore('tanks').put({
+      id: 'old',
+      updatedAt: '',
+      name: 'Ancien bac',
+      type: 'planted',
+      volumeGross: 60,
+      startDate: '2025-01-01',
+      co2: false,
+      archived: false,
+      coverPhotoId: 'a',
+    });
+    tx.objectStore('photos').put({
+      id: 'a',
+      updatedAt: '',
+      tankId: 'old',
+      date: '2025-06-01T10:00:00Z',
+      width: 1,
+      height: 1,
+      caption: 'Avant migration',
+      full: jpeg,
+      thumb: jpeg,
+    });
     await new Promise((ok) => (tx.oncomplete = ok));
     db.close();
   }, JPEG_B64);

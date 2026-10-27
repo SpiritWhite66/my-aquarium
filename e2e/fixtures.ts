@@ -4,7 +4,9 @@ import { test as base, expect, type Page } from '@playwright/test';
 export const test = base.extend<{ app: App }>({
   app: async ({ page }, use) => {
     // Sans le sélecteur de fichier natif, l'export passe par un téléchargement que Playwright sait suivre.
-    await page.addInitScript(() => delete (window as { showSaveFilePicker?: unknown }).showSaveFilePicker);
+    await page.addInitScript(
+      () => delete (window as { showSaveFilePicker?: unknown }).showSaveFilePicker,
+    );
     // Les confirmations (« L'import remplace toutes les données… ») sont acceptées.
     page.on('dialog', (d) => d.accept());
     await use(new App(page));
@@ -28,21 +30,61 @@ export function sampleBackup() {
     exportedAt: NOW,
     data: {
       tanks: [
-        row('salon', { name: 'Salon', type: 'planted', volumeGross: 120, startDate: '2026-01-01', co2: true, archived: false, coverPhotoId: 'p1' }),
-        row('nano', { name: 'Nano', type: 'planted', volumeGross: 30, startDate: '2026-03-01', co2: false, archived: false }),
+        row('salon', {
+          name: 'Salon',
+          type: 'planted',
+          volumeGross: 120,
+          startDate: '2026-01-01',
+          co2: true,
+          archived: false,
+          coverPhotoId: 'p1',
+        }),
+        row('nano', {
+          name: 'Nano',
+          type: 'planted',
+          volumeGross: 30,
+          startDate: '2026-03-01',
+          co2: false,
+          archived: false,
+        }),
       ],
       species: [],
       inhabitants: [
-        row('i1', { tankId: 'salon', speciesId: 'paracheirodon-innesi', quantity: 12, unit: 'individual', addedDate: '2026-02-01', status: 'healthy' }),
+        row('i1', {
+          tankId: 'salon',
+          speciesId: 'paracheirodon-innesi',
+          quantity: 12,
+          unit: 'individual',
+          addedDate: '2026-02-01',
+          status: 'healthy',
+        }),
       ],
       inhabitantEvents: [],
       waterTests: [
-        row('w1', { tankId: 'salon', date: '2026-09-20T18:00:00.000Z', values: { no3: 15, ph: 6.8 } }),
-        row('w2', { tankId: 'salon', date: '2026-09-27T18:00:00.000Z', values: { no3: 20, ph: 6.9 } }),
+        row('w1', {
+          tankId: 'salon',
+          date: '2026-09-20T18:00:00.000Z',
+          values: { no3: 15, ph: 6.8 },
+        }),
+        row('w2', {
+          tankId: 'salon',
+          date: '2026-09-27T18:00:00.000Z',
+          values: { no3: 20, ph: 6.9 },
+        }),
       ],
       tasks: [],
       logs: [],
-      photos: [row('p1', { tankId: 'salon', date: '2026-09-01T10:00:00.000Z', width: 1, height: 1, caption: 'Vue de face', full: jpegUrl, thumb: jpegUrl })],
+      photos: [
+        row('p1', {
+          tankId: 'salon',
+          date: '2026-09-01T10:00:00.000Z',
+          width: 1,
+          height: 1,
+          caption: 'Vue de face',
+          full: jpegUrl,
+          thumb: jpegUrl,
+        }),
+      ],
     },
   };
 }
@@ -57,7 +99,11 @@ export class App {
   }
 
   async seed(data: object = sampleBackup()) {
-    await this.importFile({ name: 'sauvegarde.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(data)) });
+    await this.importFile({
+      name: 'sauvegarde.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(data)),
+    });
     await expect(this.status()).toContainText('Données importées');
   }
 
@@ -68,12 +114,23 @@ export class App {
   /** Lien vers un bac dans la liste des bacs (ouvre la liste). */
   async tankLink(name: string) {
     await this.page.goto('/bacs');
-    return this.page.getByRole('main').getByRole('link').filter({ has: this.page.getByText(name, { exact: true }) }).first();
+    return this.page
+      .getByRole('main')
+      .getByRole('link')
+      .filter({ has: this.page.getByText(name, { exact: true }) })
+      .first();
   }
 
   async openTank(name: string, tab = 'population') {
     await (await this.tankLink(name)).click();
-    // eslint-disable-next-line security/detect-non-literal-regexp -- `tab` est un nom d'onglet fixé par les tests
-    if (tab !== 'population') await this.page.getByRole('navigation', { name: 'Sections du bac' }).getByRole('link', { name: new RegExp(tab, 'i') }).click();
+    if (tab !== 'population') {
+      // `tab` est un nom d'onglet fixé par les tests.
+      // eslint-disable-next-line security/detect-non-literal-regexp -- jamais une saisie externe
+      const name = new RegExp(tab, 'i');
+      await this.page
+        .getByRole('navigation', { name: 'Sections du bac' })
+        .getByRole('link', { name })
+        .click();
+    }
   }
 }

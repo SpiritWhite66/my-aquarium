@@ -9,8 +9,18 @@ afterEach(async () => {
   await shell.db.delete();
 });
 
-const links = (el: HTMLElement, sel: string) => [...el.querySelectorAll<HTMLAnchorElement>(sel)].map((a) => [a.textContent.trim(), a.getAttribute('href')]);
-const NAV = [['Accueil', '/'], ['Bacs', '/bacs'], ['Catalogue', '/catalogue'], ['Matériel', '/materiel'], ['Réglages', '/reglages']];
+const links = (el: HTMLElement, sel: string) =>
+  [...el.querySelectorAll<HTMLAnchorElement>(sel)].map((a) => [
+    a.textContent.trim(),
+    a.getAttribute('href'),
+  ]);
+const NAV = [
+  ['Accueil', '/'],
+  ['Bacs', '/bacs'],
+  ['Catalogue', '/catalogue'],
+  ['Matériel', '/materiel'],
+  ['Réglages', '/reglages'],
+];
 
 describe('coquille de l’appli', () => {
   it('propose la même navigation en barre latérale et en barre d’onglets, chacune nommée', async () => {
@@ -18,12 +28,15 @@ describe('coquille de l’appli', () => {
     expect(links(shell.el, 'aside a.nav')).toEqual(NAV);
     expect(links(shell.el, 'nav.tabs a.tab')).toEqual(NAV);
     expect(shell.el.querySelector('aside')!.getAttribute('aria-label')).toBe('Navigation');
-    expect(shell.el.querySelector('nav.tabs')!.getAttribute('aria-label')).toBe('Navigation principale');
+    expect(shell.el.querySelector('nav.tabs')!.getAttribute('aria-label')).toBe(
+      'Navigation principale',
+    );
   });
 
   it('marque l’entrée de la page courante, et l’accueil seulement à l’accueil', async () => {
     shell = await bootShell();
-    const on = () => [...shell.el.querySelectorAll('nav.tabs a.on')].map((a) => a.textContent.trim());
+    const on = () =>
+      [...shell.el.querySelectorAll('nav.tabs a.on')].map((a) => a.textContent.trim());
     expect(on()).toEqual(['Accueil']);
     await shell.router.navigateByUrl('/bacs/a/eau');
     await shell.settle();
@@ -37,12 +50,30 @@ describe('coquille de l’appli', () => {
     shell = await bootShell(async (db) => {
       const { seedAll } = await import('./testing/app.testing');
       await seedAll(db);
-      await db.waterTests.put({ id: 'bad', updatedAt: '', tankId: 'b', date: '2026-10-30T10:00:00Z', values: { no3: 99 } });
-      await db.tanks.put({ id: 'z', updatedAt: '', name: 'Archivé', type: 'planted', volumeGross: 20, startDate: '2025-01-01', co2: false, archived: true });
+      await db.waterTests.put({
+        id: 'bad',
+        updatedAt: '',
+        tankId: 'b',
+        date: '2026-10-30T10:00:00Z',
+        values: { no3: 99 },
+      });
+      await db.tanks.put({
+        id: 'z',
+        updatedAt: '',
+        name: 'Archivé',
+        type: 'planted',
+        volumeGross: 20,
+        startDate: '2025-01-01',
+        co2: false,
+        archived: true,
+      });
     });
     await new Promise((r) => setTimeout(r, 100));
     await shell.settle();
-    const tanks = [...shell.el.querySelectorAll('aside a.tk')].map((a) => [a.textContent.replace(/\s+/g, ' ').trim(), a.getAttribute('href')]);
+    const tanks = [...shell.el.querySelectorAll('aside a.tk')].map((a) => [
+      a.textContent.replace(/\s+/g, ' ').trim(),
+      a.getAttribute('href'),
+    ]);
     expect(tanks).toHaveLength(2);
     const nano = tanks.find((t) => t[0]!.includes('Nano'))!;
     expect(nano[1]).toBe('/bacs/b');
@@ -70,7 +101,11 @@ describe('coquille de l’appli', () => {
       const skip = shell.el.querySelector<HTMLAnchorElement>('a.skip')!;
       expect(skip.getAttribute('href')).toBe('#contenu');
       expect(skip.textContent.trim()).toBe('Aller au contenu');
-      expect(shell.el.querySelector('a.skip')!.compareDocumentPosition(shell.el.querySelector('.shell')!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+      expect(
+        shell.el
+          .querySelector('a.skip')!
+          .compareDocumentPosition(shell.el.querySelector('.shell')!),
+      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
       document.body.append(shell.el);
       const event = new MouseEvent('click', { bubbles: true, cancelable: true });
       skip.dispatchEvent(event);

@@ -1,5 +1,16 @@
-import type { ElementRef} from '@angular/core';
-import { ChangeDetectionStrategy, Component, afterNextRender, computed, effect, inject, input, linkedSignal, output, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  viewChild,
+} from '@angular/core';
 import type { Photo } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { PopulationStore } from '../core/stores/population.store';
@@ -84,8 +95,15 @@ export class PhotoViewer {
   private readonly selectedId = linkedSignal(() => this.startId());
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
-  protected readonly current = computed(() => this.photos().find((p) => p.id === this.selectedId()) ?? this.photos().at(0));
-  protected readonly index = computed(() => Math.max(0, this.photos().findIndex((p) => p.id === this.current()?.id)));
+  protected readonly current = computed(
+    () => this.photos().find((p) => p.id === this.selectedId()) ?? this.photos().at(0),
+  );
+  protected readonly index = computed(() =>
+    Math.max(
+      0,
+      this.photos().findIndex((p) => p.id === this.current()?.id),
+    ),
+  );
 
   constructor() {
     // Focus dans la boîte de dialogue pour que le clavier (Échap, flèches) fonctionne.
@@ -96,7 +114,8 @@ export class PhotoViewer {
     // L'image est lue d'avance : le partage doit partir sans attente après le clic (exigé par iOS et Android).
     effect(() => {
       const id = this.current()?.id;
-      if (id) void this.photoRepo.photoFile(id).then((f) => f && (this.preloaded = { id, full: f.full }));
+      if (id)
+        void this.photoRepo.photoFile(id).then((f) => f && (this.preloaded = { id, full: f.full }));
     });
   }
 
@@ -121,7 +140,9 @@ export class PhotoViewer {
   }
 
   protected filename(p: Photo): string {
-    return `${this.subject(p).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${localDay(p.date)}.jpg`;
+    return `${this.subject(p)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')}-${localDay(p.date)}.jpg`;
   }
 
   /**
@@ -129,7 +150,10 @@ export class PhotoViewer {
    * puis ouvre l'écran d'import pour coller la réponse. Sans partage de fichiers : téléchargement.
    */
   protected async toAi(p: Photo): Promise<void> {
-    const full = this.preloaded?.id === p.id ? this.preloaded.full : (await this.photoRepo.photoFile(p.id))?.full;
+    const full =
+      this.preloaded?.id === p.id
+        ? this.preloaded.full
+        : (await this.photoRepo.photoFile(p.id))?.full;
     if (!full) return;
     const file = new File([full], this.filename(p), { type: 'image/jpeg' });
     const text = p.inhabitantId
@@ -141,10 +165,14 @@ export class PhotoViewer {
       } else {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(full);
-        setTimeout(() => { URL.revokeObjectURL(a.href); }, 1000);
+        setTimeout(() => {
+          URL.revokeObjectURL(a.href);
+        }, 1000);
         a.download = file.name;
         a.click();
-        await browserNav().clipboard?.writeText(text).catch(() => undefined);
+        await browserNav()
+          .clipboard?.writeText(text)
+          .catch(() => undefined);
       }
     } catch {
       return; // partage annulé

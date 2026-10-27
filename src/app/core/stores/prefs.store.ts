@@ -9,5 +9,9 @@ export class PrefsStore {
   private readonly db = inject(AQUARIUM_DB);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly notificationPrefs = liveSignal(this.destroyRef, async () => (await this.db.prefs.get('notifications')) ?? DEFAULT_PREFS, DEFAULT_PREFS);
+  readonly notificationPrefs = liveSignal(
+    this.destroyRef,
+    async () => (await this.db.prefs.get('notifications')) ?? DEFAULT_PREFS,
+    DEFAULT_PREFS,
+  );
 }

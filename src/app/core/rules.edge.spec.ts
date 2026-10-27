@@ -1,11 +1,39 @@
 // Cas limites des règles métier. Les espèces sont fabriquées ici : les tests ne dépendent pas du catalogue.
 import { describe, expect, it } from 'vitest';
 import type { Inhabitant, Species, Tank } from './models';
-import { PARAMS, PARAM_BY_KEY, compatibilityIssues, idealRange, isAlive, issuesIfAdded, levelOf, measuredParams, testAlerts, worst } from './rules';
+import {
+  PARAMS,
+  PARAM_BY_KEY,
+  compatibilityIssues,
+  idealRange,
+  isAlive,
+  issuesIfAdded,
+  levelOf,
+  measuredParams,
+  testAlerts,
+  worst,
+} from './rules';
 
 const sp = (id: string, o: Record<string, unknown> = {}): Species =>
-  ({ id, scientificName: `Sci ${id}`, commonNames: [id.toUpperCase()], kind: 'fish', source: 'builtin', ...o }) as unknown as Species;
-const tank = (o: Partial<Tank> = {}): Tank => ({ id: 't', updatedAt: '', name: 'Bac', type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: false, archived: false, ...o });
+  ({
+    id,
+    scientificName: `Sci ${id}`,
+    commonNames: [id.toUpperCase()],
+    kind: 'fish',
+    source: 'builtin',
+    ...o,
+  }) as unknown as Species;
+const tank = (o: Partial<Tank> = {}): Tank => ({
+  id: 't',
+  updatedAt: '',
+  name: 'Bac',
+  type: 'planted',
+  volumeGross: 60,
+  startDate: '2026-01-01',
+  co2: false,
+  archived: false,
+  ...o,
+});
 const m = (species: Species, quantity = 5) => ({ species, quantity });
 
 describe('measuredParams', () => {
@@ -14,7 +42,18 @@ describe('measuredParams', () => {
   });
 
   it('ajoute les secondaires dès qu’un relevé les contient, pas avant', () => {
-    expect(measuredParams([{ values: { fe: 0.1 } }, { values: { ph: 7, mg: 10 } }])).toEqual(['temp', 'ph', 'gh', 'kh', 'no2', 'no3', 'nh4', 'po4', 'fe', 'mg']);
+    expect(measuredParams([{ values: { fe: 0.1 } }, { values: { ph: 7, mg: 10 } }])).toEqual([
+      'temp',
+      'ph',
+      'gh',
+      'kh',
+      'no2',
+      'no3',
+      'nh4',
+      'po4',
+      'fe',
+      'mg',
+    ]);
     expect(measuredParams([{ values: { fe: undefined } }])).toHaveLength(8);
     expect(measuredParams([{ values: { conductivity: 0 } }])).toContain('conductivity');
   });
@@ -63,7 +102,12 @@ describe('plages par défaut', () => {
 
   it('température, pH, GH et KH reprennent la plage par défaut sans espèce renseignée', () => {
     expect(idealRange('temp', [], tank())).toEqual({ min: 22, max: 26, from: [], conflict: false });
-    expect(idealRange('ph', [sp('a')], tank())).toEqual({ min: 6, max: 7.5, from: [], conflict: false });
+    expect(idealRange('ph', [sp('a')], tank())).toEqual({
+      min: 6,
+      max: 7.5,
+      from: [],
+      conflict: false,
+    });
     expect(idealRange('gh', [], tank())).toMatchObject({ min: 4, max: 12 });
     expect(idealRange('kh', [], tank())).toMatchObject({ min: 2, max: 8 });
   });
@@ -79,18 +123,34 @@ describe('plages par défaut', () => {
 
 describe('plage commune des espèces', () => {
   it('prend la borne la plus haute des minimums et la plus basse des maximums', () => {
-    const r = idealRange('ph', [sp('a', { ph: { min: 6, max: 8 } }), sp('b', { ph: { min: 6.5, max: 7.5 } }), sp('c', { ph: { min: 5, max: 7.8 } })], tank())!;
+    const r = idealRange(
+      'ph',
+      [
+        sp('a', { ph: { min: 6, max: 8 } }),
+        sp('b', { ph: { min: 6.5, max: 7.5 } }),
+        sp('c', { ph: { min: 5, max: 7.8 } }),
+      ],
+      tank(),
+    )!;
     expect(r).toMatchObject({ min: 6.5, max: 7.5, conflict: false });
     expect(r.from).toHaveLength(3);
   });
 
   it('des plages qui se touchent en un point restent compatibles', () => {
-    const r = idealRange('temp', [sp('a', { temp: { min: 20, max: 24 } }), sp('b', { temp: { min: 24, max: 28 } })], tank())!;
+    const r = idealRange(
+      'temp',
+      [sp('a', { temp: { min: 20, max: 24 } }), sp('b', { temp: { min: 24, max: 28 } })],
+      tank(),
+    )!;
     expect(r).toMatchObject({ min: 24, max: 24, conflict: false });
   });
 
   it('des plages disjointes donnent la zone entre les deux, en conflit', () => {
-    const r = idealRange('temp', [sp('a', { temp: { min: 20, max: 22 } }), sp('b', { temp: { min: 25, max: 28 } })], tank())!;
+    const r = idealRange(
+      'temp',
+      [sp('a', { temp: { min: 20, max: 22 } }), sp('b', { temp: { min: 25, max: 28 } })],
+      tank(),
+    )!;
     expect(r).toMatchObject({ min: 22, max: 25, conflict: true });
     expect(r.from.map((s) => s.id)).toEqual(['a', 'b']);
   });
@@ -148,15 +208,28 @@ describe('worst', () => {
 
 describe('testAlerts', () => {
   const t = tank({ type: 'community' });
-  const test = (values: Record<string, number | undefined>) => ({ id: 'w', updatedAt: '', tankId: 't', date: '', values }) as never;
+  const test = (values: Record<string, number | undefined>) =>
+    ({ id: 'w', updatedAt: '', tankId: 't', date: '', values }) as never;
 
   it('sans relevé, rien', () => expect(testAlerts(undefined, [], t)).toEqual([]));
 
   it('ne remonte que les valeurs hors plage, avec le sens et la plage', () => {
     const alerts = testAlerts(test({ ph: 7, no3: 40, temp: 20, kh: 5 }), [], t);
     expect(alerts).toEqual([
-      { key: 'no3', value: 40, range: { min: 0, max: 25, from: [], conflict: false }, level: 'danger', direction: 'high' },
-      { key: 'temp', value: 20, range: { min: 22, max: 26, from: [], conflict: false }, level: 'warn', direction: 'low' },
+      {
+        key: 'no3',
+        value: 40,
+        range: { min: 0, max: 25, from: [], conflict: false },
+        level: 'danger',
+        direction: 'high',
+      },
+      {
+        key: 'temp',
+        value: 20,
+        range: { min: 22, max: 26, from: [], conflict: false },
+        level: 'warn',
+        direction: 'low',
+      },
     ]);
   });
 
@@ -192,7 +265,9 @@ describe('compatibilité : cas par cas', () => {
   const shrimp = (id: string) => sp(id, { kind: 'shrimp' });
 
   it('un bac sans problème ne remonte rien', () => {
-    expect(compatibilityIssues(tank(), [m(sp('a', { fauna: { minGroup: 6 } }), 6), m(plant('p'))])).toEqual([]);
+    expect(
+      compatibilityIssues(tank(), [m(sp('a', { fauna: { minGroup: 6 } }), 6), m(plant('p'))]),
+    ).toEqual([]);
     expect(compatibilityIssues(tank(), [])).toEqual([]);
   });
 
@@ -200,7 +275,12 @@ describe('compatibilité : cas par cas', () => {
     const a = sp('a', { temp: { min: 20, max: 22 } });
     const b = sp('b', { temp: { min: 25, max: 28 } });
     expect(compatibilityIssues(tank(), [m(a), m(b)])).toEqual([
-      { level: 'warn', title: 'Temp. incompatibles', detail: 'Les plages de A et B ne se recouvrent pas.', speciesIds: ['a', 'b'] },
+      {
+        level: 'warn',
+        title: 'Temp. incompatibles',
+        detail: 'Les plages de A et B ne se recouvrent pas.',
+        speciesIds: ['a', 'b'],
+      },
     ]);
   });
 
@@ -223,7 +303,12 @@ describe('compatibilité : cas par cas', () => {
   it('un mangeur de plantes menace une plante (singulier) ou plusieurs (pluriel)', () => {
     const eater = sp('e', { fauna: { eatsPlants: true } });
     expect(compatibilityIssues(tank(), [m(eater), m(plant('p'))])).toEqual([
-      { level: 'warn', title: 'E mange les plantes', detail: 'P est menacée.', speciesIds: ['e', 'p'] },
+      {
+        level: 'warn',
+        title: 'E mange les plantes',
+        detail: 'P est menacée.',
+        speciesIds: ['e', 'p'],
+      },
     ]);
     const [two] = compatibilityIssues(tank(), [m(eater), m(plant('p')), m(plant('q'))]);
     expect(two.detail).toBe('P et Q sont menacées.');
@@ -234,7 +319,12 @@ describe('compatibilité : cas par cas', () => {
   it('un chasseur de crevettes les menace ; un mangeur d’alevins est regroupé avec ses semblables', () => {
     const hunter = sp('h', { fauna: { predation: ['shrimp'] } });
     expect(compatibilityIssues(tank(), [m(hunter), m(shrimp('s'))])).toEqual([
-      { level: 'warn', title: 'H chasse les crevettes', detail: 'S risquent d\'être mangées.', speciesIds: ['h', 's'] },
+      {
+        level: 'warn',
+        title: 'H chasse les crevettes',
+        detail: "S risquent d'être mangées.",
+        speciesIds: ['h', 's'],
+      },
     ]);
     expect(compatibilityIssues(tank(), [m(hunter)])).toEqual([]);
 
@@ -242,7 +332,11 @@ describe('compatibilité : cas par cas', () => {
     const fry2 = sp('f2', { fauna: { predation: ['shrimp_fry'] } });
     const issues = compatibilityIssues(tank(), [m(fry1), m(fry2), m(shrimp('s'))]);
     expect(issues).toHaveLength(1);
-    expect(issues[0]).toMatchObject({ title: 'F1 et F2 mangent les jeunes crevettes', speciesIds: ['f1', 'f2', 's'], level: 'warn' });
+    expect(issues[0]).toMatchObject({
+      title: 'F1 et F2 mangent les jeunes crevettes',
+      speciesIds: ['f1', 'f2', 's'],
+      level: 'warn',
+    });
     expect(issues[0].detail).toContain('mousses');
     const single = compatibilityIssues(tank(), [m(fry1), m(shrimp('s'))]);
     expect(single[0].title).toBe('F1 mange les jeunes crevettes');
@@ -259,7 +353,12 @@ describe('compatibilité : cas par cas', () => {
     const eater = sp('e', { fauna: { predation: ['snails'] } });
     const snail = sp('n', { kind: 'snail' });
     expect(compatibilityIssues(tank(), [m(eater), m(snail)])).toEqual([
-      { level: 'warn', title: 'E mange les escargots', detail: 'N sont menacés.', speciesIds: ['e', 'n'] },
+      {
+        level: 'warn',
+        title: 'E mange les escargots',
+        detail: 'N sont menacés.',
+        speciesIds: ['e', 'n'],
+      },
     ]);
     expect(compatibilityIssues(tank(), [m(eater)])).toEqual([]);
   });
@@ -267,9 +366,16 @@ describe('compatibilité : cas par cas', () => {
   it('un groupe trop petit est signalé avec les bons accords', () => {
     const group = sp('g', { fauna: { minGroup: 6 } });
     expect(compatibilityIssues(tank(), [m(group, 1)])).toEqual([
-      { level: 'warn', title: 'Groupe trop petit : G', detail: '1 individu, au moins 6 conseillés.', speciesIds: ['g'] },
+      {
+        level: 'warn',
+        title: 'Groupe trop petit : G',
+        detail: '1 individu, au moins 6 conseillés.',
+        speciesIds: ['g'],
+      },
     ]);
-    expect(compatibilityIssues(tank(), [m(group, 5)])[0].detail).toBe('5 individus, au moins 6 conseillés.');
+    expect(compatibilityIssues(tank(), [m(group, 5)])[0].detail).toBe(
+      '5 individus, au moins 6 conseillés.',
+    );
     expect(compatibilityIssues(tank(), [m(group, 6)])).toEqual([]);
     expect(compatibilityIssues(tank(), [m(sp('x', { fauna: { minGroup: 1 } }), 0)])).toEqual([]);
   });
@@ -277,9 +383,16 @@ describe('compatibilité : cas par cas', () => {
   it('un bac trop petit est signalé selon le volume net quand il existe', () => {
     const big = sp('b', { fauna: { minTankLiters: 100 } });
     expect(compatibilityIssues(tank({ volumeGross: 60 }), [m(big)])).toEqual([
-      { level: 'warn', title: 'Bac trop petit pour B', detail: '60 L, au moins 100 L conseillés.', speciesIds: ['b'] },
+      {
+        level: 'warn',
+        title: 'Bac trop petit pour B',
+        detail: '60 L, au moins 100 L conseillés.',
+        speciesIds: ['b'],
+      },
     ]);
-    expect(compatibilityIssues(tank({ volumeGross: 120, volumeNet: 90 }), [m(big)])[0].detail).toBe('90 L, au moins 100 L conseillés.');
+    expect(compatibilityIssues(tank({ volumeGross: 120, volumeNet: 90 }), [m(big)])[0].detail).toBe(
+      '90 L, au moins 100 L conseillés.',
+    );
     expect(compatibilityIssues(tank({ volumeGross: 100 }), [m(big)])).toEqual([]);
     expect(compatibilityIssues(tank({ volumeGross: 80, volumeNet: 100 }), [m(big)])).toEqual([]);
   });
@@ -287,16 +400,29 @@ describe('compatibilité : cas par cas', () => {
   it('une plante qui exige du CO2 le signale quand le bac n’en a pas', () => {
     const needy = sp('n', { kind: 'plant', flora: { co2: 'required' } });
     expect(compatibilityIssues(tank({ co2: false }), [m(needy)])).toEqual([
-      { level: 'warn', title: 'N a besoin de CO2', detail: 'Le bac n’a pas d’injection de CO2.', speciesIds: ['n'] },
+      {
+        level: 'warn',
+        title: 'N a besoin de CO2',
+        detail: 'Le bac n’a pas d’injection de CO2.',
+        speciesIds: ['n'],
+      },
     ]);
     expect(compatibilityIssues(tank({ co2: true }), [m(needy)])).toEqual([]);
-    expect(compatibilityIssues(tank(), [m(sp('o', { kind: 'plant', flora: { co2: 'optional' } }))])).toEqual([]);
+    expect(
+      compatibilityIssues(tank(), [m(sp('o', { kind: 'plant', flora: { co2: 'optional' } }))]),
+    ).toEqual([]);
   });
 
   it('des animaux dans un bac en cyclage sont un danger', () => {
     const cyc = tank({ cycling: true });
     expect(compatibilityIssues(cyc, [m(sp('a'))])).toEqual([
-      { level: 'danger', title: 'Animaux dans un bac en cyclage', detail: 'A est exposé aux pics d’ammonium et de nitrites. Attends la fin du cyclage ou surveille de très près.', speciesIds: ['a'] },
+      {
+        level: 'danger',
+        title: 'Animaux dans un bac en cyclage',
+        detail:
+          'A est exposé aux pics d’ammonium et de nitrites. Attends la fin du cyclage ou surveille de très près.',
+        speciesIds: ['a'],
+      },
     ]);
     const two = compatibilityIssues(cyc, [m(sp('a')), m(sp('b')), m(plant('p'))])[0];
     expect(two.detail.startsWith('A et B sont exposés')).toBe(true);
@@ -329,13 +455,21 @@ describe('issuesIfAdded', () => {
 
   it('ajouter à une espèce déjà présente augmente sa quantité plutôt que de la dupliquer', () => {
     expect(issuesIfAdded(tank(), [m(group, 2)], group, 4)).toEqual([]);
-    expect(issuesIfAdded(tank(), [m(group, 2)], group, 1).map((i) => i.detail)).toEqual(['3 individus, au moins 6 conseillés.']);
-    expect(issuesIfAdded(tank(), [], group, 2).map((i) => i.title)).toEqual(['Groupe trop petit : G']);
+    expect(issuesIfAdded(tank(), [m(group, 2)], group, 1).map((i) => i.detail)).toEqual([
+      '3 individus, au moins 6 conseillés.',
+    ]);
+    expect(issuesIfAdded(tank(), [], group, 2).map((i) => i.title)).toEqual([
+      'Groupe trop petit : G',
+    ]);
   });
 
   it('une nouvelle espèce est ajoutée avec la quantité demandée (1 par défaut)', () => {
-    expect(issuesIfAdded(tank(), [], group).map((i) => i.detail)).toEqual(['1 individu, au moins 6 conseillés.']);
-    expect(issuesIfAdded(tank(), [], group, 3).map((i) => i.detail)).toEqual(['3 individus, au moins 6 conseillés.']);
+    expect(issuesIfAdded(tank(), [], group).map((i) => i.detail)).toEqual([
+      '1 individu, au moins 6 conseillés.',
+    ]);
+    expect(issuesIfAdded(tank(), [], group, 3).map((i) => i.detail)).toEqual([
+      '3 individus, au moins 6 conseillés.',
+    ]);
     expect(issuesIfAdded(tank(), [], group, 6)).toEqual([]);
   });
 

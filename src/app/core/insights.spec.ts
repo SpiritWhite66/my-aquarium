@@ -1,12 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import type { MaintenanceTask, Tank, WaterTest } from './models';
-import { gearChecks, photoperiod, scheduleHours, afterWaterChange, bpmFromTaps, co2Advice, co2FromKhPh, co2FromPhDrop, co2Status, latestKhPh, cyclingPhase, percentFromLabel, stockAlerts, tasksToIcs, trendOf, warrantyEnd } from './insights';
+import {
+  gearChecks,
+  photoperiod,
+  scheduleHours,
+  afterWaterChange,
+  bpmFromTaps,
+  co2Advice,
+  co2FromKhPh,
+  co2FromPhDrop,
+  co2Status,
+  latestKhPh,
+  cyclingPhase,
+  percentFromLabel,
+  stockAlerts,
+  tasksToIcs,
+  trendOf,
+  warrantyEnd,
+} from './insights';
 import type { Consumable, Equipment } from './models';
 
 const DAY = 86_400_000;
 const NOW = new Date('2026-10-25T12:00:00Z').getTime();
 const test = (daysAgo: number, values: WaterTest['values']): WaterTest => ({
-  id: String(daysAgo), updatedAt: '', tankId: 't', date: new Date(NOW - daysAgo * DAY).toISOString(), values,
+  id: String(daysAgo),
+  updatedAt: '',
+  tankId: 't',
+  date: new Date(NOW - daysAgo * DAY).toISOString(),
+  values,
 });
 
 describe('changement d’eau', () => {
@@ -22,15 +43,30 @@ describe('changement d’eau', () => {
 
 describe('tendance', () => {
   it('détecte une hausse des nitrates et estime le dépassement', () => {
-    const tests = [test(21, { no3: 10 }), test(14, { no3: 14 }), test(7, { no3: 18 }), test(0, { no3: 22 })];
+    const tests = [
+      test(21, { no3: 10 }),
+      test(14, { no3: 14 }),
+      test(7, { no3: 18 }),
+      test(0, { no3: 22 }),
+    ];
     const t = trendOf(tests, 'no3', { min: 5, max: 25 }, 60, NOW)!;
     expect(t.perWeek).toBeCloseTo(4, 1);
     expect(t.limit).toBe('max');
     expect(t.daysToLimit).toBe(6);
   });
   it('ignore une valeur stable ou trop peu de mesures', () => {
-    expect(trendOf([test(14, { ph: 6.8 }), test(7, { ph: 6.9 }), test(0, { ph: 6.8 })], 'ph', { min: 6.5, max: 7.5 }, 60, NOW)).toBeUndefined();
-    expect(trendOf([test(7, { no3: 5 }), test(0, { no3: 25 })], 'no3', { min: 5, max: 25 }, 60, NOW)).toBeUndefined();
+    expect(
+      trendOf(
+        [test(14, { ph: 6.8 }), test(7, { ph: 6.9 }), test(0, { ph: 6.8 })],
+        'ph',
+        { min: 6.5, max: 7.5 },
+        60,
+        NOW,
+      ),
+    ).toBeUndefined();
+    expect(
+      trendOf([test(7, { no3: 5 }), test(0, { no3: 25 })], 'no3', { min: 5, max: 25 }, 60, NOW),
+    ).toBeUndefined();
   });
 });
 
@@ -39,15 +75,28 @@ describe('cyclage', () => {
     expect(cyclingPhase([])).toBe('no_data');
     expect(cyclingPhase([test(10, { nh4: 2, no2: 0 })])).toBe('ammonia');
     expect(cyclingPhase([test(10, { nh4: 2 }), test(5, { nh4: 0.5, no2: 1 })])).toBe('nitrite');
-    expect(cyclingPhase([test(5, { nh4: 0, no2: 0.5 }), test(2, { nh4: 0, no2: 0, no3: 10 })])).toBe('waiting');
-    expect(cyclingPhase([test(4, { nh4: 0, no2: 0, no3: 10 }), test(1, { nh4: 0, no2: 0, no3: 15 })])).toBe('done');
+    expect(
+      cyclingPhase([test(5, { nh4: 0, no2: 0.5 }), test(2, { nh4: 0, no2: 0, no3: 10 })]),
+    ).toBe('waiting');
+    expect(
+      cyclingPhase([test(4, { nh4: 0, no2: 0, no3: 10 }), test(1, { nh4: 0, no2: 0, no3: 15 })]),
+    ).toBe('done');
   });
 });
 
 describe('agenda', () => {
   it('produit un calendrier avec répétition et alarme', () => {
     const tank = { id: 't', name: 'Bac salon' } as Tank;
-    const task: MaintenanceTask = { id: 'x', updatedAt: '', tankId: 't', type: 'water_change', label: 'Changement d’eau 30 %', everyDays: 7, nextDue: '2026-10-27', active: true };
+    const task: MaintenanceTask = {
+      id: 'x',
+      updatedAt: '',
+      tankId: 't',
+      type: 'water_change',
+      label: 'Changement d’eau 30 %',
+      everyDays: 7,
+      nextDue: '2026-10-27',
+      active: true,
+    };
     const ics = tasksToIcs([task], [tank], new Date(NOW));
     expect(ics).toContain('DTSTART;VALUE=DATE:20261027');
     expect(ics).toContain('RRULE:FREQ=DAILY;INTERVAL=7');
@@ -58,7 +107,16 @@ describe('agenda', () => {
 
   it('un libellé ne peut pas ajouter de lignes au calendrier', () => {
     const tank = { id: 't', name: 'Bac' } as Tank;
-    const task: MaintenanceTask = { id: 'x', updatedAt: '', tankId: 't', type: 'water_change', label: 'A\rEND:VEVENT\r\nBEGIN:VEVENT\nX', everyDays: 7, nextDue: '2026-10-27', active: true };
+    const task: MaintenanceTask = {
+      id: 'x',
+      updatedAt: '',
+      tankId: 't',
+      type: 'water_change',
+      label: 'A\rEND:VEVENT\r\nBEGIN:VEVENT\nX',
+      everyDays: 7,
+      nextDue: '2026-10-27',
+      active: true,
+    };
     const ics = tasksToIcs([task], [tank], new Date(NOW));
     expect(ics.split('\r\n').filter((l) => l.startsWith('END:VEVENT'))).toHaveLength(1);
     expect(ics).not.toMatch(/\r(?!\n)/);
@@ -81,19 +139,42 @@ describe('CO2', () => {
 });
 
 describe('matériel et consommables', () => {
-  const c = (o: Partial<Consumable>): Consumable => ({ id: 'c', updatedAt: '', name: 'Test NO3', category: 'test_kit', level: 'full', ...o });
+  const c = (o: Partial<Consumable>): Consumable => ({
+    id: 'c',
+    updatedAt: '',
+    name: 'Test NO3',
+    category: 'test_kit',
+    level: 'full',
+    ...o,
+  });
   it('calcule la fin de garantie', () => {
     expect(warrantyEnd({ purchaseDate: '2025-11-15', warrantyMonths: 24 })).toBe('2027-11-15');
     expect(warrantyEnd({ purchaseDate: '2025-11-15' })).toBeUndefined();
   });
   it('signale stock bas, péremption et garantie', () => {
-    const eq: Equipment = { id: 'e', updatedAt: '', type: 'filter', name: 'Filtre', purchaseDate: '2024-11-10', warrantyMonths: 24 };
+    const eq: Equipment = {
+      id: 'e',
+      updatedAt: '',
+      type: 'filter',
+      name: 'Filtre',
+      purchaseDate: '2024-11-10',
+      warrantyMonths: 24,
+    };
     const alerts = stockAlerts(
-      [c({ id: '1', expiryDate: '2026-10-01' }), c({ id: '2', name: 'Engrais', category: 'fertilizer', level: 'low' }), c({ id: '3', name: 'Granulés', category: 'food', level: 'full', expiryDate: '2026-11-10' })],
+      [
+        c({ id: '1', expiryDate: '2026-10-01' }),
+        c({ id: '2', name: 'Engrais', category: 'fertilizer', level: 'low' }),
+        c({ id: '3', name: 'Granulés', category: 'food', level: 'full', expiryDate: '2026-11-10' }),
+      ],
       [eq],
       '2026-10-25',
     );
-    expect(alerts.map((a) => a.title)).toEqual(['Test NO3 : périmé', 'Engrais : bientôt vide', 'Granulés : périme bientôt', 'Garantie : Filtre']);
+    expect(alerts.map((a) => a.title)).toEqual([
+      'Test NO3 : périmé',
+      'Engrais : bientôt vide',
+      'Granulés : périme bientôt',
+      'Garantie : Filtre',
+    ]);
     expect(alerts[0].level).toBe('danger');
   });
 });
@@ -108,7 +189,11 @@ describe('CO2 estimé par KH et pH', () => {
     expect(co2Advice(19, 60)).toMatchObject({ verdict: 'low', suggestedBpm: 72 });
     expect(co2Advice(5, 50)).toMatchObject({ verdict: 'very_low', suggestedBpm: 60 });
     expect(co2Advice(28, 60)).toMatchObject({ verdict: 'ok', suggestedBpm: 60 });
-    expect(co2Advice(50, 60)).toMatchObject({ verdict: 'very_high', level: 'danger', suggestedBpm: 42 });
+    expect(co2Advice(50, 60)).toMatchObject({
+      verdict: 'very_high',
+      level: 'danger',
+      suggestedBpm: 42,
+    });
   });
   it('associe le pH récent à un KH de la semaine', () => {
     const tests = [test(5, { kh: 4 }), test(0, { ph: 6.7 })];
@@ -119,11 +204,22 @@ describe('CO2 estimé par KH et pH', () => {
 
 describe('contrôles du matériel', () => {
   const tank = { id: 't', name: 'Bac', type: 'planted', volumeGross: 75, co2: true } as Tank;
-  const eq = (o: Partial<Equipment>): Equipment => ({ id: Math.random().toString(), updatedAt: '', type: 'other', name: 'x', ...o });
+  const eq = (o: Partial<Equipment>): Equipment => ({
+    id: Math.random().toString(),
+    updatedAt: '',
+    type: 'other',
+    name: 'x',
+    ...o,
+  });
   it('calcule la durée d’éclairage avec sieste', () => {
     expect(scheduleHours({ on: '10:00', off: '19:30' })).toBe(9.5);
     expect(scheduleHours({ on: '22:00', off: '06:00' })).toBe(8);
-    expect(photoperiod({ schedule: { on: '10:00', off: '20:00' }, siesta: { on: '14:00', off: '16:00' } })).toBe(8);
+    expect(
+      photoperiod({
+        schedule: { on: '10:00', off: '20:00' },
+        siesta: { on: '14:00', off: '16:00' },
+      }),
+    ).toBe(8);
   });
   it('signale éclairage long, brassage faible et CO2 mal synchronisé', () => {
     const checks = gearChecks(tank, [

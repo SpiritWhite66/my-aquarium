@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { Location } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
@@ -35,8 +43,15 @@ const FLORA_EVENTS: QuickEvent[] = [
   { type: 'note', label: 'Note', sign: 0 },
 ];
 const EVENT_LABELS: Record<InhabitantEventType, string> = {
-  added: 'Ajout', birth: 'Naissance', death: 'Décès ou retrait', disease: 'Maladie', treatment: 'Traitement',
-  trim: 'Taille', propagated: 'Bouture', moved: 'Déplacement', note: 'Note',
+  added: 'Ajout',
+  birth: 'Naissance',
+  death: 'Décès ou retrait',
+  disease: 'Maladie',
+  treatment: 'Traitement',
+  trim: 'Taille',
+  propagated: 'Bouture',
+  moved: 'Déplacement',
+  note: 'Note',
 };
 
 /** Fiche d'un habitant d'un bac : quantité, état et journal. */
@@ -190,20 +205,26 @@ export class InhabitantPage {
   protected readonly urls = inject(PhotoUrls);
   protected readonly viewing = signal<string | null>(null);
   protected readonly comparing = signal(false);
-  protected readonly photos = computed(() => this.photoStore.photos().filter((p) => p.inhabitantId === this.hid()));
+  protected readonly photos = computed(() =>
+    this.photoStore.photos().filter((p) => p.inhabitantId === this.hid()),
+  );
 
   protected readonly data = computed(() => {
     const inhabitant = this.populationStore.inhabitants().find((i) => i.id === this.hid());
     const species = inhabitant && this.speciesStore.speciesById().get(inhabitant.speciesId);
     if (!inhabitant || !species) return undefined;
-    const events = this.populationStore.inhabitantEvents().filter((e) => e.inhabitantId === inhabitant.id);
+    const events = this.populationStore
+      .inhabitantEvents()
+      .filter((e) => e.inhabitantId === inhabitant.id);
     return { inhabitant, species, events };
   });
   protected readonly isPlant = computed(() => this.data()?.species.kind === 'plant');
   protected readonly events = computed(() => (this.isPlant() ? FLORA_EVENTS : FAUNA_EVENTS));
 
   protected readonly moveQty = signal(0);
-  protected readonly otherTanks = computed(() => this.store.activeTanks().filter((t) => t.id !== this.data()?.inhabitant.tankId));
+  protected readonly otherTanks = computed(() =>
+    this.store.activeTanks().filter((t) => t.id !== this.data()?.inhabitant.tankId),
+  );
   protected readonly moveTo = linkedSignal(() => this.otherTanks()[0]?.id ?? '');
 
   protected async move(i: Inhabitant): Promise<void> {
@@ -215,12 +236,14 @@ export class InhabitantPage {
     await this.livestockRepo.moveInhabitant(i, to, qty);
     this.moveQty.set(0);
     // Déplacement complet : on suit l'habitant dans son nouveau bac.
-    if (qty >= i.quantity) void this.router.navigate(['/bacs', to, 'habitants', i.id], { replaceUrl: true });
+    if (qty >= i.quantity)
+      void this.router.navigate(['/bacs', to, 'habitants', i.id], { replaceUrl: true });
   }
 
   protected setQuantity(i: Inhabitant, raw: string): void {
     const q = Math.max(0, Math.round(Number(raw.replace(',', '.'))));
-    if (Number.isFinite(q)) void this.livestockRepo.updateInhabitant(i.id, { quantity: q, approximate: false });
+    if (Number.isFinite(q))
+      void this.livestockRepo.updateInhabitant(i.id, { quantity: q, approximate: false });
   }
 
   protected setStatus(i: Inhabitant, status: HealthStatus): void {
@@ -233,7 +256,10 @@ export class InhabitantPage {
   }
 
   protected async remove(i: Inhabitant): Promise<void> {
-    if (!confirm('Supprimer cet habitant et son journal ? (Pour un décès, préfère l’état « Mort ».)')) return;
+    if (
+      !confirm('Supprimer cet habitant et son journal ? (Pour un décès, préfère l’état « Mort ».)')
+    )
+      return;
     await this.livestockRepo.deleteInhabitant(i.id);
     this.location.back();
   }

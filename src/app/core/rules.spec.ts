@@ -20,7 +20,12 @@ const tank: Tank = {
 
 describe('catalogue', () => {
   it('contient les espèces de l’utilisateur', () => {
-    for (const id of ['neritina-natalensis', 'neocaridina-davidi', 'danio-margaritatus', 'apistogramma-borellii']) {
+    for (const id of [
+      'neritina-natalensis',
+      'neocaridina-davidi',
+      'danio-margaritatus',
+      'apistogramma-borellii',
+    ]) {
       expect(sp(id)).toBeDefined();
     }
   });
@@ -62,7 +67,11 @@ describe('levelOf', () => {
   });
 
   it('remonte les alertes d’un relevé', () => {
-    const alerts = testAlerts({ id: 'w', updatedAt: '', tankId: 't1', date: '', values: { no2: 0.3, ph: 7 } }, [], tank);
+    const alerts = testAlerts(
+      { id: 'w', updatedAt: '', tankId: 't1', date: '', values: { no2: 0.3, ph: 7 } },
+      [],
+      tank,
+    );
     expect(alerts.map((a) => a.key)).toEqual(['no2']);
   });
 });
@@ -77,7 +86,12 @@ describe('compatibilité', () => {
   });
 
   it('prévient qu’un herbivore menace les plantes', () => {
-    const issues = issuesIfAdded(tank, [{ species: sp('rotala-rotundifolia'), quantity: 5 }], sp('metynnis-argenteus'), 5);
+    const issues = issuesIfAdded(
+      tank,
+      [{ species: sp('rotala-rotundifolia'), quantity: 5 }],
+      sp('metynnis-argenteus'),
+      5,
+    );
     expect(issues.some((i) => i.title.includes('mange les plantes'))).toBe(true);
   });
 

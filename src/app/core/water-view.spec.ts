@@ -1,18 +1,70 @@
 // Calculs de l'onglet Eau, avec des valeurs vérifiées à la main.
 import { describe, expect, it } from 'vitest';
-import type { Co2Reading, MaintenanceLog, Observation, SettingChange, Species, Tank, WaterTest } from './models';
+import type {
+  Co2Reading,
+  MaintenanceLog,
+  Observation,
+  SettingChange,
+  Species,
+  Tank,
+  WaterTest,
+} from './models';
 import {
-  algaeNotes, co2Estimate, co2HistoryLabel, fertilizerDoses, lastCo2Reading, paramCells, paramCharts, phDayReading, recentTests, settingMarks, testSummary,
+  algaeNotes,
+  co2Estimate,
+  co2HistoryLabel,
+  fertilizerDoses,
+  lastCo2Reading,
+  paramCells,
+  paramCharts,
+  phDayReading,
+  recentTests,
+  settingMarks,
+  testSummary,
   type WaterContext,
 } from './water-view';
 
-const tank = { id: 't', updatedAt: '', name: 'Salon', type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: true, archived: false } as Tank;
-const wt = (date: string, values: WaterTest['values']): WaterTest => ({ id: date, updatedAt: '', tankId: 't', date, values });
-const fish = (ph: [number, number]): Species => ({ id: 's', updatedAt: '', kind: 'fish', scientificName: 'Danio', commonNames: ['Danio'], source: 'builtin', ph: { min: ph[0], max: ph[1] } });
+const tank = {
+  id: 't',
+  updatedAt: '',
+  name: 'Salon',
+  type: 'planted',
+  volumeGross: 60,
+  startDate: '2026-01-01',
+  co2: true,
+  archived: false,
+} as Tank;
+const wt = (date: string, values: WaterTest['values']): WaterTest => ({
+  id: date,
+  updatedAt: '',
+  tankId: 't',
+  date,
+  values,
+});
+const fish = (ph: [number, number]): Species => ({
+  id: 's',
+  updatedAt: '',
+  kind: 'fish',
+  scientificName: 'Danio',
+  commonNames: ['Danio'],
+  source: 'builtin',
+  ph: { min: ph[0], max: ph[1] },
+});
 const NOW = Date.UTC(2026, 9, 31);
 const day = (n: number) => new Date(Date.UTC(2026, 9, 1 + n)).toISOString();
-const ctx = (tests: WaterTest[], alerts: WaterContext['alerts'] = []): WaterContext => ({ tank, tests, lastTest: tests.at(-1), alerts });
-const reading = (date: string, p: Partial<Co2Reading> = {}): Co2Reading => ({ id: date, updatedAt: '', tankId: 't', date, ...p });
+const ctx = (tests: WaterTest[], alerts: WaterContext['alerts'] = []): WaterContext => ({
+  tank,
+  tests,
+  lastTest: tests.at(-1),
+  alerts,
+});
+const reading = (date: string, p: Partial<Co2Reading> = {}): Co2Reading => ({
+  id: date,
+  updatedAt: '',
+  tankId: 't',
+  date,
+  ...p,
+});
 
 describe('paramCells', () => {
   it('sans relevé : les paramètres principaux, sans valeur', () => {
@@ -48,15 +100,28 @@ describe('paramCharts', () => {
   it('rien sans bac', () => expect(paramCharts(undefined, [])).toEqual([]));
 
   it('met les paramètres hors plage en premier, puis garde l’ordre habituel', () => {
-    const tests = [wt(day(0), { temp: 25, ph: 7, no3: 80 }), wt(day(1), { temp: 25, ph: 7, no3: 80 })];
-    const v = ctx(tests, [{ key: 'no3', value: 80, range: { min: 5, max: 25 }, level: 'danger', direction: 'high' }]);
+    const tests = [
+      wt(day(0), { temp: 25, ph: 7, no3: 80 }),
+      wt(day(1), { temp: 25, ph: 7, no3: 80 }),
+    ];
+    const v = ctx(tests, [
+      { key: 'no3', value: 80, range: { min: 5, max: 25 }, level: 'danger', direction: 'high' },
+    ]);
     expect(paramCharts(v, [], NOW).map((c) => c.key)).toEqual(['no3', 'temp', 'ph']);
   });
 
   it('décrit la plage, ses espèces et le niveau actuel', () => {
     const v = ctx([wt(day(0), { ph: 8.1 })]);
     const [c] = paramCharts(v, [fish([6.5, 7.5])], NOW);
-    expect(c).toMatchObject({ key: 'ph', label: 'pH', rangeLabel: '6,5–7,5', from: 'Danio', conflict: false, level: 'danger', unit: '' });
+    expect(c).toMatchObject({
+      key: 'ph',
+      label: 'pH',
+      rangeLabel: '6,5–7,5',
+      from: 'Danio',
+      conflict: false,
+      level: 'danger',
+      unit: '',
+    });
   });
 
   it('sans espèce, la plage vient du défaut et n’a pas d’origine', () => {
@@ -77,26 +142,50 @@ describe('paramCharts', () => {
   });
 
   it('ne force pas de tendance avec moins de 3 mesures', () => {
-    expect(paramCharts(ctx([wt(day(28), { no3: 10 }), wt(day(29), { no3: 90 })]), [], NOW)[0].trend).toBeUndefined();
+    expect(
+      paramCharts(ctx([wt(day(28), { no3: 10 }), wt(day(29), { no3: 90 })]), [], NOW)[0].trend,
+    ).toBeUndefined();
   });
 });
 
 describe('CO2', () => {
   it('lastCo2Reading ignore les mesures sans débit ni drop checker', () => {
-    const list = [reading(day(0), { bubblesPerMinute: 3 }), reading(day(1), { phBefore: 7, phAfter: 6 })];
+    const list = [
+      reading(day(0), { bubblesPerMinute: 3 }),
+      reading(day(1), { phBefore: 7, phAfter: 6 }),
+    ];
     expect(lastCo2Reading(list)?.date).toBe(day(0));
     expect(lastCo2Reading([reading(day(2), { dropChecker: 'green' })])?.dropChecker).toBe('green');
     expect(lastCo2Reading([reading(day(2))])).toBeUndefined();
   });
 
   it('phDayReading : une baisse d’un point de pH = 30 mg/L', () => {
-    const r = reading(day(29), { phBefore: 7.2, phAfter: 6.2, phBeforeTime: '09:00', phAfterTime: '17:00' });
+    const r = reading(day(29), {
+      phBefore: 7.2,
+      phAfter: 6.2,
+      phBeforeTime: '09:00',
+      phAfterTime: '17:00',
+    });
     const out = phDayReading([r], 3, NOW);
-    expect(out).toMatchObject({ drop: 1, mgL: 30, level: 'ok', phBefore: 7.2, phAfter: 6.2, phBeforeTime: '09:00', phAfterTime: '17:00', date: day(29), suggestedBpm: 3 });
+    expect(out).toMatchObject({
+      drop: 1,
+      mgL: 30,
+      level: 'ok',
+      phBefore: 7.2,
+      phAfter: 6.2,
+      phBeforeTime: '09:00',
+      phAfterTime: '17:00',
+      date: day(29),
+      suggestedBpm: 3,
+    });
   });
 
   it('phDayReading : prend la dernière mesure complète', () => {
-    const list = [reading(day(27), { phBefore: 7, phAfter: 6 }), reading(day(29), { phBefore: 7, phAfter: 6.5 }), reading(day(30), { phBefore: 7 })];
+    const list = [
+      reading(day(27), { phBefore: 7, phAfter: 6 }),
+      reading(day(29), { phBefore: 7, phAfter: 6.5 }),
+      reading(day(30), { phBefore: 7 }),
+    ];
     expect(phDayReading(list, undefined, NOW)?.date).toBe(day(29));
   });
 
@@ -111,8 +200,16 @@ describe('CO2', () => {
   });
 
   it('co2Estimate : 3 × KH × 10^(7 − pH)', () => {
-    expect(co2Estimate([wt(day(0), { kh: 4, ph: 6.6 })], 4)).toMatchObject({ mgL: 30.1, kh: 4, ph: 6.6, level: 'ok' });
-    expect(co2Estimate([wt(day(0), { kh: 8, ph: 6.4 })], 4)).toMatchObject({ mgL: 95.5, level: 'danger' });
+    expect(co2Estimate([wt(day(0), { kh: 4, ph: 6.6 })], 4)).toMatchObject({
+      mgL: 30.1,
+      kh: 4,
+      ph: 6.6,
+      level: 'ok',
+    });
+    expect(co2Estimate([wt(day(0), { kh: 8, ph: 6.4 })], 4)).toMatchObject({
+      mgL: 95.5,
+      level: 'danger',
+    });
   });
 
   it('co2Estimate : rien sans couple KH + pH', () => {
@@ -126,18 +223,38 @@ describe('CO2', () => {
   });
 
   it('co2HistoryLabel : saute les mesures sans débit et la mesure la plus récente', () => {
-    const list = [reading(day(1), { bubblesPerMinute: 2 }), reading(day(2), { phBefore: 7 }), reading(day(3), { bubblesPerMinute: 4 })];
+    const list = [
+      reading(day(1), { bubblesPerMinute: 2 }),
+      reading(day(2), { phBefore: 7 }),
+      reading(day(3), { bubblesPerMinute: 4 }),
+    ];
     expect(co2HistoryLabel(list)).toMatch(/^2 \(/);
     expect(co2HistoryLabel([])).toBe('');
   });
 });
 
 describe('repères et listes', () => {
-  const obs = (id: string, tankId: string, algaeLevel?: 0 | 1 | 2 | 3, algaeTypes?: string[]): Observation =>
-    ({ id, updatedAt: '', tankId, date: day(Number(id)), overall: 'good', findings: [], algaeLevel, algaeTypes });
+  const obs = (
+    id: string,
+    tankId: string,
+    algaeLevel?: 0 | 1 | 2 | 3,
+    algaeTypes?: string[],
+  ): Observation => ({
+    id,
+    updatedAt: '',
+    tankId,
+    date: day(Number(id)),
+    overall: 'good',
+    findings: [],
+    algaeLevel,
+    algaeTypes,
+  });
 
   it('algaeNotes : les 16 dernières notes du bac seulement', () => {
-    const list = [...Array.from({ length: 20 }, (_, i) => obs(String(i + 1), 't', 1)), obs('99', 'autre', 3)];
+    const list = [
+      ...Array.from({ length: 20 }, (_, i) => obs(String(i + 1), 't', 1)),
+      obs('99', 'autre', 3),
+    ];
     const out = algaeNotes(list, 't');
     expect(out).toHaveLength(16);
     expect(out[0].date).toBe(day(5));
@@ -145,19 +262,40 @@ describe('repères et listes', () => {
   });
 
   it('algaeNotes : niveau et types d’algues', () => {
-    expect(algaeNotes([obs('1', 't', 2, ['brosse', 'filament'])], 't')).toEqual([{ date: day(1), level: 2, types: 'brosse, filament' }]);
+    expect(algaeNotes([obs('1', 't', 2, ['brosse', 'filament'])], 't')).toEqual([
+      { date: day(1), level: 2, types: 'brosse, filament' },
+    ]);
     expect(algaeNotes([obs('1', 't')], 't')[0]).toMatchObject({ level: 0, types: undefined });
   });
 
   it('fertilizerDoses : seulement les engrais du bac', () => {
-    const log = (id: string, tankId: string, type: MaintenanceLog['type']): MaintenanceLog => ({ id, updatedAt: '', tankId, type, label: 'L' + id, date: day(1) });
-    const out = fertilizerDoses([log('1', 't', 'fertilize'), log('2', 't', 'water_change'), log('3', 'x', 'fertilize')], 't');
+    const log = (id: string, tankId: string, type: MaintenanceLog['type']): MaintenanceLog => ({
+      id,
+      updatedAt: '',
+      tankId,
+      type,
+      label: 'L' + id,
+      date: day(1),
+    });
+    const out = fertilizerDoses(
+      [log('1', 't', 'fertilize'), log('2', 't', 'water_change'), log('3', 'x', 'fertilize')],
+      't',
+    );
     expect(out).toEqual([{ date: day(1), label: 'L1' }]);
   });
 
   it('settingMarks : seulement les réglages du bac, avec le nom du matériel', () => {
-    const ch = (id: string, tankId: string): SettingChange =>
-      ({ id, updatedAt: '', tankId, equipmentId: 'e', equipmentName: 'Rampe', date: day(1), field: 'light.intensityPct', from: '50', to: '60' });
+    const ch = (id: string, tankId: string): SettingChange => ({
+      id,
+      updatedAt: '',
+      tankId,
+      equipmentId: 'e',
+      equipmentName: 'Rampe',
+      date: day(1),
+      field: 'light.intensityPct',
+      from: '50',
+      to: '60',
+    });
     const out = settingMarks([ch('1', 't'), ch('2', 'x')], 't');
     expect(out).toHaveLength(1);
     expect(out[0].label).toMatch(/^Rampe · /);

@@ -37,28 +37,42 @@ export class HomePage {
   protected readonly alerts = computed(() =>
     this.store.tankViews().flatMap((v) => [
       // Pendant le cyclage, les pics de NH4 et NO2 sont attendus : on ne les signale que s'il y a des animaux.
-      ...v.alerts.filter((a) => !(v.tank.cycling && !v.fauna.length && (a.key === 'nh4' || a.key === 'no2'))).map((a) => {
-        const p = PARAM_BY_KEY[a.key];
-        return {
-          tankId: v.tank.id,
-          level: a.level,
-          title: `${p.short} à ${fmt(a.value)}${p.unit ? ' ' + p.unit : ''} — ${v.tank.name}`,
-          detail: `Plage idéale ${fmtRange(a.range.min, a.range.max, p.unit)}.${a.level === 'danger' && p.toxic ? ' Changement d’eau conseillé.' : ''}`,
-          link: 'eau',
-        };
-      }),
+      ...v.alerts
+        .filter((a) => !(v.tank.cycling && !v.fauna.length && (a.key === 'nh4' || a.key === 'no2')))
+        .map((a) => {
+          const p = PARAM_BY_KEY[a.key];
+          return {
+            tankId: v.tank.id,
+            level: a.level,
+            title: `${p.short} à ${fmt(a.value)}${p.unit ? ' ' + p.unit : ''} — ${v.tank.name}`,
+            detail: `Plage idéale ${fmtRange(a.range.min, a.range.max, p.unit)}.${a.level === 'danger' && p.toxic ? ' Changement d’eau conseillé.' : ''}`,
+            link: 'eau',
+          };
+        }),
       // Tendance : les nitrates vont dépasser la plage dans la semaine.
       ...(() => {
-        const range = idealRange('no3', v.members.map((m) => m.species), v.tank);
+        const range = idealRange(
+          'no3',
+          v.members.map((m) => m.species),
+          v.tank,
+        );
         const t = trendOf(v.tests, 'no3', range);
-        if (t?.limit !== 'max' || t.daysToLimit == null || t.daysToLimit > 7 || v.alerts.some((a) => a.key === 'no3')) return [];
-        return [{
-          tankId: v.tank.id,
-          level: 'warn' as const,
-          title: `Nitrates en hausse — ${v.tank.name}`,
-          detail: `+${fmt(t.perWeek)} mg/L par semaine : ${fmt(must(range).max)} mg/L atteints dans ~${t.daysToLimit} j. Prévois un changement d’eau.`,
-          link: 'eau',
-        }];
+        if (
+          t?.limit !== 'max' ||
+          t.daysToLimit == null ||
+          t.daysToLimit > 7 ||
+          v.alerts.some((a) => a.key === 'no3')
+        )
+          return [];
+        return [
+          {
+            tankId: v.tank.id,
+            level: 'warn' as const,
+            title: `Nitrates en hausse — ${v.tank.name}`,
+            detail: `+${fmt(t.perWeek)} mg/L par semaine : ${fmt(must(range).max)} mg/L atteints dans ~${t.daysToLimit} j. Prévois un changement d’eau.`,
+            link: 'eau',
+          },
+        ];
       })(),
       ...v.openFindings.map((f) => ({
         tankId: v.tank.id,
@@ -88,7 +102,11 @@ export class HomePage {
   }
 
   protected readonly stock = computed(() =>
-    stockAlerts(this.gearStore.consumables(), this.gearStore.equipment(), this.store.today()).filter((a) => a.level !== 'info'),
+    stockAlerts(
+      this.gearStore.consumables(),
+      this.gearStore.equipment(),
+      this.store.today(),
+    ).filter((a) => a.level !== 'info'),
   );
 
   protected readonly lateCount = computed(

@@ -4,18 +4,68 @@ import { buildDossier, diagnosticRequest } from './diagnostic';
 import type { Tank } from './models';
 
 describe('dossier de diagnostic', () => {
-  const tank: Tank = { id: 't', updatedAt: '', name: 'Bac salon', type: 'planted', volumeGross: 60, startDate: '2026-03-01', co2: true, archived: false };
+  const tank: Tank = {
+    id: 't',
+    updatedAt: '',
+    name: 'Bac salon',
+    type: 'planted',
+    volumeGross: 60,
+    startDate: '2026-03-01',
+    co2: true,
+    archived: false,
+  };
   const base = {
-    species: BUILTIN_SPECIES, events: [], tasks: [], logs: [], co2Readings: [], observations: [], diagnoses: [], photos: [], today: '2026-10-25',
+    species: BUILTIN_SPECIES,
+    events: [],
+    tasks: [],
+    logs: [],
+    co2Readings: [],
+    observations: [],
+    diagnoses: [],
+    photos: [],
+    today: '2026-10-25',
     inhabitants: [
-      { id: 'i1', updatedAt: '', tankId: 't', speciesId: 'rotala-rotundifolia', quantity: 8, unit: 'stem' as const, addedDate: '2026-09-01', status: 'healthy' as const },
-      { id: 'i2', updatedAt: '', tankId: 'o', speciesId: 'betta-splendens', quantity: 1, unit: 'individual' as const, addedDate: '2026-09-01', status: 'healthy' as const },
+      {
+        id: 'i1',
+        updatedAt: '',
+        tankId: 't',
+        speciesId: 'rotala-rotundifolia',
+        quantity: 8,
+        unit: 'stem' as const,
+        addedDate: '2026-09-01',
+        status: 'healthy' as const,
+      },
+      {
+        id: 'i2',
+        updatedAt: '',
+        tankId: 'o',
+        speciesId: 'betta-splendens',
+        quantity: 1,
+        unit: 'individual' as const,
+        addedDate: '2026-09-01',
+        status: 'healthy' as const,
+      },
     ],
     tests: [
-      { id: 'w1', updatedAt: '', tankId: 't', date: '2026-10-20T10:00:00Z', values: { kh: 4, ph: 6.8, no3: 30 } },
+      {
+        id: 'w1',
+        updatedAt: '',
+        tankId: 't',
+        date: '2026-10-20T10:00:00Z',
+        values: { kh: 4, ph: 6.8, no3: 30 },
+      },
       { id: 'w2', updatedAt: '', tankId: 'o', date: '2026-10-20T10:00:00Z', values: { no3: 5 } },
     ],
-    equipment: [{ id: 'e', updatedAt: '', tankId: 't', type: 'light' as const, name: 'Twinstar', light: { schedule: { on: '10:00', off: '20:30' } } }],
+    equipment: [
+      {
+        id: 'e',
+        updatedAt: '',
+        tankId: 't',
+        type: 'light' as const,
+        name: 'Twinstar',
+        light: { schedule: { on: '10:00', off: '20:30' } },
+      },
+    ],
   };
 
   it('ne contient que les données du bac', () => {

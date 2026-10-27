@@ -66,14 +66,28 @@ export class TaskFormPage {
   readonly taskId = input<string>();
 
   protected readonly typeList = Object.entries(TASK_TYPES) as [TaskType, string][];
-  private readonly existing = computed(() => this.careStore.tasks().find((t) => t.id === this.taskId()));
-  protected readonly type = fromEntity<MaintenanceTask, TaskType>(this.existing, (t) => t.type, 'water_change');
+  private readonly existing = computed(() =>
+    this.careStore.tasks().find((t) => t.id === this.taskId()),
+  );
+  protected readonly type = fromEntity<MaintenanceTask, TaskType>(
+    this.existing,
+    (t) => t.type,
+    'water_change',
+  );
   protected readonly label = fromEntity(this.existing, (t) => t.label, TASK_TYPES.water_change);
   protected readonly every = fromEntity(this.existing, (t) => String(t.everyDays), '7');
-  protected readonly nextDue = fromEntity(this.existing, (t) => t.nextDue, addDays(this.store.today(), 7));
+  protected readonly nextDue = fromEntity(
+    this.existing,
+    (t) => t.nextDue,
+    addDays(this.store.today(), 7),
+  );
 
-  protected readonly tankName = computed(() => this.store.tanks().find((t) => t.id === this.id())?.name ?? '');
-  protected readonly valid = computed(() => this.label().trim() && (parseNumber(this.every()) ?? 0) >= 1 && this.nextDue());
+  protected readonly tankName = computed(
+    () => this.store.tanks().find((t) => t.id === this.id())?.name ?? '',
+  );
+  protected readonly valid = computed(
+    () => this.label().trim() && (parseNumber(this.every()) ?? 0) >= 1 && this.nextDue(),
+  );
 
   protected setType(type: TaskType): void {
     // Le libellé suit le type tant qu'il n'a pas été personnalisé.

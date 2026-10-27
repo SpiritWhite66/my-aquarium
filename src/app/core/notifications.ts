@@ -23,7 +23,9 @@ export class NotificationService {
   private readonly prefsRepo = inject(PrefsRepo);
 
   readonly supported = typeof window !== 'undefined' && 'Notification' in window;
-  readonly permission = signal<NotificationPermission>(this.supported ? Notification.permission : 'denied');
+  readonly permission = signal<NotificationPermission>(
+    this.supported ? Notification.permission : 'denied',
+  );
   /** Synchronisation périodique accordée : rappels même appli fermée. */
   readonly background = signal(false);
 
@@ -31,7 +33,15 @@ export class NotificationService {
   private readonly digests = computed(() => {
     const p = this.prefs();
     if (!p.enabled) return {};
-    return digestsAhead(this.store.today(), { tasks: this.careStore.tasks(), diagnoses: this.careStore.diagnoses(), tanks: this.store.tanks() }, p);
+    return digestsAhead(
+      this.store.today(),
+      {
+        tasks: this.careStore.tasks(),
+        diagnoses: this.careStore.diagnoses(),
+        tanks: this.store.tanks(),
+      },
+      p,
+    );
   });
 
   constructor() {
@@ -47,7 +57,9 @@ export class NotificationService {
       void this.check();
     });
     if (typeof window === 'undefined') return;
-    const timer = setInterval(() => { void this.check(); }, 5 * 60_000);
+    const timer = setInterval(() => {
+      void this.check();
+    }, 5 * 60_000);
     const onVisible = (): void => {
       if (document.visibilityState === 'visible') void this.check();
     };
@@ -80,7 +92,12 @@ export class NotificationService {
   /** Affiche tout de suite la notification du jour (ou un exemple). */
   async test(): Promise<void> {
     const today = this.digests()[this.store.today()] as Digest | undefined;
-    await this.show(today ?? { title: 'Rappels activés', body: 'Rien à faire aujourd’hui. Tu seras prévenu les jours où une tâche est due.' });
+    await this.show(
+      today ?? {
+        title: 'Rappels activés',
+        body: 'Rien à faire aujourd’hui. Tu seras prévenu les jours où une tâche est due.',
+      },
+    );
   }
 
   /** Évite deux vérifications simultanées (minuteur + retour sur l'onglet) qui afficheraient deux fois. */
@@ -94,7 +111,11 @@ export class NotificationService {
     try {
       const today = this.store.today();
       if (this.shownOn === today) return;
-      const digest = shouldNotify({ ...this.prefs(), digests: this.digests(), digestsUntil: addDays(today, DIGEST_DAYS - 1) }, new Date(), today);
+      const digest = shouldNotify(
+        { ...this.prefs(), digests: this.digests(), digestsUntil: addDays(today, DIGEST_DAYS - 1) },
+        new Date(),
+        today,
+      );
       if (!digest) return;
       this.shownOn = today;
       await this.prefsRepo.saveNotificationPrefs({ lastShown: today });
@@ -105,7 +126,12 @@ export class NotificationService {
   }
 
   private async show(d: Digest): Promise<void> {
-    const options = { body: d.body, icon: 'icons/icon-192x192.png', badge: 'icons/icon-192x192.png', tag: 'aquarium-daily' };
+    const options = {
+      body: d.body,
+      icon: 'icons/icon-192x192.png',
+      badge: 'icons/icon-192x192.png',
+      tag: 'aquarium-daily',
+    };
     const reg = await this.registration();
     if (reg) await reg.showNotification(d.title, options);
     // L'API peut manquer (navigateur sans notifications, ou retirée entre-temps) : rien à afficher.
@@ -121,7 +147,9 @@ export class NotificationService {
     const reg = await this.registration();
     if (!reg?.periodicSync) return;
     try {
-      const status = await navigator.permissions.query({ name: 'periodic-background-sync' as PermissionName });
+      const status = await navigator.permissions.query({
+        name: 'periodic-background-sync' as PermissionName,
+      });
       if (status.state !== 'granted') return;
       await reg.periodicSync.register(SYNC_TAG, { minInterval: 6 * 3600_000 });
       this.background.set(true);
@@ -138,5 +166,9 @@ export class NotificationService {
 }
 
 type PeriodicReg = ServiceWorkerRegistration & {
-  periodicSync?: { register(tag: string, o: { minInterval: number }): Promise<void>; unregister(tag: string): Promise<void>; getTags(): Promise<string[]> };
+  periodicSync?: {
+    register(tag: string, o: { minInterval: number }): Promise<void>;
+    unregister(tag: string): Promise<void>;
+    getTags(): Promise<string[]>;
+  };
 };

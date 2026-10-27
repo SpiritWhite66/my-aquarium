@@ -11,6 +11,9 @@ Application web (PWA) personnelle pour gérer plusieurs aquariums d'eau douce : 
 nvm use            # Node 26 (≥ 26.12.1, corrige Node2Shell)
 npm install
 npm start          # http://localhost:4200
+npm run lint                            # ESLint strict : 0 erreur, 0 avertissement
+npm run format:check                    # Prettier (npm run format pour corriger)
+npm run knip                            # code, exports et dépendances inutilisés
 npm test -- --watch=false               # tests unitaires et d'interface
 npm test -- --watch=false --coverage    # + couverture (seuil : 80 %)
 npm run mutation                        # tests de mutation (Stryker), ~35 min

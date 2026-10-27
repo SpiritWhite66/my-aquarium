@@ -31,10 +31,41 @@ afterEach(async () => {
   await db.delete();
 });
 
-const tank = (id: string, name: string, o: Partial<Tank> = {}): Tank => ({ id, updatedAt: U, name, type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: false, archived: false, ...o });
-const inh = (id: string, tankId: string, speciesId: string, o: Partial<Inhabitant> = {}): Inhabitant => ({ id, updatedAt: U, tankId, speciesId, quantity: 10, unit: 'individual', addedDate: '2026-09-01', status: 'healthy', ...o });
-const obs = (id: string, tankId: string, date: string, findings: Observation['findings'] = []): Observation => ({ id, updatedAt: U, tankId, date, overall: 'watch', findings });
-const finding = (severity: 'info' | 'warn' | 'danger', extra = {}) => ({ category: 'algae', severity, title: 'Algues', ...extra }) as never;
+const tank = (id: string, name: string, o: Partial<Tank> = {}): Tank => ({
+  id,
+  updatedAt: U,
+  name,
+  type: 'planted',
+  volumeGross: 60,
+  startDate: '2026-01-01',
+  co2: false,
+  archived: false,
+  ...o,
+});
+const inh = (
+  id: string,
+  tankId: string,
+  speciesId: string,
+  o: Partial<Inhabitant> = {},
+): Inhabitant => ({
+  id,
+  updatedAt: U,
+  tankId,
+  speciesId,
+  quantity: 10,
+  unit: 'individual',
+  addedDate: '2026-09-01',
+  status: 'healthy',
+  ...o,
+});
+const obs = (
+  id: string,
+  tankId: string,
+  date: string,
+  findings: Observation['findings'] = [],
+): Observation => ({ id, updatedAt: U, tankId, date, overall: 'watch', findings });
+const finding = (severity: 'info' | 'warn' | 'danger', extra = {}) =>
+  ({ category: 'algae', severity, title: 'Algues', ...extra }) as never;
 const ready = () => waitFor(() => store.ready());
 
 describe('chargement', () => {
@@ -42,7 +73,9 @@ describe('chargement', () => {
     expect(store.ready()).toBe(false);
     await ready();
     await waitFor(() => TestBed.inject(SpeciesStore).species().length === BUILTIN_SPECIES.length);
-    expect(TestBed.inject(SpeciesStore).speciesById().get('danio-margaritatus')?.scientificName).toBe('Danio margaritatus');
+    expect(
+      TestBed.inject(SpeciesStore).speciesById().get('danio-margaritatus')?.scientificName,
+    ).toBe('Danio margaritatus');
   });
 
   it('commence vide et se met à jour dès qu’une donnée est ajoutée', async () => {
@@ -68,21 +101,100 @@ describe('ordre des listes', () => {
       { id: 'w1', updatedAt: U, tankId: 'a', date: '2026-10-01', values: {} },
     ]);
     await db.tasks.bulkPut([
-      { id: 't2', updatedAt: U, tankId: 'a', type: 'custom', label: '2', everyDays: 7, nextDue: '2026-10-20', active: true },
-      { id: 't1', updatedAt: U, tankId: 'a', type: 'custom', label: '1', everyDays: 7, nextDue: '2026-10-10', active: true },
-      { id: 't3', updatedAt: U, tankId: 'a', type: 'custom', label: '3', everyDays: 7, nextDue: '2026-10-30', active: true },
+      {
+        id: 't2',
+        updatedAt: U,
+        tankId: 'a',
+        type: 'custom',
+        label: '2',
+        everyDays: 7,
+        nextDue: '2026-10-20',
+        active: true,
+      },
+      {
+        id: 't1',
+        updatedAt: U,
+        tankId: 'a',
+        type: 'custom',
+        label: '1',
+        everyDays: 7,
+        nextDue: '2026-10-10',
+        active: true,
+      },
+      {
+        id: 't3',
+        updatedAt: U,
+        tankId: 'a',
+        type: 'custom',
+        label: '3',
+        everyDays: 7,
+        nextDue: '2026-10-30',
+        active: true,
+      },
     ]);
     await db.logs.bulkPut([
       { id: 'l2', updatedAt: U, tankId: 'a', type: 'custom', label: '2', date: '2026-10-02' },
       { id: 'l3', updatedAt: U, tankId: 'a', type: 'custom', label: '3', date: '2026-10-03' },
       { id: 'l1', updatedAt: U, tankId: 'a', type: 'custom', label: '1', date: '2026-10-01' },
     ]);
-    await db.observations.bulkPut([obs('o2', 'a', '2026-10-02'), obs('o3', 'a', '2026-10-03'), obs('o1', 'a', '2026-10-01')]);
-    await db.photos.bulkPut(['p2', 'p3', 'p1'].map((id) => ({ id, updatedAt: U, tankId: 'a', date: `2026-10-0${id[1]}`, width: 1, height: 1 })));
-    await db.co2Readings.bulkPut(['r2', 'r3', 'r1'].map((id) => ({ id, updatedAt: U, tankId: 'a', date: `2026-10-0${id[1]}` })));
-    await db.diagnoses.bulkPut(['g2', 'g3', 'g1'].map((id) => ({ id, updatedAt: U, tankId: 'a', date: `2026-10-0${id[1]}`, summary: '', hypotheses: [], actions: [] })));
-    await db.settingChanges.bulkPut(['s2', 's3', 's1'].map((id) => ({ id, updatedAt: U, tankId: 'a', equipmentId: 'e', equipmentName: 'E', date: `2026-10-0${id[1]}`, field: 'light.intensityPct' as const })));
-    await waitFor(() => [TestBed.inject(PopulationStore).inhabitantEvents(), TestBed.inject(WaterStore).waterTests(), TestBed.inject(CareStore).tasks(), TestBed.inject(CareStore).logs(), TestBed.inject(CareStore).observations(), TestBed.inject(PhotoStore).photos(), TestBed.inject(WaterStore).co2Readings(), TestBed.inject(CareStore).diagnoses(), TestBed.inject(GearStore).settingChanges()].every((l) => l.length === 3));
+    await db.observations.bulkPut([
+      obs('o2', 'a', '2026-10-02'),
+      obs('o3', 'a', '2026-10-03'),
+      obs('o1', 'a', '2026-10-01'),
+    ]);
+    await db.photos.bulkPut(
+      ['p2', 'p3', 'p1'].map((id) => ({
+        id,
+        updatedAt: U,
+        tankId: 'a',
+        date: `2026-10-0${id[1]}`,
+        width: 1,
+        height: 1,
+      })),
+    );
+    await db.co2Readings.bulkPut(
+      ['r2', 'r3', 'r1'].map((id) => ({
+        id,
+        updatedAt: U,
+        tankId: 'a',
+        date: `2026-10-0${id[1]}`,
+      })),
+    );
+    await db.diagnoses.bulkPut(
+      ['g2', 'g3', 'g1'].map((id) => ({
+        id,
+        updatedAt: U,
+        tankId: 'a',
+        date: `2026-10-0${id[1]}`,
+        summary: '',
+        hypotheses: [],
+        actions: [],
+      })),
+    );
+    await db.settingChanges.bulkPut(
+      ['s2', 's3', 's1'].map((id) => ({
+        id,
+        updatedAt: U,
+        tankId: 'a',
+        equipmentId: 'e',
+        equipmentName: 'E',
+        date: `2026-10-0${id[1]}`,
+        field: 'light.intensityPct' as const,
+      })),
+    );
+    await waitFor(() =>
+      [
+        TestBed.inject(PopulationStore).inhabitantEvents(),
+        TestBed.inject(WaterStore).waterTests(),
+        TestBed.inject(CareStore).tasks(),
+        TestBed.inject(CareStore).logs(),
+        TestBed.inject(CareStore).observations(),
+        TestBed.inject(PhotoStore).photos(),
+        TestBed.inject(WaterStore).co2Readings(),
+        TestBed.inject(CareStore).diagnoses(),
+        TestBed.inject(GearStore).settingChanges(),
+      ].every((l) => l.length === 3),
+    );
 
     const ids = (l: { id: string }[]) => l.map((x) => x.id);
     expect(ids(TestBed.inject(PopulationStore).inhabitantEvents())).toEqual(['e3', 'e2', 'e1']);
@@ -101,7 +213,12 @@ describe('ordre des listes', () => {
     await db.inhabitants.put(inh('i', 'a', 'danio-margaritatus'));
     await db.equipment.put({ id: 'e', updatedAt: U, type: 'filter', name: 'F' });
     await db.consumables.put({ id: 'c', updatedAt: U, name: 'N', category: 'food', level: 'full' });
-    await waitFor(() => TestBed.inject(PopulationStore).inhabitants().length === 1 && TestBed.inject(GearStore).equipment().length === 1 && TestBed.inject(GearStore).consumables().length === 1);
+    await waitFor(
+      () =>
+        TestBed.inject(PopulationStore).inhabitants().length === 1 &&
+        TestBed.inject(GearStore).equipment().length === 1 &&
+        TestBed.inject(GearStore).consumables().length === 1,
+    );
     expect(TestBed.inject(GearStore).equipment()[0].name).toBe('F');
     expect(TestBed.inject(GearStore).consumables()[0].name).toBe('N');
   });
@@ -110,10 +227,26 @@ describe('ordre des listes', () => {
 describe('photos d’habitants', () => {
   it('retient la plus récente de chaque habitant, pas les photos de bac', async () => {
     await ready();
-    const photo = (id: string, date: string, inhabitantId?: string) => ({ id, updatedAt: U, tankId: 'a', inhabitantId, date, width: 1, height: 1 });
-    await db.photos.bulkPut([photo('old', '2026-10-01', 'i1'), photo('new', '2026-10-05', 'i1'), photo('other', '2026-10-03', 'i2'), photo('tank', '2026-10-09')]);
+    const photo = (id: string, date: string, inhabitantId?: string) => ({
+      id,
+      updatedAt: U,
+      tankId: 'a',
+      inhabitantId,
+      date,
+      width: 1,
+      height: 1,
+    });
+    await db.photos.bulkPut([
+      photo('old', '2026-10-01', 'i1'),
+      photo('new', '2026-10-05', 'i1'),
+      photo('other', '2026-10-03', 'i2'),
+      photo('tank', '2026-10-09'),
+    ]);
     await waitFor(() => TestBed.inject(PhotoStore).photos().length === 4);
-    expect([...TestBed.inject(PhotoStore).inhabitantCovers()]).toEqual([['i1', 'new'], ['i2', 'other']]);
+    expect([...TestBed.inject(PhotoStore).inhabitantCovers()]).toEqual([
+      ['i1', 'new'],
+      ['i2', 'other'],
+    ]);
   });
 });
 
@@ -121,9 +254,21 @@ describe('catalogue', () => {
   it('masque la fiche intégrée remplacée par une fiche personnalisée', async () => {
     await ready();
     await waitFor(() => TestBed.inject(SpeciesStore).species().length === BUILTIN_SPECIES.length);
-    await db.species.put({ id: 'custom-1', source: 'custom', overrides: 'danio-margaritatus', scientificName: 'Danio margaritatus', commonNames: ['Perso'], kind: 'fish', updatedAt: U } as never);
-    await waitFor(() => TestBed.inject(SpeciesStore).species().length === BUILTIN_SPECIES.length + 1);
-    const ids = TestBed.inject(SpeciesStore).catalog().map((s) => s.id);
+    await db.species.put({
+      id: 'custom-1',
+      source: 'custom',
+      overrides: 'danio-margaritatus',
+      scientificName: 'Danio margaritatus',
+      commonNames: ['Perso'],
+      kind: 'fish',
+      updatedAt: U,
+    } as never);
+    await waitFor(
+      () => TestBed.inject(SpeciesStore).species().length === BUILTIN_SPECIES.length + 1,
+    );
+    const ids = TestBed.inject(SpeciesStore)
+      .catalog()
+      .map((s) => s.id);
     expect(ids).toContain('custom-1');
     expect(ids).not.toContain('danio-margaritatus');
     expect(ids).toHaveLength(BUILTIN_SPECIES.length);
@@ -132,7 +277,12 @@ describe('catalogue', () => {
 
 describe('bacs actifs', () => {
   it('écarte les bacs archivés et trie par nom à la française', async () => {
-    await db.tanks.bulkPut([tank('1', 'Salon'), tank('2', 'Nano'), tank('3', 'Éco'), tank('4', 'Vieux', { archived: true })]);
+    await db.tanks.bulkPut([
+      tank('1', 'Salon'),
+      tank('2', 'Nano'),
+      tank('3', 'Éco'),
+      tank('4', 'Vieux', { archived: true }),
+    ]);
     await waitFor(() => store.tanks().length === 4);
     expect(store.activeTanks().map((t) => t.name)).toEqual(['Éco', 'Nano', 'Salon']);
     expect(store.tanks()).toHaveLength(4);
@@ -159,7 +309,11 @@ describe('vue d’un bac', () => {
       inh('7', 'b', 'danio-margaritatus'),
     ]);
     await load();
-    await waitFor(() => TestBed.inject(PopulationStore).inhabitants().length === 7 && store.tankViews().length === 1);
+    await waitFor(
+      () =>
+        TestBed.inject(PopulationStore).inhabitants().length === 7 &&
+        store.tankViews().length === 1,
+    );
     const v = view('a');
     expect(v.members.map((m) => m.inhabitant.id)).toEqual(['3', '2', '1']);
     expect(v.plants.map((m) => m.inhabitant.id)).toEqual(['1']);
@@ -172,7 +326,16 @@ describe('vue d’un bac', () => {
     await load();
     await waitFor(() => store.tankViews().length === 1);
     const v = view('a');
-    expect(v).toMatchObject({ level: 'ok', statusLabel: 'OK', alerts: [], issues: [], tests: [], members: [], openFindings: [], tasks: [] });
+    expect(v).toMatchObject({
+      level: 'ok',
+      statusLabel: 'OK',
+      alerts: [],
+      issues: [],
+      tests: [],
+      members: [],
+      openFindings: [],
+      tasks: [],
+    });
     expect(v.lastTest).toBeUndefined();
     expect(v.lastObservation).toBeUndefined();
   });
@@ -185,7 +348,9 @@ describe('vue d’un bac', () => {
       { id: 'wb', updatedAt: U, tankId: 'b', date: '2026-10-05', values: { no3: 10 } },
     ]);
     await load();
-    await waitFor(() => TestBed.inject(WaterStore).waterTests().length === 3 && store.tankViews().length === 2);
+    await waitFor(
+      () => TestBed.inject(WaterStore).waterTests().length === 3 && store.tankViews().length === 2,
+    );
     const a = view('a');
     expect(a.tests.map((t) => t.id)).toEqual(['w1', 'w2']);
     expect(a.lastTest?.id).toBe('w2');
@@ -197,7 +362,13 @@ describe('vue d’un bac', () => {
 
   it('une valeur trop basse donne « bas »', async () => {
     await db.tanks.put(tank('a', 'Salon'));
-    await db.waterTests.put({ id: 'w', updatedAt: U, tankId: 'a', date: '2026-10-03', values: { temp: 15 } });
+    await db.waterTests.put({
+      id: 'w',
+      updatedAt: U,
+      tankId: 'a',
+      date: '2026-10-03',
+      values: { temp: 15 },
+    });
     await load();
     await waitFor(() => store.tankViews()[0]?.lastTest !== undefined);
     expect(view('a').statusLabel).toBe('Temp. bas');
@@ -207,9 +378,18 @@ describe('vue d’un bac', () => {
   it('juge les alertes avec les plages des espèces du bac', async () => {
     await db.tanks.put(tank('a', 'Salon'));
     await db.inhabitants.put(inh('1', 'a', 'danio-margaritatus'));
-    await db.waterTests.put({ id: 'w', updatedAt: U, tankId: 'a', date: '2026-10-03', values: { temp: 21 } });
+    await db.waterTests.put({
+      id: 'w',
+      updatedAt: U,
+      tankId: 'a',
+      date: '2026-10-03',
+      values: { temp: 21 },
+    });
     await load();
-    await waitFor(() => store.tankViews()[0]?.members.length === 1 && store.tankViews()[0].lastTest !== undefined);
+    await waitFor(
+      () =>
+        store.tankViews()[0]?.members.length === 1 && store.tankViews()[0].lastTest !== undefined,
+    );
     // 21 °C est trop frais pour la plage par défaut (22–26) mais convient aux danios (20–26).
     expect(view('a').alerts).toEqual([]);
   });
@@ -225,7 +405,10 @@ describe('vue d’un bac', () => {
   describe('bilan visuel', () => {
     it('un constat ouvert à surveiller fait passer le bac en « Bilan visuel »', async () => {
       await db.tanks.put(tank('a', 'Salon'));
-      await db.observations.bulkPut([obs('o1', 'a', '2026-10-01', [finding('danger')]), obs('o2', 'a', '2026-10-05', [finding('warn')])]);
+      await db.observations.bulkPut([
+        obs('o1', 'a', '2026-10-01', [finding('danger')]),
+        obs('o2', 'a', '2026-10-05', [finding('warn')]),
+      ]);
       await load();
       await waitFor(() => store.tankViews()[0]?.lastObservation?.id === 'o2');
       const v = view('a');
@@ -244,7 +427,9 @@ describe('vue d’un bac', () => {
 
     it('ignore les constats résolus et informatifs', async () => {
       await db.tanks.put(tank('a', 'Salon'));
-      await db.observations.put(obs('o', 'a', '2026-10-01', [finding('danger', { resolved: true }), finding('info')]));
+      await db.observations.put(
+        obs('o', 'a', '2026-10-01', [finding('danger', { resolved: true }), finding('info')]),
+      );
       await load();
       await waitFor(() => store.tankViews()[0]?.lastObservation !== undefined);
       expect(view('a')).toMatchObject({ level: 'ok', statusLabel: 'OK', openFindings: [] });
@@ -253,9 +438,19 @@ describe('vue d’un bac', () => {
     it('une alerte d’eau passe avant le bilan visuel dans l’étiquette', async () => {
       await db.tanks.put(tank('a', 'Salon'));
       await db.observations.put(obs('o', 'a', '2026-10-01', [finding('warn')]));
-      await db.waterTests.put({ id: 'w', updatedAt: U, tankId: 'a', date: '2026-10-03', values: { no3: 30 } });
+      await db.waterTests.put({
+        id: 'w',
+        updatedAt: U,
+        tankId: 'a',
+        date: '2026-10-03',
+        values: { no3: 30 },
+      });
       await load();
-      await waitFor(() => store.tankViews()[0]?.lastTest !== undefined && store.tankViews()[0].lastObservation !== undefined);
+      await waitFor(
+        () =>
+          store.tankViews()[0]?.lastTest !== undefined &&
+          store.tankViews()[0].lastObservation !== undefined,
+      );
       expect(view('a').statusLabel).toBe('NO3 élevé');
       expect(view('a').level).toBe('warn');
     });
@@ -263,10 +458,22 @@ describe('vue d’un bac', () => {
 
   it('ne garde que les tâches actives du bac', async () => {
     await db.tanks.put(tank('a', 'Salon'));
-    const t = (id: string, o = {}) => ({ id, updatedAt: U, tankId: 'a', type: 'custom' as const, label: id, everyDays: 7, nextDue: '2026-10-01', active: true, ...o });
+    const t = (id: string, o = {}) => ({
+      id,
+      updatedAt: U,
+      tankId: 'a',
+      type: 'custom' as const,
+      label: id,
+      everyDays: 7,
+      nextDue: '2026-10-01',
+      active: true,
+      ...o,
+    });
     await db.tasks.bulkPut([t('on'), t('off', { active: false }), t('autre', { tankId: 'b' })]);
     await load();
-    await waitFor(() => TestBed.inject(CareStore).tasks().length === 3 && store.tankViews().length === 1);
+    await waitFor(
+      () => TestBed.inject(CareStore).tasks().length === 3 && store.tankViews().length === 1,
+    );
     expect(view('a').tasks.map((x) => x.id)).toEqual(['on']);
   });
 
@@ -279,7 +486,17 @@ describe('vue d’un bac', () => {
 });
 
 describe('tâches dues', () => {
-  const task = (id: string, nextDue: string, o = {}) => ({ id, updatedAt: U, tankId: 'a', type: 'custom' as const, label: id, everyDays: 7, nextDue, active: true, ...o });
+  const task = (id: string, nextDue: string, o = {}) => ({
+    id,
+    updatedAt: U,
+    tankId: 'a',
+    type: 'custom' as const,
+    label: id,
+    everyDays: 7,
+    nextDue,
+    active: true,
+    ...o,
+  });
 
   it('liste les tâches actives échues, des plus en retard aux plus récentes, avec leur bac', async () => {
     await ready();
@@ -293,7 +510,9 @@ describe('tâches dues', () => {
       task('archive', '2000-01-01', { tankId: 'z' }),
       task('inconnu', '2000-01-01', { tankId: 'x' }),
     ]);
-    await waitFor(() => TestBed.inject(CareStore).tasks().length === 6 && store.tanks().length === 2);
+    await waitFor(
+      () => TestBed.inject(CareStore).tasks().length === 6 && store.tanks().length === 2,
+    );
     expect(store.dueTasks().map((d) => d.task.id)).toEqual(['retard', 'aujourdhui']);
     expect(store.dueTasks()[0].tank.name).toBe('Salon');
   });
@@ -301,9 +520,18 @@ describe('tâches dues', () => {
 
 describe('préférences de rappel', () => {
   it('part des valeurs par défaut puis suit ce qui est enregistré', async () => {
-    expect(TestBed.inject(PrefsStore).notificationPrefs()).toMatchObject({ enabled: false, time: '09:00', tasks: true, followUps: true });
+    expect(TestBed.inject(PrefsStore).notificationPrefs()).toMatchObject({
+      enabled: false,
+      time: '09:00',
+      tasks: true,
+      followUps: true,
+    });
     await TestBed.inject(PrefsRepo).saveNotificationPrefs({ enabled: true, time: '07:30' });
     await waitFor(() => TestBed.inject(PrefsStore).notificationPrefs().enabled);
-    expect(TestBed.inject(PrefsStore).notificationPrefs()).toMatchObject({ enabled: true, time: '07:30', tasks: true });
+    expect(TestBed.inject(PrefsStore).notificationPrefs()).toMatchObject({
+      enabled: true,
+      time: '07:30',
+      tasks: true,
+    });
   });
 });

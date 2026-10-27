@@ -8,8 +8,20 @@ const inventory = {
   kind: 'inventory',
   data: {
     items: [
-      { scientificName: 'Danio margaritatus', kind: 'fish', quantity: 10, unit: 'individual', confidence: 'high' },
-      { scientificName: 'Rotala rotundifolia', kind: 'plant', quantity: 12, unit: 'stem', confidence: 'medium' },
+      {
+        scientificName: 'Danio margaritatus',
+        kind: 'fish',
+        quantity: 10,
+        unit: 'individual',
+        confidence: 'high',
+      },
+      {
+        scientificName: 'Rotala rotundifolia',
+        kind: 'plant',
+        quantity: 12,
+        unit: 'stem',
+        confidence: 'medium',
+      },
     ],
   },
 };
@@ -20,7 +32,9 @@ describe('validation du JSON IA', () => {
   });
 
   it('refuse un champ inconnu, une valeur hors liste et un champ manquant', () => {
-    const bad = structuredClone(inventory) as unknown as { data: { items: { tank?: string; unit?: string; confidence?: unknown }[] } };
+    const bad = structuredClone(inventory) as unknown as {
+      data: { items: { tank?: string; unit?: string; confidence?: unknown }[] };
+    };
     bad.data.items[0].tank = 'Bac salon';
     bad.data.items[1].unit = 'touffes';
     delete bad.data.items[1].confidence;
@@ -37,14 +51,35 @@ describe('validation du JSON IA', () => {
   it('valide un relevé en gouttes et un bilan visuel', () => {
     expect(
       validatePayload({
-        format: 'my-aquarium-ai', version: 1, kind: 'water_test',
-        data: { method: 'drops', values: { ph: { value: 7.2, confidence: 'high' }, no3: { value: 25, confidence: 'low', note: 'entre 10 et 25' } } },
+        format: 'my-aquarium-ai',
+        version: 1,
+        kind: 'water_test',
+        data: {
+          method: 'drops',
+          values: {
+            ph: { value: 7.2, confidence: 'high' },
+            no3: { value: 25, confidence: 'low', note: 'entre 10 et 25' },
+          },
+        },
       }),
     ).toEqual([]);
     expect(
       validatePayload({
-        format: 'my-aquarium-ai', version: 1, kind: 'sanity',
-        data: { overall: 'watch', findings: [{ category: 'algae', severity: 'warn', title: 'Algues filamenteuses', confidence: 'medium', advice: ['Retirer à la main'] }] },
+        format: 'my-aquarium-ai',
+        version: 1,
+        kind: 'sanity',
+        data: {
+          overall: 'watch',
+          findings: [
+            {
+              category: 'algae',
+              severity: 'warn',
+              title: 'Algues filamenteuses',
+              confidence: 'medium',
+              advice: ['Retirer à la main'],
+            },
+          ],
+        },
       }),
     ).toEqual([]);
   });
@@ -52,7 +87,12 @@ describe('validation du JSON IA', () => {
 
 describe('lecture du texte collé', () => {
   it('extrait plusieurs blocs ```json entourés de texte', () => {
-    const sanity = { format: 'my-aquarium-ai', version: 1, kind: 'sanity', data: { overall: 'good', findings: [] } };
+    const sanity = {
+      format: 'my-aquarium-ai',
+      version: 1,
+      kind: 'sanity',
+      data: { overall: 'good', findings: [] },
+    };
     const text = `Voici l'inventaire :\n\`\`\`json\n${JSON.stringify(inventory)}\n\`\`\`\nEt le bilan :\n\`\`\`json\n${JSON.stringify(sanity)}\n\`\`\``;
     const r = parseAiText(text);
     expect(r.ok && r.payloads.map((p) => p.kind)).toEqual(['inventory', 'sanity']);

@@ -2,7 +2,14 @@
 // La validation lit le même schéma que celui donné à l'IA : une seule source de vérité.
 
 import schema from '../../../ai/my-aquarium-ai.schema.json';
-import type { Diagnosis, FindingCategory, ParamKey, QuantityUnit, Species, SpeciesKind } from './models';
+import type {
+  Diagnosis,
+  FindingCategory,
+  ParamKey,
+  QuantityUnit,
+  Species,
+  SpeciesKind,
+} from './models';
 
 export type Confidence = 'high' | 'medium' | 'low';
 
@@ -46,9 +53,22 @@ interface Envelope<K extends string, D> {
 
 export type AiPayload =
   | Envelope<'inventory', { items: AiInventoryItem[] }>
-  | Envelope<'water_test', { method: 'drops' | 'strips' | 'probe'; testKit?: string; values: Partial<Record<ParamKey, AiReading>> }>
-  | Envelope<'sanity', { overall: 'good' | 'watch' | 'problem'; summary?: string; findings: AiFinding[] }>
-  | Envelope<'diagnosis', Pick<Diagnosis, 'question' | 'summary' | 'hypotheses' | 'actions' | 'followUp'>>;
+  | Envelope<
+      'water_test',
+      {
+        method: 'drops' | 'strips' | 'probe';
+        testKit?: string;
+        values: Partial<Record<ParamKey, AiReading>>;
+      }
+    >
+  | Envelope<
+      'sanity',
+      { overall: 'good' | 'watch' | 'problem'; summary?: string; findings: AiFinding[] }
+    >
+  | Envelope<
+      'diagnosis',
+      Pick<Diagnosis, 'question' | 'summary' | 'hypotheses' | 'actions' | 'followUp'>
+    >;
 
 export type ParseResult = { ok: true; payloads: AiPayload[] } | { ok: false; errors: string[] };
 
@@ -57,7 +77,12 @@ export type ParseResult = { ok: true; payloads: AiPayload[] } | { ok: false; err
 type Schema = Record<string, unknown>;
 const ROOT = schema as unknown as Schema;
 const DEFS = ROOT['$defs'] as Record<string, Schema>;
-const DATA_DEF: Record<string, string> = { inventory: 'InventoryData', water_test: 'WaterTestData', sanity: 'SanityData', diagnosis: 'DiagnosisData' };
+const DATA_DEF: Record<string, string> = {
+  inventory: 'InventoryData',
+  water_test: 'WaterTestData',
+  sanity: 'SanityData',
+  diagnosis: 'DiagnosisData',
+};
 
 function typeOk(type: string, v: unknown): boolean {
   switch (type) {
@@ -77,14 +102,17 @@ function typeOk(type: string, v: unknown): boolean {
 function validate(s: Schema, v: unknown, path: string, errors: string[]): void {
   if (s['$ref']) {
     const name = (s['$ref'] as string).replace('#/$defs/', '');
-    validate(DEFS[name], v, path, errors); return;
+    validate(DEFS[name], v, path, errors);
+    return;
   }
   if ('const' in s && v !== s['const']) {
     errors.push(`${path} doit valoir ${JSON.stringify(s['const'])}`);
     return;
   }
   if (s['enum'] && !(s['enum'] as unknown[]).includes(v)) {
-    errors.push(`${path} : « ${String(v)} » n’est pas accepté (${(s['enum'] as unknown[]).join(', ')})`);
+    errors.push(
+      `${path} : « ${String(v)} » n’est pas accepté (${(s['enum'] as unknown[]).join(', ')})`,
+    );
     return;
   }
   if (s['type'] && !typeOk(s['type'] as string, v)) {
@@ -95,7 +123,9 @@ function validate(s: Schema, v: unknown, path: string, errors: string[]): void {
     errors.push(`${path} doit être ≥ ${s['minimum']}`);
   }
   if (Array.isArray(v) && s['items']) {
-    v.forEach((item, i) => { validate(s['items'] as Schema, item, `${path}[${i}]`, errors); });
+    v.forEach((item, i) => {
+      validate(s['items'] as Schema, item, `${path}[${i}]`, errors);
+    });
   }
   if (typeOk('object', v) && (s['properties'] || s['required'])) {
     const obj = v as Record<string, unknown>;
@@ -105,7 +135,8 @@ function validate(s: Schema, v: unknown, path: string, errors: string[]): void {
     }
     for (const [key, val] of Object.entries(obj)) {
       if (Object.hasOwn(props, key)) validate(props[key], val, `${path}.${key}`, errors);
-      else if (s['additionalProperties'] === false) errors.push(`${path}.${key} n’est pas prévu par le format`);
+      else if (s['additionalProperties'] === false)
+        errors.push(`${path}.${key} n’est pas prévu par le format`);
     }
   }
 }
@@ -168,14 +199,20 @@ const norm = (s: string) =>
     .trim();
 
 /** Trouve l'espèce du catalogue correspondant à un nom donné par l'IA. */
-export function matchSpecies(scientificName: string, commonName: string | undefined, species: Species[]): Species | undefined {
+export function matchSpecies(
+  scientificName: string,
+  commonName: string | undefined,
+  species: Species[],
+): Species | undefined {
   const sci = norm(scientificName);
   const exact = species.find((s) => norm(s.scientificName) === sci);
   if (exact) return exact;
   // Même binôme (genre + espèce), en ignorant variété ou cultivar.
   const binomial = sci.split(' ').slice(0, 2).join(' ');
   if (binomial.includes(' ')) {
-    const byBinomial = species.find((s) => norm(s.scientificName).split(' ').slice(0, 2).join(' ') === binomial);
+    const byBinomial = species.find(
+      (s) => norm(s.scientificName).split(' ').slice(0, 2).join(' ') === binomial,
+    );
     if (byBinomial) return byBinomial;
   }
   if (commonName) {
@@ -192,7 +229,11 @@ export function matchSpecies(scientificName: string, commonName: string | undefi
   return undefined;
 }
 
-export const CONFIDENCE_LABELS: Record<Confidence, string> = { high: 'Sûr', medium: 'Probable', low: 'À vérifier' };
+export const CONFIDENCE_LABELS: Record<Confidence, string> = {
+  high: 'Sûr',
+  medium: 'Probable',
+  low: 'À vérifier',
+};
 
 export const FINDING_CATEGORIES: Record<FindingCategory, string> = {
   algae: 'Algues',
@@ -205,4 +246,8 @@ export const FINDING_CATEGORIES: Record<FindingCategory, string> = {
   other: 'Autre',
 };
 
-export const OVERALL_LABELS = { good: 'Bon état', watch: 'À surveiller', problem: 'Problème' } as const;
+export const OVERALL_LABELS = {
+  good: 'Bon état',
+  watch: 'À surveiller',
+  problem: 'Problème',
+} as const;

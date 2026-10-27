@@ -73,13 +73,16 @@ export class PhotosTab {
   protected readonly comparing = signal(false);
 
   protected readonly tank = computed(() => this.store.tanks().find((t) => t.id === this.id()));
-  protected readonly list = computed(() => this.photoStore.photos().filter((p) => p.tankId === this.id()));
+  protected readonly list = computed(() =>
+    this.photoStore.photos().filter((p) => p.tankId === this.id()),
+  );
 
   /** Photos du bac lui-même (pas celles des habitants), seules comparables entre elles. */
   protected readonly tankPhotos = computed(() => this.list().filter((p) => !p.inhabitantId));
 
   protected label(p: Photo): string {
-    const inh = p.inhabitantId && this.populationStore.inhabitants().find((i) => i.id === p.inhabitantId);
+    const inh =
+      p.inhabitantId && this.populationStore.inhabitants().find((i) => i.id === p.inhabitantId);
     const what = inh ? speciesName(this.speciesStore.speciesById().get(inh.speciesId)) : 'Bac';
     return `${what}, ${fmtShortDate(p.date)}${p.caption ? ' : ' + p.caption : ''}`;
   }

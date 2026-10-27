@@ -13,11 +13,23 @@ afterEach(async () => {
 
 const U = '';
 const today = todayIso();
-const task = (id: string, o: Record<string, unknown> = {}) => ({ id, updatedAt: U, tankId: 'a', type: 'custom' as const, label: id, everyDays: 7, nextDue: today, active: true, ...o });
-const alerts = () => [...app.el().querySelectorAll('.alert')].map((a) => a.textContent.replace(/\s+/g, ' ').trim());
-const tasks = () => [...app.el().querySelectorAll('.task')].map((a) => a.textContent.replace(/\s+/g, ' ').trim());
+const task = (id: string, o: Record<string, unknown> = {}) => ({
+  id,
+  updatedAt: U,
+  tankId: 'a',
+  type: 'custom' as const,
+  label: id,
+  everyDays: 7,
+  nextDue: today,
+  active: true,
+  ...o,
+});
+const alerts = () =>
+  [...app.el().querySelectorAll('.alert')].map((a) => a.textContent.replace(/\s+/g, ' ').trim());
+const tasks = () =>
+  [...app.el().querySelectorAll('.task')].map((a) => a.textContent.replace(/\s+/g, ' ').trim());
 
-async function boot(seed: (db: App["db"]) => PromiseLike<unknown> = async () => undefined) {
+async function boot(seed: (db: App['db']) => PromiseLike<unknown> = async () => undefined) {
   app = await bootApp(async (db) => {
     await seedAll(db);
     await db.tasks.clear();
@@ -101,7 +113,15 @@ describe('à surveiller', () => {
   });
 
   it('signale une valeur hors plage avec le nom du bac et mène à l’onglet eau', async () => {
-    await boot((db) => db.waterTests.put({ id: 'w', updatedAt: U, tankId: 'a', date: '2026-10-20T10:00:00Z', values: { no3: 40, no2: 0.5 } }));
+    await boot((db) =>
+      db.waterTests.put({
+        id: 'w',
+        updatedAt: U,
+        tankId: 'a',
+        date: '2026-10-20T10:00:00Z',
+        values: { no3: 40, no2: 0.5 },
+      }),
+    );
     await app.go('/', 'À surveiller');
     const list = alerts().filter((a) => a.includes('Bac salon'));
     expect(list).toHaveLength(2);
@@ -120,7 +140,13 @@ describe('à surveiller', () => {
     await boot(async (db) => {
       await db.inhabitants.delete('i1');
       await db.tanks.update('a', { cycling: true });
-      await db.waterTests.put({ id: 'w', updatedAt: U, tankId: 'a', date: '2026-10-20T10:00:00Z', values: { nh4: 2, no2: 1, no3: 40 } });
+      await db.waterTests.put({
+        id: 'w',
+        updatedAt: U,
+        tankId: 'a',
+        date: '2026-10-20T10:00:00Z',
+        values: { nh4: 2, no2: 1, no3: 40 },
+      });
     });
     await app.go('/', 'À surveiller');
     const mine = alerts().filter((a) => a.includes('Bac salon'));
@@ -131,7 +157,13 @@ describe('à surveiller', () => {
   it('avec des animaux, un cyclage ne masque pas les alertes', async () => {
     await boot(async (db) => {
       await db.tanks.update('a', { cycling: true });
-      await db.waterTests.put({ id: 'w', updatedAt: U, tankId: 'a', date: '2026-10-20T10:00:00Z', values: { nh4: 2 } });
+      await db.waterTests.put({
+        id: 'w',
+        updatedAt: U,
+        tankId: 'a',
+        date: '2026-10-20T10:00:00Z',
+        values: { nh4: 2 },
+      });
     });
     await app.go('/', 'À surveiller');
     expect(alerts().some((a) => a.includes('NH4 à 2 mg/L'))).toBe(true);
@@ -139,22 +171,47 @@ describe('à surveiller', () => {
 
   it('prévient quand les nitrates montent vers la limite', async () => {
     const day = (n: number) => new Date(Date.now() - (21 - n * 7) * 864e5).toISOString();
-    await boot((db) => db.waterTests.bulkPut([5, 10, 15, 20].map((v, i) => ({ id: `w${i}`, updatedAt: U, tankId: 'a', date: day(i), values: { no3: v } }))));
+    await boot((db) =>
+      db.waterTests.bulkPut(
+        [5, 10, 15, 20].map((v, i) => ({
+          id: `w${i}`,
+          updatedAt: U,
+          tankId: 'a',
+          date: day(i),
+          values: { no3: v },
+        })),
+      ),
+    );
     await app.go('/', 'Nitrates en hausse');
     expect(alerts()[0]).toMatch(/Nitrates en hausse — Bac salon/);
-    expect(alerts()[0]).toMatch(/\+5 mg\/L par semaine : 25 mg\/L atteints dans ~\d+ j\. Prévois un changement d’eau\./);
+    expect(alerts()[0]).toMatch(
+      /\+5 mg\/L par semaine : 25 mg\/L atteints dans ~\d+ j\. Prévois un changement d’eau\./,
+    );
   });
 
   it('signale les constats ouverts du dernier bilan visuel et les problèmes de cohabitation', async () => {
     await boot(async (db) => {
-      await db.observations.put({ id: 'o', updatedAt: U, tankId: 'a', date: '2026-10-20T10:00:00Z', overall: 'watch', findings: [{ category: 'algae', severity: 'danger', title: 'Algues noires', advice: ['Brosser'] }, { category: 'algae', severity: 'warn', title: 'Voile', detail: 'Léger' }, { category: 'algae', severity: 'warn', title: 'Autre' }] as never });
+      await db.observations.put({
+        id: 'o',
+        updatedAt: U,
+        tankId: 'a',
+        date: '2026-10-20T10:00:00Z',
+        overall: 'watch',
+        findings: [
+          { category: 'algae', severity: 'danger', title: 'Algues noires', advice: ['Brosser'] },
+          { category: 'algae', severity: 'warn', title: 'Voile', detail: 'Léger' },
+          { category: 'algae', severity: 'warn', title: 'Autre' },
+        ] as never,
+      });
       await db.inhabitants.update('i1', { quantity: 2 });
     });
     await app.go('/', 'Algues noires');
     const list = alerts();
     expect(list.find((a) => a.startsWith('Algues noires — Bac salon'))).toContain('Brosser');
     expect(list.find((a) => a.startsWith('Voile — Bac salon'))).toContain('Léger');
-    expect(list.find((a) => a.startsWith('Autre — Bac salon'))).toContain('Constat du dernier bilan visuel.');
+    expect(list.find((a) => a.startsWith('Autre — Bac salon'))).toContain(
+      'Constat du dernier bilan visuel.',
+    );
     expect(list.find((a) => a.startsWith('Groupe trop petit'))).toContain('Bac salon');
     expect(app.find('.alert[href="/bacs/a/population"]')).not.toBeNull();
   });
@@ -165,7 +222,14 @@ describe('à surveiller', () => {
       await db.consumables.bulkPut([
         { id: 'c1', updatedAt: U, name: 'Vide', category: 'food', level: 'empty' },
         { id: 'c2', updatedAt: U, name: 'Bas', category: 'food', level: 'low' },
-        { id: 'c3', updatedAt: U, name: 'Test NO3', category: 'test_kit', level: 'full', expiryDate: '2020-01-01' },
+        {
+          id: 'c3',
+          updatedAt: U,
+          name: 'Test NO3',
+          category: 'test_kit',
+          level: 'full',
+          expiryDate: '2020-01-01',
+        },
       ]);
     });
     await app.go('/', 'À surveiller');
@@ -180,7 +244,13 @@ describe('à surveiller', () => {
   it('une garantie qui se termine ou un équipement mène à l’onglet équipements', async () => {
     await boot(async (db) => {
       await db.consumables.clear();
-      await db.consumables.put({ id: 'c1', updatedAt: U, name: 'Vide', category: 'food', level: 'empty' });
+      await db.consumables.put({
+        id: 'c1',
+        updatedAt: U,
+        name: 'Vide',
+        category: 'food',
+        level: 'empty',
+      });
     });
     await app.go('/', 'À surveiller');
     expect(app.find('.alert[href="/materiel?vue=consommables"]')!.textContent).toContain('Vide');
@@ -189,19 +259,33 @@ describe('à surveiller', () => {
 
 describe('entretien du jour', () => {
   it('dit quand il n’y a rien à faire', async () => {
-    await boot((db) => db.tasks.put(task('Plus tard', { nextDue: addDays(today, 3) })).then(() => undefined));
+    await boot((db) =>
+      db.tasks.put(task('Plus tard', { nextDue: addDays(today, 3) })).then(() => undefined),
+    );
     await app.go('/', 'Rien à faire aujourd’hui.');
     expect(app.find('.sub', '0 tâche')).not.toBeNull();
   });
 
   it('liste les tâches dues, avec le bac et le retard, et compte les retards', async () => {
-    await boot((db) => db.tasks.bulkPut([task('Aujourd’hui'), task('En retard', { nextDue: addDays(today, -2), tankId: 'b' }), task('Demain', { nextDue: addDays(today, 1) })]).then(() => undefined));
+    await boot((db) =>
+      db.tasks
+        .bulkPut([
+          task('Aujourd’hui'),
+          task('En retard', { nextDue: addDays(today, -2), tankId: 'b' }),
+          task('Demain', { nextDue: addDays(today, 1) }),
+        ])
+        .then(() => undefined),
+    );
     await app.go('/', 'En retard');
     expect(tasks()).toHaveLength(2);
     expect(tasks()[0]).toContain('En retard Nano · en retard de 2 j');
     expect(tasks()[1]).toContain('Aujourd’hui Bac salon · aujourd’hui');
-    expect(app.find('h2', 'Entretien du jour')!.parentElement!.textContent).toMatch(/2 tâches\s*· 1 en retard/);
-    expect(app.find('button.done')!.getAttribute('aria-label')).toBe('En retard : marquer comme fait');
+    expect(app.find('h2', 'Entretien du jour')!.parentElement!.textContent).toMatch(
+      /2 tâches\s*· 1 en retard/,
+    );
+    expect(app.find('button.done')!.getAttribute('aria-label')).toBe(
+      'En retard : marquer comme fait',
+    );
     expect(app.el().querySelectorAll('button.done.late')).toHaveLength(1);
   });
 
@@ -209,14 +293,18 @@ describe('entretien du jour', () => {
     await boot((db) => db.tasks.put(task('Seule')).then(() => undefined));
     await app.go('/', 'Seule');
     expect(app.find('h2', 'Entretien du jour')!.parentElement!.textContent).toMatch(/1 tâche(?!s)/);
-    expect(app.find('h2', 'Entretien du jour')!.parentElement!.textContent).not.toContain('en retard');
+    expect(app.find('h2', 'Entretien du jour')!.parentElement!.textContent).not.toContain(
+      'en retard',
+    );
   });
 
   it('valider une tâche simple la reporte', async () => {
     await boot((db) => db.tasks.put(task('Vitres', { type: 'glass_clean' })).then(() => undefined));
     await app.go('/', 'Vitres');
     app.press('button.done');
-    await vi.waitFor(async () => expect((await app.db.tasks.get('Vitres'))!.nextDue).toBe(addDays(today, 7)));
+    await vi.waitFor(async () =>
+      expect((await app.db.tasks.get('Vitres'))!.nextDue).toBe(addDays(today, 7)),
+    );
     await vi.waitFor(() => {
       app.harness.detectChanges();
       expect(app.find('.task')).toBeNull();
@@ -230,7 +318,9 @@ describe('entretien du jour', () => {
     expect(app.find('[role=dialog]')?.getAttribute('aria-labelledby')).toBe('wc-title');
     expect(await app.db.logs.where('taskId').equals('Eau').count()).toBe(0);
     app.press('[role=dialog] .btn.fill', 'C’est fait');
-    await vi.waitFor(async () => expect(await app.db.logs.where('taskId').equals('Eau').count()).toBe(1));
+    await vi.waitFor(async () =>
+      expect(await app.db.logs.where('taskId').equals('Eau').count()).toBe(1),
+    );
   });
 
   it('une fertilisation passe par la saisie des doses', async () => {

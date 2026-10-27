@@ -55,9 +55,23 @@ describe('nouveau bac', () => {
     set('co2t', '60');
     app.click(checkbox('cyclage'));
     save();
-    await vi.waitFor(async () => expect((await app.db.tanks.toArray()).some((t) => t.name === 'Salon')).toBe(true));
+    await vi.waitFor(async () =>
+      expect((await app.db.tanks.toArray()).some((t) => t.name === 'Salon')).toBe(true),
+    );
     const t = (await app.db.tanks.toArray()).find((x) => x.name === 'Salon')!;
-    expect(t).toMatchObject({ type: 'community', volumeGross: 112.5, volumeNet: 100, startDate: '2026-03-01', substrate: 'Sable', notes: 'Premier bac', co2: true, co2Target: 60, cycling: true, archived: false, lighting: { photoperiodHours: 8.5 } });
+    expect(t).toMatchObject({
+      type: 'community',
+      volumeGross: 112.5,
+      volumeNet: 100,
+      startDate: '2026-03-01',
+      substrate: 'Sable',
+      notes: 'Premier bac',
+      co2: true,
+      co2Target: 60,
+      cycling: true,
+      archived: false,
+      lighting: { photoperiodHours: 8.5 },
+    });
     expect((await app.db.tasks.where('tankId').equals(t.id).toArray()).length).toBeGreaterThan(3);
     await vi.waitFor(() => expect(app.harness.routeNativeElement?.textContent).toContain('Salon'));
   });
@@ -67,7 +81,9 @@ describe('nouveau bac', () => {
     set('vg', '20');
     app.click(checkbox('tâches d’entretien habituelles'));
     save();
-    await vi.waitFor(async () => expect((await app.db.tanks.toArray()).some((t) => t.name === 'Nu')).toBe(true));
+    await vi.waitFor(async () =>
+      expect((await app.db.tanks.toArray()).some((t) => t.name === 'Nu')).toBe(true),
+    );
     const t = (await app.db.tanks.toArray()).find((x) => x.name === 'Nu')!;
     expect(t.volumeNet).toBeUndefined();
     expect(t.substrate).toBeUndefined();
@@ -88,13 +104,20 @@ describe('nouveau bac', () => {
     set('name', 'Sans CO2');
     set('vg', '20');
     save();
-    await vi.waitFor(async () => expect((await app.db.tanks.toArray()).some((t) => t.name === 'Sans CO2')).toBe(true));
-    expect((await app.db.tanks.toArray()).find((t) => t.name === 'Sans CO2')!.co2Target).toBeUndefined();
+    await vi.waitFor(async () =>
+      expect((await app.db.tanks.toArray()).some((t) => t.name === 'Sans CO2')).toBe(true),
+    );
+    expect(
+      (await app.db.tanks.toArray()).find((t) => t.name === 'Sans CO2')!.co2Target,
+    ).toBeUndefined();
   });
 
   it('ne fait rien si on valide un formulaire invalide', async () => {
     const before = await app.db.tanks.count();
-    app.el().querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    app
+      .el()
+      .querySelector('form')!
+      .dispatchEvent(new Event('submit', { cancelable: true }));
     await app.flush();
     expect(await app.db.tanks.count()).toBe(before);
   });
@@ -168,7 +191,9 @@ describe('modification d’un bac', () => {
     vi.stubGlobal('confirm', (m: string) => (asked.push(m), true));
     app.press('button.danger', 'Supprimer');
     await vi.waitFor(async () => expect(await app.db.tanks.get('a')).toBeUndefined());
-    expect(asked[0]).toBe('Supprimer « Bac salon » et tout son historique ? Cette action est définitive.');
+    expect(asked[0]).toBe(
+      'Supprimer « Bac salon » et tout son historique ? Cette action est définitive.',
+    );
     expect(await app.db.waterTests.where('tankId').equals('a').count()).toBe(0);
   });
 });

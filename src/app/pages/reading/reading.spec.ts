@@ -9,8 +9,10 @@ afterEach(async () => {
 const field = (id: string) => app.el().querySelector<HTMLInputElement>('#' + id)!;
 const set = (id: string, value: string) => app.type(field(id), value);
 const save = () => app.press('header button.fill', 'Enregistrer');
-const pills = () => [...app.el().querySelectorAll('.checks .pill')].map((p) => p.textContent.trim());
-const waterTests = async (tankId: string) => (await app.db.waterTests.where('tankId').equals(tankId).toArray()).filter((t) => t.id.length > 3);
+const pills = () =>
+  [...app.el().querySelectorAll('.checks .pill')].map((p) => p.textContent.trim());
+const waterTests = async (tankId: string) =>
+  (await app.db.waterTests.where('tankId').equals(tankId).toArray()).filter((t) => t.id.length > 3);
 
 describe('nouveau relevé', () => {
   it('propose le bac de l’adresse, sinon le premier, et change de bac', async () => {
@@ -61,7 +63,11 @@ describe('nouveau relevé', () => {
     set('p-ph', '7');
     set('p-no3', '60');
     set('p-temp', '15');
-    expect(pills()).toEqual(['pH 7 · dans la plage 6,5–7,5', 'NO3 60 · hors plage 5–25', 'Temp. 15 · hors plage 20–26']);
+    expect(pills()).toEqual([
+      'pH 7 · dans la plage 6,5–7,5',
+      'NO3 60 · hors plage 5–25',
+      'Temp. 15 · hors plage 20–26',
+    ]);
     expect(app.find('.field.danger')).not.toBeNull();
     expect(app.find('.checks .pill.ok')?.textContent).toContain('pH 7');
     expect(app.find('.checks .pill.dg')?.textContent).toContain('NO3');
@@ -88,7 +94,11 @@ describe('nouveau relevé', () => {
     set('note', '  après changement d’eau ');
     set('when', '2026-10-20T08:30');
     save();
-    await vi.waitFor(async () => expect((await app.db.waterTests.toArray()).some((t) => t.note === 'après changement d’eau')).toBe(true));
+    await vi.waitFor(async () =>
+      expect(
+        (await app.db.waterTests.toArray()).some((t) => t.note === 'après changement d’eau'),
+      ).toBe(true),
+    );
     const t = (await app.db.waterTests.toArray()).find((x) => x.note === 'après changement d’eau')!;
     expect(t.values).toEqual({ ph: 6.8, no3: 12 });
     expect(t.tankId).toBe('a');
@@ -104,7 +114,9 @@ describe('nouveau relevé', () => {
     set('note', '   ');
     set('when', '');
     save();
-    await vi.waitFor(async () => expect((await app.db.waterTests.where('tankId').equals('b').toArray())).toHaveLength(1));
+    await vi.waitFor(async () =>
+      expect(await app.db.waterTests.where('tankId').equals('b').toArray()).toHaveLength(1),
+    );
     const [t] = await app.db.waterTests.where('tankId').equals('b').toArray();
     expect(t.note).toBeUndefined();
     expect(Math.abs(Date.now() - new Date(t.date).getTime())).toBeLessThan(10_000);
@@ -116,7 +128,9 @@ describe('nouveau relevé', () => {
     await app.go('/releve?bac=a', 'Nouveau relevé');
     set('p-ph', '7');
     save();
-    await vi.waitFor(async () => expect((await app.db.tasks.get('t2'))!.nextDue > '2026-01-01').toBe(true));
+    await vi.waitFor(async () =>
+      expect((await app.db.tasks.get('t2'))!.nextDue > '2026-01-01').toBe(true),
+    );
   });
 
   describe('paramètres secondaires', () => {
@@ -124,7 +138,9 @@ describe('nouveau relevé', () => {
       app = await bootApp();
       await app.go('/releve?bac=a', 'Nouveau relevé');
       expect(field('p-fe')).toBeNull();
-      expect(app.find('button.out', 'Autres paramètres')?.textContent).toContain('Fe, K, Mg, Cond.');
+      expect(app.find('button.out', 'Autres paramètres')?.textContent).toContain(
+        'Fe, K, Mg, Cond.',
+      );
       app.press('button.out', 'Autres paramètres');
       expect(field('p-fe')).not.toBeNull();
       expect(field('p-conductivity')).not.toBeNull();
@@ -154,18 +170,37 @@ describe('nouveau relevé', () => {
       app.press('.types button', 'Eau verte');
       app.press('.types button', 'Eau verte');
       save();
-      await vi.waitFor(async () => expect((await app.db.observations.toArray()).some((o) => o.manual && o.id !== 'o1')).toBe(true));
+      await vi.waitFor(async () =>
+        expect((await app.db.observations.toArray()).some((o) => o.manual && o.id !== 'o1')).toBe(
+          true,
+        ),
+      );
       const o = (await app.db.observations.toArray()).find((x) => x.manual && x.id !== 'o1')!;
-      expect(o).toMatchObject({ tankId: 'a', algaeLevel: 2, algaeTypes: ['Filamenteuses'], overall: 'watch', summary: 'Algues : moyen (Filamenteuses)', findings: [] });
+      expect(o).toMatchObject({
+        tankId: 'a',
+        algaeLevel: 2,
+        algaeTypes: ['Filamenteuses'],
+        overall: 'watch',
+        summary: 'Algues : moyen (Filamenteuses)',
+        findings: [],
+      });
       expect(await waterTests('a')).toHaveLength(0);
     });
 
-    it.each([[0, 'Aucune', 'good', 'Algues : aucune'], [3, 'Beaucoup', 'problem', 'Algues : beaucoup'], [1, 'Un peu', 'watch', 'Algues : un peu']])('niveau %i', async (level, label, overall, summary) => {
+    it.each([
+      [0, 'Aucune', 'good', 'Algues : aucune'],
+      [3, 'Beaucoup', 'problem', 'Algues : beaucoup'],
+      [1, 'Un peu', 'watch', 'Algues : un peu'],
+    ])('niveau %i', async (level, label, overall, summary) => {
       app = await bootApp();
       await app.go('/releve?bac=a', 'Nouveau relevé');
       app.press('.algae .lv button', label);
       save();
-      await vi.waitFor(async () => expect((await app.db.observations.toArray()).some((o) => o.manual && o.id !== 'o1')).toBe(true));
+      await vi.waitFor(async () =>
+        expect((await app.db.observations.toArray()).some((o) => o.manual && o.id !== 'o1')).toBe(
+          true,
+        ),
+      );
       const o = (await app.db.observations.toArray()).find((x) => x.manual && x.id !== 'o1')!;
       expect(o).toMatchObject({ algaeLevel: level, overall, summary });
       expect(o.algaeTypes).toBeUndefined();
@@ -187,7 +222,11 @@ describe('nouveau relevé', () => {
       app.press('.algae .lv button', 'Un peu');
       set('when', '2026-10-21T09:00');
       save();
-      await vi.waitFor(async () => expect((await app.db.observations.toArray()).some((o) => o.manual && o.id !== 'o1')).toBe(true));
+      await vi.waitFor(async () =>
+        expect((await app.db.observations.toArray()).some((o) => o.manual && o.id !== 'o1')).toBe(
+          true,
+        ),
+      );
       const o = (await app.db.observations.toArray()).find((x) => x.manual && x.id !== 'o1')!;
       expect(o.date).toBe(new Date('2026-10-21T09:00').toISOString());
     });

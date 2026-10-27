@@ -20,5 +20,9 @@ export default defineConfig({
     // Proche de Safari iOS. À la demande seulement (E2E_WEBKIT=1) : demande des paquets système.
     ...(process.env.E2E_WEBKIT ? [{ name: 'webkit', use: { ...devices['iPhone 15'] } }] : []),
   ],
-  webServer: { command: 'node e2e/serve.mjs', url: 'http://localhost:4370', reuseExistingServer: false },
+  webServer: {
+    command: 'node e2e/serve.mjs',
+    url: 'http://localhost:4370',
+    reuseExistingServer: false,
+  },
 });

@@ -12,7 +12,19 @@ import { Icon } from '../../shared/icon';
 import { GearRepo } from '../../core/data/gear.repo';
 
 export function equipmentIcon(type: EquipmentType): string {
-  return ({ filter: 'filter', heater: 'heater', light: 'bulb', co2: 'bubble', pump: 'filter', air: 'bubble', thermometer: 'thermo', controller: 'timer', other: 'tool' } as Record<EquipmentType, string>)[type];
+  return (
+    {
+      filter: 'filter',
+      heater: 'heater',
+      light: 'bulb',
+      co2: 'bubble',
+      pump: 'filter',
+      air: 'bubble',
+      thermometer: 'thermo',
+      controller: 'timer',
+      other: 'tool',
+    } as Record<EquipmentType, string>
+  )[type];
 }
 
 /** Résumé des caractéristiques utiles, en une ligne. */
@@ -26,12 +38,14 @@ export function equipmentSummary(e: Equipment): string {
     if (l.par) parts.push(`PAR ${l.par}`);
   }
   if (e.filter?.flowLh) parts.push(`${e.filter.flowLh} L/h`);
-  if (e.heater?.powerW) parts.push(`${e.heater.powerW} W${e.heater.setpointC ? ' · ' + fmt(e.heater.setpointC) + ' °C' : ''}`);
+  if (e.heater?.powerW)
+    parts.push(
+      `${e.heater.powerW} W${e.heater.setpointC ? ' · ' + fmt(e.heater.setpointC) + ' °C' : ''}`,
+    );
   if (e.co2?.schedule) parts.push(`CO2 ${e.co2.schedule.on}–${e.co2.schedule.off}`);
   if (e.specs) parts.push(e.specs);
   return parts.join(' · ');
 }
-
 
 /** Matériel (par bac) et consommables (stock, péremption). */
 @Component({
@@ -151,7 +165,9 @@ export class GearPage {
   protected readonly icon = equipmentIcon;
   protected readonly date = fmtDate;
 
-  protected readonly tab = computed(() => (this.vue() === 'consommables' ? 'consommables' : 'equipements'));
+  protected readonly tab = computed(() =>
+    this.vue() === 'consommables' ? 'consommables' : 'equipements',
+  );
 
   protected readonly groups = computed(() => {
     const tanks = this.store.activeTanks();
@@ -161,18 +177,29 @@ export class GearPage {
       return { title: t.name, items, checks: gearChecks(t, items) };
     });
     const known = new Set(tanks.map((t) => t.id));
-    groups.push({ title: 'En réserve', items: all.filter((e) => !e.tankId || !known.has(e.tankId)), checks: [] });
+    groups.push({
+      title: 'En réserve',
+      items: all.filter((e) => !e.tankId || !known.has(e.tankId)),
+      checks: [],
+    });
     return groups.filter((g) => g.items.length);
   });
 
   protected readonly consumables = computed(() => {
     const order: Record<StockLevel, number> = { empty: 0, low: 1, half: 2, full: 3 };
-    return [...this.gearStore.consumables()].sort((a, b) => order[a.level] - order[b.level] || a.name.localeCompare(b.name, 'fr'));
+    return [...this.gearStore.consumables()].sort(
+      (a, b) => order[a.level] - order[b.level] || a.name.localeCompare(b.name, 'fr'),
+    );
   });
 
-  protected readonly alerts = computed(() => stockAlerts(this.gearStore.consumables(), this.gearStore.equipment(), this.store.today()));
+  protected readonly alerts = computed(() =>
+    stockAlerts(this.gearStore.consumables(), this.gearStore.equipment(), this.store.today()),
+  );
 
-  protected warranty(e: { purchaseDate?: string; warrantyMonths?: number }): { label: string; soon: boolean; over: boolean } | undefined {
+  protected warranty(e: {
+    purchaseDate?: string;
+    warrantyMonths?: number;
+  }): { label: string; soon: boolean; over: boolean } | undefined {
     const end = warrantyEnd(e);
     if (!end) return undefined;
     const days = daysBetween(this.store.today(), end);

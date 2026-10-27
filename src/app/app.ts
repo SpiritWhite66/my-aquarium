@@ -1,4 +1,4 @@
-import type { ElementRef} from '@angular/core';
+import type { ElementRef } from '@angular/core';
 import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AquariumStore } from './core/store';
@@ -30,7 +30,8 @@ export class App {
   constructor() {
     // Après un changement de page, le focus passe au contenu : un lecteur d'écran annonce la nouvelle page.
     inject(Router).events.subscribe((e) => {
-      if (e instanceof NavigationEnd && this.navigations++ > 0) this.main()?.nativeElement.focus({ preventScroll: true });
+      if (e instanceof NavigationEnd && this.navigations++ > 0)
+        this.main()?.nativeElement.focus({ preventScroll: true });
     });
   }
 

@@ -38,12 +38,32 @@ afterEach(async () => {
 
 describe('NotificationService', () => {
   it('n’affiche la notification du jour qu’une fois, même si deux vérifications se croisent', async () => {
-    const tankId = await TestBed.inject(TankRepo).saveTank({ name: 'Salon', type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: false, archived: false });
-    await TestBed.inject(CareRepo).saveTask({ tankId, type: 'water_test', label: 'Test', everyDays: 7, nextDue: '2020-01-01', active: true });
+    const tankId = await TestBed.inject(TankRepo).saveTank({
+      name: 'Salon',
+      type: 'planted',
+      volumeGross: 60,
+      startDate: '2026-01-01',
+      co2: false,
+      archived: false,
+    });
+    await TestBed.inject(CareRepo).saveTask({
+      tankId,
+      type: 'water_test',
+      label: 'Test',
+      everyDays: 7,
+      nextDue: '2020-01-01',
+      active: true,
+    });
     await TestBed.inject(PrefsRepo).saveNotificationPrefs({ enabled: true, time: '00:00' });
     const store = TestBed.inject(AquariumStore);
     const service = TestBed.inject(NotificationService);
-    await waitFor(() => store.ready() && store.dueTasks().length === 1 && TestBed.inject(PrefsStore).notificationPrefs().enabled && Object.keys(TestBed.inject(PrefsStore).notificationPrefs().digests ?? {}).length > 0);
+    await waitFor(
+      () =>
+        store.ready() &&
+        store.dueTasks().length === 1 &&
+        TestBed.inject(PrefsStore).notificationPrefs().enabled &&
+        Object.keys(TestBed.inject(PrefsStore).notificationPrefs().digests ?? {}).length > 0,
+    );
 
     await Promise.all([service.check(), service.check(), service.check()]);
     await service.check();

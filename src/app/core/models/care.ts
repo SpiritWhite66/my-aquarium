@@ -31,6 +31,13 @@ export interface MaintenanceLog extends Entity {
   type: TaskType;
   label: string;
   date: string; // ISO datetime
-  details?: { waterChangedLiters?: number; product?: string; dose?: string; amount?: number; unit?: DoseUnit; consumableId?: string };
+  details?: {
+    waterChangedLiters?: number;
+    product?: string;
+    dose?: string;
+    amount?: number;
+    unit?: DoseUnit;
+    consumableId?: string;
+  };
   note?: string;
 }

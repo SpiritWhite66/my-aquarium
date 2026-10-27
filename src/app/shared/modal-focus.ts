@@ -7,7 +7,8 @@ function visible(el: HTMLElement): boolean {
   return style.display !== 'none' && style.visibility !== 'hidden';
 }
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * Pour une fenêtre modale : Tab reste dans la fenêtre, et à la fermeture le focus revient
@@ -27,7 +28,10 @@ export class ModalFocus {
   protected onKey(e: KeyboardEvent): void {
     if (e.key !== 'Tab') return;
     const items = [...this.el.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(visible);
-    if (!items.length) { e.preventDefault(); return; }
+    if (!items.length) {
+      e.preventDefault();
+      return;
+    }
     const first = items[0];
     const last = items[items.length - 1];
     const active = document.activeElement;

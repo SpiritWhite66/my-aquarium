@@ -26,7 +26,14 @@ afterEach(async () => {
 
 const U = '';
 const daysAgo = (n: number) => new Date(Date.now() - n * 864e5).toISOString();
-const photo = (id: string, ago: number, tankId = 'a') => ({ id, updatedAt: U, tankId, date: daysAgo(ago), width: 10, height: 10 });
+const photo = (id: string, ago: number, tankId = 'a') => ({
+  id,
+  updatedAt: U,
+  tankId,
+  date: daysAgo(ago),
+  width: 10,
+  height: 10,
+});
 
 async function boot(opts: { photos?: number; diagnosisAgo?: number | null; tests?: boolean } = {}) {
   const { photos = 0, diagnosisAgo = 10, tests = false } = opts;
@@ -35,14 +42,27 @@ async function boot(opts: { photos?: number; diagnosisAgo?: number | null; tests
     await db.diagnoses.clear();
     if (diagnosisAgo != null) {
       await db.diagnoses.put({
-        id: 'g1', updatedAt: U, tankId: 'a', date: daysAgo(diagnosisAgo), summary: 'Algues', hypotheses: [{ title: 'Excès de lumière', probability: 'high' }],
-        actions: [{ title: 'Réduire', priority: 'now', done: true }, { title: 'Observer', priority: 'later' }], followUp: { inDays: 14, measure: ['NO3', 'Observer les poissons'] },
+        id: 'g1',
+        updatedAt: U,
+        tankId: 'a',
+        date: daysAgo(diagnosisAgo),
+        summary: 'Algues',
+        hypotheses: [{ title: 'Excès de lumière', probability: 'high' }],
+        actions: [
+          { title: 'Réduire', priority: 'now', done: true },
+          { title: 'Observer', priority: 'later' },
+        ],
+        followUp: { inDays: 14, measure: ['NO3', 'Observer les poissons'] },
       });
     }
     if (!tests) await db.waterTests.clear();
     for (let n = 1; n <= photos; n++) {
       await db.photos.put(photo(`p${n}`, n * 2));
-      await db.photoFiles.put({ id: `p${n}`, full: new Blob([`full${n}`]), thumb: new Blob(['t']) });
+      await db.photoFiles.put({
+        id: `p${n}`,
+        full: new Blob([`full${n}`]),
+        thumb: new Blob(['t']),
+      });
     }
   });
 }
@@ -60,16 +80,28 @@ describe('page de diagnostic', () => {
     await boot({ photos: 2 });
     await app.go('/diagnostic?bac=a', 'Contenu du dossier');
     expect((app.el().querySelector('#tank') as HTMLSelectElement).value).toBe('a');
-    expect(summary()).toContain('1 espèces · 0 relevés · 1 équipements · 1 opérations d’entretien · 1 diagnostic(s) précédent(s) · 2 photo(s)');
+    expect(summary()).toContain(
+      '1 espèces · 0 relevés · 1 équipements · 1 opérations d’entretien · 1 diagnostic(s) précédent(s) · 2 photo(s)',
+    );
     expect(app.find('a', 'Importer depuis l’IA')!.getAttribute('href')).toBe('/import-ia?bac=a');
-    expect(app.find('a.ton', 'Skill diagnostic')!.getAttribute('href')).toBe('ai/my-aquarium-diagnostic.zip');
+    expect(app.find('a.ton', 'Skill diagnostic')!.getAttribute('href')).toBe(
+      'ai/my-aquarium-diagnostic.zip',
+    );
   });
 
   it('liste ce qui manque pour un meilleur diagnostic', async () => {
     await boot();
     await app.go('/diagnostic?bac=a', 'Manque pour un meilleur diagnostic');
-    expect(summary()).toContain('Manque pour un meilleur diagnostic : relevés d’eau, débit du filtre, photos.');
-    await app.db.waterTests.put({ id: 'w', updatedAt: U, tankId: 'a', date: daysAgo(1), values: { ph: 7 } });
+    expect(summary()).toContain(
+      'Manque pour un meilleur diagnostic : relevés d’eau, débit du filtre, photos.',
+    );
+    await app.db.waterTests.put({
+      id: 'w',
+      updatedAt: U,
+      tankId: 'a',
+      date: daysAgo(1),
+      values: { ph: 7 },
+    });
     await vi.waitFor(() => {
       app.harness.detectChanges();
       expect(summary()).toContain('NO3, PO4, KH');
@@ -142,11 +174,21 @@ describe('page de diagnostic', () => {
     it('signale les mesures demandées, faites ou non, et propose un relevé', async () => {
       await boot();
       await app.go('/diagnostic?bac=a', 'Mesures demandées');
-      const items = [...app.el().querySelectorAll('.fu-l:last-of-type li')].map((l) => l.textContent.trim());
+      const items = [...app.el().querySelectorAll('.fu-l:last-of-type li')].map((l) =>
+        l.textContent.trim(),
+      );
       expect(items).toEqual(['NO3', 'Observer les poissons']);
-      expect(app.find('a', 'Faire un relevé avant d’envoyer')!.getAttribute('href')).toBe('/releve?bac=a');
+      expect(app.find('a', 'Faire un relevé avant d’envoyer')!.getAttribute('href')).toBe(
+        '/releve?bac=a',
+      );
       expect(app.find('li.m-unk')?.textContent).toContain('Observer les poissons');
-      await app.db.waterTests.put({ id: 'w', updatedAt: U, tankId: 'a', date: daysAgo(1), values: { no3: 15 } });
+      await app.db.waterTests.put({
+        id: 'w',
+        updatedAt: U,
+        tankId: 'a',
+        date: daysAgo(1),
+        values: { no3: 15 },
+      });
       await vi.waitFor(() => {
         app.harness.detectChanges();
         expect(app.find('li', 'NO3 : 15')).not.toBeNull();
@@ -163,7 +205,11 @@ describe('page de diagnostic', () => {
 
     it('en suivi, joint les photos prises depuis plus la dernière d’avant', async () => {
       await boot({ photos: 0 });
-      for (const [id, ago] of [['old', 30], ['new1', 3], ['new2', 5]] as const) {
+      for (const [id, ago] of [
+        ['old', 30],
+        ['new1', 3],
+        ['new2', 5],
+      ] as const) {
         await app.db.photos.put(photo(id, ago));
         await app.db.photoFiles.put({ id, full: new Blob(['f']), thumb: new Blob(['t']) });
       }
@@ -183,12 +229,20 @@ describe('page de diagnostic', () => {
       app.press('button.fill', 'Envoyer à l’IA');
       await vi.waitFor(() => expect(share).toHaveBeenCalledTimes(1));
       const arg = (share.mock.calls[0] as unknown as [{ files: File[]; text: string }])[0];
-      expect(arg.files.map((f) => f.name)).toEqual([expect.stringMatching(/^dossier-bac-salon-\d{4}-\d{2}-\d{2}\.json$/), expect.stringMatching(/^photo-1-/), expect.stringMatching(/^photo-2-/)]);
+      expect(arg.files.map((f) => f.name)).toEqual([
+        expect.stringMatching(/^dossier-bac-salon-\d{4}-\d{2}-\d{2}\.json$/),
+        expect.stringMatching(/^photo-1-/),
+        expect.stringMatching(/^photo-2-/),
+      ]);
       expect(arg.text).toContain('Diagnostic de mon aquarium « Bac salon »');
       expect(arg.text).toContain('Mon problème : Algues filamenteuses');
-      expect(arg.text).toContain('C\'est le suivi de ton diagnostic du');
+      expect(arg.text).toContain("C'est le suivi de ton diagnostic du");
       const dossier = JSON.parse(await arg.files[0].text());
-      expect(dossier).toMatchObject({ format: 'my-aquarium-dossier', question: 'Algues filamenteuses', tank: { name: 'Bac salon' } });
+      expect(dossier).toMatchObject({
+        format: 'my-aquarium-dossier',
+        question: 'Algues filamenteuses',
+        tank: { name: 'Bac salon' },
+      });
       expect(dossier.sinceLastDiagnosis).toBeDefined();
       await vi.waitFor(() => expect(app.find('.msg')?.textContent).toContain('Dossier envoyé.'));
     });
@@ -199,7 +253,11 @@ describe('page de diagnostic', () => {
       vi.stubGlobal('navigator', { ...navigator, canShare: undefined, clipboard: { writeText } });
       await app.go('/diagnostic?bac=a', 'Contenu du dossier');
       app.press('button.fill', 'Envoyer à l’IA');
-      await vi.waitFor(() => expect(app.find('.msg')?.textContent).toContain('Fichiers téléchargés et demande copiée'), { timeout: 4000 });
+      await vi.waitFor(
+        () =>
+          expect(app.find('.msg')?.textContent).toContain('Fichiers téléchargés et demande copiée'),
+        { timeout: 4000 },
+      );
       expect(click).toHaveBeenCalledTimes(2);
       expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Bac salon'));
       expect(app.find('button.fill', 'Envoyer')!.hasAttribute('disabled')).toBe(false);
@@ -207,7 +265,13 @@ describe('page de diagnostic', () => {
 
     it('un partage annulé ne laisse aucun message et libère le bouton', async () => {
       await boot();
-      vi.stubGlobal('navigator', { ...navigator, canShare: () => true, share: async () => { throw new DOMException('annulé', 'AbortError'); } });
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        canShare: () => true,
+        share: async () => {
+          throw new DOMException('annulé', 'AbortError');
+        },
+      });
       await app.go('/diagnostic?bac=a', 'Contenu du dossier');
       app.press('button.fill', 'Envoyer à l’IA');
       await new Promise((r) => setTimeout(r, 50));
@@ -223,8 +287,12 @@ describe('page de diagnostic', () => {
       await app.go('/diagnostic?bac=a', 'Contenu du dossier');
       app.press('button.fill', 'Envoyer à l’IA');
       await vi.waitFor(() => expect(share).toHaveBeenCalled());
-      expect((share.mock.calls[0] as unknown as [{ text: string }])[0].text).not.toContain('suivi de ton diagnostic');
-      expect((share.mock.calls[0] as unknown as [{ text: string }])[0].text).toContain('Fais un bilan général');
+      expect((share.mock.calls[0] as unknown as [{ text: string }])[0].text).not.toContain(
+        'suivi de ton diagnostic',
+      );
+      expect((share.mock.calls[0] as unknown as [{ text: string }])[0].text).toContain(
+        'Fais un bilan général',
+      );
     });
   });
 
@@ -232,7 +300,10 @@ describe('page de diagnostic', () => {
     await boot({ photos: 1, diagnosisAgo: null });
     await app.go('/diagnostic?bac=a', 'Contenu du dossier');
     app.press('button.out', 'Télécharger');
-    await vi.waitFor(() => expect(app.find('.msg')?.textContent).toBe('Dossier et photos téléchargés.'), { timeout: 4000 });
+    await vi.waitFor(
+      () => expect(app.find('.msg')?.textContent).toBe('Dossier et photos téléchargés.'),
+      { timeout: 4000 },
+    );
     expect(click).toHaveBeenCalledTimes(2);
   });
 
@@ -243,7 +314,9 @@ describe('page de diagnostic', () => {
     vi.stubGlobal('fetch', async (url: string) => ({ text: async () => 'PROMPT ' + url }));
     await app.go('/diagnostic?bac=a', 'Contenu du dossier');
     app.press('button.out', 'Copier le prompt');
-    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('PROMPT ai/diagnostic-prompt.md'));
+    await vi.waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith('PROMPT ai/diagnostic-prompt.md'),
+    );
     await vi.waitFor(() => expect(app.el().textContent).toContain('Prompt copié'));
   });
 });

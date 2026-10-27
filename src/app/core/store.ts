@@ -3,7 +3,16 @@ import { AQUARIUM_DB } from './db';
 import { BUILTIN_SPECIES } from './catalog';
 import { Clock } from './clock';
 import type { Inhabitant, MaintenanceTask, Observation, Species, Tank, WaterTest } from './models';
-import { PARAM_BY_KEY, compatibilityIssues, isAlive, testAlerts, worst, type Issue, type Level, type ParamAlert } from './rules';
+import {
+  PARAM_BY_KEY,
+  compatibilityIssues,
+  isAlive,
+  testAlerts,
+  worst,
+  type Issue,
+  type Level,
+  type ParamAlert,
+} from './rules';
 import { liveSignal } from './stores/live';
 import { CareStore } from './stores/care.store';
 import { PopulationStore } from './stores/population.store';
@@ -95,8 +104,13 @@ export class AquariumStore {
         members.map((m) => ({ species: m.species, quantity: m.inhabitant.quantity })),
       );
       const lastObservation = observationsOf.get(tank.id)?.at(-1);
-      const openFindings = (lastObservation?.findings ?? []).filter((f) => !f.resolved && f.severity !== 'info');
-      const level = worst([...alerts.map((a) => a.level), ...openFindings.map((f) => (f.severity === 'danger' ? 'danger' : 'warn') as Level)]);
+      const openFindings = (lastObservation?.findings ?? []).filter(
+        (f) => !f.resolved && f.severity !== 'info',
+      );
+      const level = worst([
+        ...alerts.map((a) => a.level),
+        ...openFindings.map((f) => (f.severity === 'danger' ? 'danger' : 'warn') as Level),
+      ]);
       const first = alerts.at(0);
       const statusLabel = first
         ? `${PARAM_BY_KEY[first.key].short} ${first.direction === 'high' ? 'élevé' : 'bas'}`
@@ -125,7 +139,8 @@ export class AquariumStore {
   readonly dueTasks = computed<DueTask[]>(() => {
     const today = this.today();
     const tanks = new Map(this.activeTanks().map((t) => [t.id, t]));
-    return this.careStore.tasks()
+    return this.careStore
+      .tasks()
       .filter((t) => t.active && t.nextDue <= today && tanks.has(t.tankId))
       .map((task) => ({ task, tank: must(tanks.get(task.tankId)) }));
   });

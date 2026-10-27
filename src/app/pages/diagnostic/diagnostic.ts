@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { PhotoStore } from '../../core/stores/photo.store';
@@ -7,7 +15,16 @@ import { WaterStore } from '../../core/stores/water.store';
 import { GearStore } from '../../core/stores/gear.store';
 import { SpeciesStore } from '../../core/stores/species.store';
 import { PopulationStore } from '../../core/stores/population.store';
-import { buildDossier, defaultPhotoSelection, diagnosticRequest, dossierFileName, followUpByDefault, followUpDueLabel, missingInfo, photoFileName } from '../../core/diagnostic';
+import {
+  buildDossier,
+  defaultPhotoSelection,
+  diagnosticRequest,
+  dossierFileName,
+  followUpByDefault,
+  followUpDueLabel,
+  missingInfo,
+  photoFileName,
+} from '../../core/diagnostic';
 import { fmtShortDate } from '../../core/labels';
 import { measureStatus } from '../../core/follow-up';
 import { Icon } from '../../shared/icon';
@@ -167,18 +184,32 @@ export class DiagnosticPage {
 
   readonly bac = input<string>();
 
-  protected readonly tankId = defaultTank(() => this.store.tankViews().map((v) => v.tank.id), this.bac);
+  protected readonly tankId = defaultTank(
+    () => this.store.tankViews().map((v) => v.tank.id),
+    this.bac,
+  );
   protected readonly question = signal('');
   protected readonly copied = signal(false);
   protected readonly busy = signal(false);
   protected readonly message = signal('');
 
-  private readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.tankId()));
-  protected readonly photos = computed(() => this.photoStore.photos().filter((p) => p.tankId === this.tankId()));
+  private readonly view = computed(() =>
+    this.store.tankViews().find((v) => v.tank.id === this.tankId()),
+  );
+  protected readonly photos = computed(() =>
+    this.photoStore.photos().filter((p) => p.tankId === this.tankId()),
+  );
   /** Dernier diagnostic du bac. */
-  protected readonly previous = computed(() => this.careStore.diagnoses().filter((d) => d.tankId === this.tankId()).at(-1));
+  protected readonly previous = computed(() =>
+    this.careStore
+      .diagnoses()
+      .filter((d) => d.tankId === this.tankId())
+      .at(-1),
+  );
   /** Suivi coché par défaut si le dernier diagnostic date de moins de 90 jours. */
-  protected readonly followUp = linkedSignal(() => followUpByDefault(this.previous(), this.store.today()));
+  protected readonly followUp = linkedSignal(() =>
+    followUpByDefault(this.previous(), this.store.today()),
+  );
   private readonly followUpData = computed(() => ({
     tests: this.waterStore.waterTests(),
     co2Readings: this.waterStore.co2Readings(),
@@ -191,17 +222,27 @@ export class DiagnosticPage {
     const p = this.previous();
     return p ? measureStatus(p, this.followUpData()) : [];
   });
-  protected readonly missingMeasures = computed(() => this.measures().some((m) => m.done === false));
-  protected readonly doneCount = computed(() => this.previous()?.actions.filter((a) => a.done).length ?? 0);
-  protected readonly dueLabel = computed(() => followUpDueLabel(this.previous(), this.store.today(), this.date));
+  protected readonly missingMeasures = computed(() =>
+    this.measures().some((m) => m.done === false),
+  );
+  protected readonly doneCount = computed(
+    () => this.previous()?.actions.filter((a) => a.done).length ?? 0,
+  );
+  protected readonly dueLabel = computed(() =>
+    followUpDueLabel(this.previous(), this.store.today(), this.date),
+  );
 
   /**
    * Par défaut : les 3 photos les plus récentes. En suivi : celles prises depuis le diagnostic,
    * plus la dernière d'avant pour comparer.
    */
-  protected readonly selected = linkedSignal(() => defaultPhotoSelection(this.photos(), this.previous(), this.followUp()));
+  protected readonly selected = linkedSignal(() =>
+    defaultPhotoSelection(this.photos(), this.previous(), this.followUp()),
+  );
 
-  private readonly chosenPhotos = computed(() => this.photos().filter((p) => this.selected().has(p.id)));
+  private readonly chosenPhotos = computed(() =>
+    this.photos().filter((p) => this.selected().has(p.id)),
+  );
 
   protected readonly dossier = computed(() => {
     const v = this.view();
@@ -245,7 +286,11 @@ export class DiagnosticPage {
 
   private async files(): Promise<File[]> {
     const d = must(this.dossier());
-    const json = new File([JSON.stringify(d, null, 2)], dossierFileName(must(this.view()).tank.name, this.store.today()), { type: 'application/json' });
+    const json = new File(
+      [JSON.stringify(d, null, 2)],
+      dossierFileName(must(this.view()).tank.name, this.store.today()),
+      { type: 'application/json' },
+    );
     const photos: File[] = [];
     for (const [i, p] of this.chosenPhotos().entries()) {
       const img = await this.photoRepo.photoFile(p.id);
@@ -259,16 +304,26 @@ export class DiagnosticPage {
     if (!this.dossier()) return;
     const files = await this.files();
     const prev = this.followUp() ? this.previous() : undefined;
-    const text = diagnosticRequest(must(this.view()).tank.name, this.question(), prev ? this.date(prev.date) : undefined);
+    const text = diagnosticRequest(
+      must(this.view()).tank.name,
+      this.question(),
+      prev ? this.date(prev.date) : undefined,
+    );
     this.busy.set(true);
     try {
       if (browserNav().canShare?.({ files, text })) {
         await navigator.share({ files, text });
-        this.message.set('Dossier envoyé. Quand l’IA a répondu, colle sa réponse dans « Importer depuis l’IA ».');
+        this.message.set(
+          'Dossier envoyé. Quand l’IA a répondu, colle sa réponse dans « Importer depuis l’IA ».',
+        );
       } else {
         await this.downloadFiles(files);
-        await browserNav().clipboard?.writeText(text).catch(() => undefined);
-        this.message.set('Fichiers téléchargés et demande copiée : joins-les dans Claude et colle la demande.');
+        await browserNav()
+          .clipboard?.writeText(text)
+          .catch(() => undefined);
+        this.message.set(
+          'Fichiers téléchargés et demande copiée : joins-les dans Claude et colle la demande.',
+        );
       }
     } catch {
       /* partage annulé */
@@ -290,7 +345,9 @@ export class DiagnosticPage {
       a.href = url;
       a.download = f.name;
       a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); }, 2000);
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 2000);
       // Laisse le navigateur traiter chaque téléchargement.
       await new Promise((r) => setTimeout(r, 300));
     }
@@ -300,6 +357,8 @@ export class DiagnosticPage {
     const prompt = await fetch('ai/diagnostic-prompt.md').then((r) => r.text());
     await navigator.clipboard.writeText(prompt);
     this.copied.set(true);
-    setTimeout(() => { this.copied.set(false); }, 2500);
+    setTimeout(() => {
+      this.copied.set(false);
+    }, 2500);
   }
 }

@@ -96,9 +96,20 @@ describe('événements', () => {
   });
 
   it('un habitant végétal a ses propres événements', async () => {
-    await app.db.inhabitants.put({ id: 'p1', updatedAt: '', tankId: 'a', speciesId: 'rotala-rotundifolia', quantity: 8, unit: 'stem', addedDate: '2026-09-01', status: 'healthy' });
+    await app.db.inhabitants.put({
+      id: 'p1',
+      updatedAt: '',
+      tankId: 'a',
+      speciesId: 'rotala-rotundifolia',
+      quantity: 8,
+      unit: 'stem',
+      addedDate: '2026-09-01',
+      status: 'healthy',
+    });
     await app.go('/bacs/a/habitants/p1', 'Rotala');
-    const labels = [...app.el().querySelectorAll('.ev button')].map((b) => b.textContent.trim()).join(' | ');
+    const labels = [...app.el().querySelectorAll('.ev button')]
+      .map((b) => b.textContent.trim())
+      .join(' | ');
     expect(labels).toMatch(/Taille|Bouture|Multipli/i);
     expect(labels).not.toMatch(/Naissance/);
   });
@@ -113,7 +124,9 @@ describe('événements', () => {
 describe('déplacement', () => {
   it('propose les autres bacs et déplace tout après confirmation', async () => {
     await open();
-    expect([...app.el().querySelectorAll('#to option')].map((o) => o.textContent)).toEqual(['Nano']);
+    expect([...app.el().querySelectorAll('#to option')].map((o) => o.textContent)).toEqual([
+      'Nano',
+    ]);
     expect(field('mq').value).toBe('12');
     vi.stubGlobal('confirm', () => false);
     app.press('button.ton', 'Déplacer');
@@ -130,7 +143,11 @@ describe('déplacement', () => {
     app.type(field('mq'), '5');
     app.press('button.ton', 'Déplacer');
     await vi.waitFor(async () => expect((await inh()).quantity).toBe(7));
-    expect((await app.db.inhabitants.where('tankId').equals('b').toArray()).some((i) => i.speciesId === 'danio-margaritatus' && i.quantity === 5)).toBe(true);
+    expect(
+      (await app.db.inhabitants.where('tankId').equals('b').toArray()).some(
+        (i) => i.speciesId === 'danio-margaritatus' && i.quantity === 5,
+      ),
+    ).toBe(true);
     expect((await inh()).tankId).toBe('a');
     expect(field('mq').value).toBe('7');
     app.type(field('mq'), '99');
@@ -148,7 +165,15 @@ describe('déplacement', () => {
 describe('photos de l’habitant', () => {
   async function withPhotos(count: number) {
     for (let n = 1; n <= count; n++) {
-      await app.db.photos.put({ id: `ph${n}`, updatedAt: '', tankId: 'a', inhabitantId: 'i1', date: `2026-10-0${n}T10:00:00Z`, width: 10, height: 10 });
+      await app.db.photos.put({
+        id: `ph${n}`,
+        updatedAt: '',
+        tankId: 'a',
+        inhabitantId: 'i1',
+        date: `2026-10-0${n}T10:00:00Z`,
+        width: 10,
+        height: 10,
+      });
       await app.db.photoFiles.put({ id: `ph${n}`, full: new Blob(['f']), thumb: new Blob(['t']) });
     }
     await app.go('/bacs/a/habitants/i1', 'Rasbora galaxy');
@@ -170,7 +195,9 @@ describe('photos de l’habitant', () => {
   it('compare deux photos', async () => {
     await withPhotos(2);
     app.press('button.out', 'Comparer');
-    expect(app.find('[role=dialog]')?.getAttribute('aria-label')).toBe('Comparaison avant et après');
+    expect(app.find('[role=dialog]')?.getAttribute('aria-label')).toBe(
+      'Comparaison avant et après',
+    );
     expect(app.find('.facts .chips')).toBeNull();
   });
 });

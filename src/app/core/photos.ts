@@ -32,7 +32,10 @@ export async function processPhoto(file: File): Promise<Processed> {
     throw new Error('Format d’image non pris en charge (essaie JPEG ou PNG).');
   }
   try {
-    const [full, thumb] = await Promise.all([resize(bitmap, FULL_MAX, 0.82), resize(bitmap, THUMB_MAX, 0.75)]);
+    const [full, thumb] = await Promise.all([
+      resize(bitmap, FULL_MAX, 0.82),
+      resize(bitmap, THUMB_MAX, 0.75),
+    ]);
     return { full, thumb, width: bitmap.width, height: bitmap.height };
   } finally {
     bitmap.close();
@@ -44,18 +47,27 @@ export async function processPhoto(file: File): Promise<Processed> {
 export function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => { resolve(reader.result as string); };
-    reader.onerror = () => { reject(reader.error ?? new Error('Lecture du fichier impossible')); };
+    reader.onload = () => {
+      resolve(reader.result as string);
+    };
+    reader.onerror = () => {
+      reject(reader.error ?? new Error('Lecture du fichier impossible'));
+    };
     reader.readAsDataURL(blob);
   });
 }
 
 export function dataUrlToBlob(dataUrl: string): Blob {
   const comma = dataUrl.indexOf(',');
-  const m = dataUrl.startsWith('data:') && comma > 0 ? /^([^;]*)(;base64)?$/.exec(dataUrl.slice(5, comma)) : null;
+  const m =
+    dataUrl.startsWith('data:') && comma > 0
+      ? /^([^;]*)(;base64)?$/.exec(dataUrl.slice(5, comma))
+      : null;
   if (!m) throw new Error('Photo illisible dans la sauvegarde.');
   const payload = dataUrl.slice(comma + 1);
   const type = m[1] || 'application/octet-stream';
-  const bytes = m[2] ? Uint8Array.from(atob(payload), (c) => c.charCodeAt(0)) : new TextEncoder().encode(decodeURIComponent(payload));
+  const bytes = m[2]
+    ? Uint8Array.from(atob(payload), (c) => c.charCodeAt(0))
+    : new TextEncoder().encode(decodeURIComponent(payload));
   return new Blob([bytes], { type });
 }

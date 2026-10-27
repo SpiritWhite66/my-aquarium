@@ -11,5 +11,9 @@ export class GearStore {
   readonly equipment = liveSignal(this.destroyRef, () => this.db.equipment.toArray(), []);
   readonly consumables = liveSignal(this.destroyRef, () => this.db.consumables.toArray(), []);
   /** Changements de réglages du matériel, du plus ancien au plus récent. */
-  readonly settingChanges = liveSignal(this.destroyRef, () => this.db.settingChanges.orderBy('date').toArray(), []);
+  readonly settingChanges = liveSignal(
+    this.destroyRef,
+    () => this.db.settingChanges.orderBy('date').toArray(),
+    [],
+  );
 }

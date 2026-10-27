@@ -1,9 +1,27 @@
-import type { ElementRef} from '@angular/core';
-import { ChangeDetectionStrategy, Component, DestroyRef, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import type { DropChecker, Tank } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { WaterStore } from '../core/stores/water.store';
-import { DROP_CHECKER, bpmFromTaps, co2Advice, co2FromKhPh, co2Status, latestKhPh } from '../core/insights';
+import {
+  DROP_CHECKER,
+  bpmFromTaps,
+  co2Advice,
+  co2FromKhPh,
+  co2Status,
+  latestKhPh,
+} from '../core/insights';
 import { fmt } from '../core/labels';
 import { parseNumber } from '../core/labels';
 import { Icon } from './icon';
@@ -138,15 +156,22 @@ export class Co2Counter {
     const kp = latestKhPh(tests);
     const mg = kp && co2FromKhPh(kp.kh, kp.ph);
     if (mg == null) return undefined;
-    const last = this.waterStore.co2Readings().filter((r) => r.tankId === this.tank().id).at(-1)?.bubblesPerMinute;
+    const last = this.waterStore
+      .co2Readings()
+      .filter((r) => r.tankId === this.tank().id)
+      .at(-1)?.bubblesPerMinute;
     return co2Advice(mg, last);
   });
   protected readonly canSave = computed(() => this.value() != null || !!this.drop());
 
   constructor() {
     afterNextRender(() => this.root()?.nativeElement.focus());
-    const timer = setInterval(() => { this.now.set(Date.now()); }, 500);
-    inject(DestroyRef).onDestroy(() => { clearInterval(timer); });
+    const timer = setInterval(() => {
+      this.now.set(Date.now());
+    }, 500);
+    inject(DestroyRef).onDestroy(() => {
+      clearInterval(timer);
+    });
   }
 
   protected tap(): void {
@@ -167,7 +192,10 @@ export class Co2Counter {
       date: new Date().toISOString(),
       bubblesPerMinute: bpm,
       dropChecker: this.drop(),
-      note: this.taps().length >= 5 && !parseNumber(this.manual()) ? `${this.taps().length} bulles en ${this.elapsed()} s` : undefined,
+      note:
+        this.taps().length >= 5 && !parseNumber(this.manual())
+          ? `${this.taps().length} bulles en ${this.elapsed()} s`
+          : undefined,
     });
     if (asTarget && bpm != null) await this.tankRepo.saveTank({ ...this.tank(), co2Target: bpm });
     this.closed.emit();

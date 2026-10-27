@@ -53,13 +53,32 @@ describe('nouvelle fiche', () => {
     await vi.waitFor(async () => expect(await custom()).toHaveLength(1));
     const s = (await custom())[0];
     expect(s).toMatchObject({
-      kind: 'fish', scientificName: 'Xenomystus nigri', commonNames: ['Poisson couteau', 'Couteau africain'], difficulty: 'hard', notes: 'Nocturne',
-      temp: { min: 24, max: 28 }, ph: undefined, gh: undefined, kh: undefined,
-      fauna: { adultSizeCm: 20, minGroup: 1, minTankLiters: 200, temperament: 'semi-aggressive', zone: 'bottom', diet: 'carnivore', role: 'Prédateur', eatsPlants: true, predation: ['shrimp_fry', 'shrimp'] },
+      kind: 'fish',
+      scientificName: 'Xenomystus nigri',
+      commonNames: ['Poisson couteau', 'Couteau africain'],
+      difficulty: 'hard',
+      notes: 'Nocturne',
+      temp: { min: 24, max: 28 },
+      ph: undefined,
+      gh: undefined,
+      kh: undefined,
+      fauna: {
+        adultSizeCm: 20,
+        minGroup: 1,
+        minTankLiters: 200,
+        temperament: 'semi-aggressive',
+        zone: 'bottom',
+        diet: 'carnivore',
+        role: 'Prédateur',
+        eatsPlants: true,
+        predation: ['shrimp_fry', 'shrimp'],
+      },
     });
     expect(s.flora).toBeUndefined();
     expect(s.overrides).toBeUndefined();
-    await vi.waitFor(() => expect(app.harness.routeNativeElement?.textContent).toContain('Xenomystus nigri'));
+    await vi.waitFor(() =>
+      expect(app.harness.routeNativeElement?.textContent).toContain('Xenomystus nigri'),
+    );
   });
 
   it('sans nom commun, le nom scientifique sert de nom', async () => {
@@ -86,7 +105,15 @@ describe('nouvelle fiche', () => {
     await vi.waitFor(async () => expect(await custom()).toHaveLength(1));
     const s = (await custom())[0];
     expect(s.kind).toBe('plant');
-    expect(s.flora).toMatchObject({ light: 'low', co2: 'beneficial', growth: 'slow', placement: 'background', form: 'rhizome', maxHeightCm: 12, propagation: ['division', 'bouture'] });
+    expect(s.flora).toMatchObject({
+      light: 'low',
+      co2: 'beneficial',
+      growth: 'slow',
+      placement: 'background',
+      form: 'rhizome',
+      maxHeightCm: 12,
+      propagation: ['division', 'bouture'],
+    });
     expect(s.fauna).toBeUndefined();
   });
 
@@ -125,7 +152,16 @@ describe('fiche intégrée', () => {
 
 describe('fiche personnelle', () => {
   const seed = async () => {
-    await app.db.species.put({ id: 'custom-x', source: 'custom', updatedAt: '', kind: 'fish', scientificName: 'Perso perso', commonNames: ['Perso'], ph: { min: 6, max: 7 }, fauna: { adultSizeCm: 3, temperament: 'peaceful', zone: 'middle', diet: 'omnivore' } } as never);
+    await app.db.species.put({
+      id: 'custom-x',
+      source: 'custom',
+      updatedAt: '',
+      kind: 'fish',
+      scientificName: 'Perso perso',
+      commonNames: ['Perso'],
+      ph: { min: 6, max: 7 },
+      fauna: { adultSizeCm: 3, temperament: 'peaceful', zone: 'middle', diet: 'omnivore' },
+    } as never);
   };
 
   it('se modifie sur place', async () => {
@@ -136,8 +172,12 @@ describe('fiche personnelle', () => {
     expect(field('ph-min').value).toBe('6');
     set('sci', 'Perso renommé');
     app.press('button.fill', 'Enregistrer');
-    await vi.waitFor(async () => expect((await app.db.species.get('custom-x'))?.scientificName).toBe('Perso renommé'));
-    expect((await custom()).filter((s) => s.id.startsWith('custom-')).map((s) => s.id)).toContain('custom-x');
+    await vi.waitFor(async () =>
+      expect((await app.db.species.get('custom-x'))?.scientificName).toBe('Perso renommé'),
+    );
+    expect((await custom()).filter((s) => s.id.startsWith('custom-')).map((s) => s.id)).toContain(
+      'custom-x',
+    );
   });
 
   it('se supprime après confirmation quand personne ne l’utilise', async () => {
@@ -158,14 +198,34 @@ describe('fiche personnelle', () => {
     app = await bootApp();
     await seed();
     await app.db.inhabitants.bulkPut([
-      { id: 'u1', updatedAt: '', tankId: 'a', speciesId: 'custom-x', quantity: 1, unit: 'individual', addedDate: '2026-10-01', status: 'healthy' },
-      { id: 'u2', updatedAt: '', tankId: 'b', speciesId: 'custom-x', quantity: 1, unit: 'individual', addedDate: '2026-10-01', status: 'healthy' },
+      {
+        id: 'u1',
+        updatedAt: '',
+        tankId: 'a',
+        speciesId: 'custom-x',
+        quantity: 1,
+        unit: 'individual',
+        addedDate: '2026-10-01',
+        status: 'healthy',
+      },
+      {
+        id: 'u2',
+        updatedAt: '',
+        tankId: 'b',
+        speciesId: 'custom-x',
+        quantity: 1,
+        unit: 'individual',
+        addedDate: '2026-10-01',
+        status: 'healthy',
+      },
     ]);
     await app.go('/catalogue/custom-x/modifier', 'Modifier la fiche');
     await app.until(() => field('sci').value === 'Perso perso');
     await vi.waitFor(() => {
       app.press('button.danger', 'Supprimer');
-      expect(app.find('[role=alert]')?.textContent).toBe('Cette fiche est utilisée par 2 habitants : retire-les d’abord de tes bacs.');
+      expect(app.find('[role=alert]')?.textContent).toBe(
+        'Cette fiche est utilisée par 2 habitants : retire-les d’abord de tes bacs.',
+      );
     });
     expect(await app.db.species.get('custom-x')).toBeDefined();
   });
@@ -173,7 +233,16 @@ describe('fiche personnelle', () => {
   it('accorde « habitant » au singulier', async () => {
     app = await bootApp();
     await seed();
-    await app.db.inhabitants.put({ id: 'u1', updatedAt: '', tankId: 'a', speciesId: 'custom-x', quantity: 1, unit: 'individual', addedDate: '2026-10-01', status: 'healthy' });
+    await app.db.inhabitants.put({
+      id: 'u1',
+      updatedAt: '',
+      tankId: 'a',
+      speciesId: 'custom-x',
+      quantity: 1,
+      unit: 'individual',
+      addedDate: '2026-10-01',
+      status: 'healthy',
+    });
     await app.go('/catalogue/custom-x/modifier', 'Modifier la fiche');
     await app.until(() => field('sci').value === 'Perso perso');
     await vi.waitFor(() => {

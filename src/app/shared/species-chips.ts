@@ -24,7 +24,8 @@ function speciesChips(s: Species): Chip[] {
     if (fa.role) chips.push({ text: fa.role, tone: '' });
     if (fa.eatsPlants) chips.push({ text: 'Mange les plantes', tone: 'r' });
     if (fa.predation?.includes('shrimp')) chips.push({ text: 'Chasse les crevettes', tone: 'r' });
-    else if (fa.predation?.includes('shrimp_fry')) chips.push({ text: 'Mange les jeunes crevettes', tone: 'o' });
+    else if (fa.predation?.includes('shrimp_fry'))
+      chips.push({ text: 'Mange les jeunes crevettes', tone: 'o' });
   }
   return chips;
 }

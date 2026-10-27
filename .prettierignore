@@ -1,0 +1,13 @@
+package-lock.json
+dist
+coverage
+reports
+.angular
+.stryker-tmp
+playwright-report
+test-results
+public
+ai
+src/app/core/catalog.ts
+# Fichiers lus par un script (regex) ou que Prettier ne sait pas formater de façon stable
+src/app/app.html

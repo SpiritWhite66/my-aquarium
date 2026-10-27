@@ -1,11 +1,29 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { Location } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { SpeciesStore } from '../../core/stores/species.store';
 import type { QuantityUnit, Range } from '../../core/models';
 import {
-  DIETS, DIFFICULTIES, GROWTHS, KINDS, LIGHTS, PLACEMENTS, TEMPERAMENTS, UNITS, ZONES, fmt, fmtRange,
+  DIETS,
+  DIFFICULTIES,
+  GROWTHS,
+  KINDS,
+  LIGHTS,
+  PLACEMENTS,
+  TEMPERAMENTS,
+  UNITS,
+  ZONES,
+  fmt,
+  fmtRange,
 } from '../../core/labels';
 import { idealRange, issuesIfAdded } from '../../core/rules';
 import { Icon } from '../../shared/icon';
@@ -146,12 +164,16 @@ export class SpeciesPage {
   protected readonly unit = signal<QuantityUnit>('individual');
 
   protected readonly species = computed(() => this.speciesStore.speciesById().get(this.id()));
-  private readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.tankId()));
+  private readonly view = computed(() =>
+    this.store.tankViews().find((v) => v.tank.id === this.tankId()),
+  );
   protected readonly tank = computed(() => this.view()?.tank);
 
   protected readonly unitList = computed(() => {
     const all = Object.entries(UNITS) as [QuantityUnit, [string, string]][];
-    return this.species()?.kind === 'plant' ? all.filter(([u]) => u !== 'individual') : all.filter(([u]) => u === 'individual');
+    return this.species()?.kind === 'plant'
+      ? all.filter(([u]) => u !== 'individual')
+      : all.filter(([u]) => u === 'individual');
   });
 
   protected readonly facts = computed(() => {
@@ -159,13 +181,24 @@ export class SpeciesPage {
     if (!s) return [];
     const out: [string, string][] = [];
     if (s.flora) {
-      out.push(['Croissance', GROWTHS[s.flora.growth]], ['Lumière', LIGHTS[s.flora.light]], ['Placement', PLACEMENTS[s.flora.placement]]);
-      out.push(['CO2', { none: 'Inutile', beneficial: 'Conseillé', required: 'Requis' }[s.flora.co2]]);
+      out.push(
+        ['Croissance', GROWTHS[s.flora.growth]],
+        ['Lumière', LIGHTS[s.flora.light]],
+        ['Placement', PLACEMENTS[s.flora.placement]],
+      );
+      out.push([
+        'CO2',
+        { none: 'Inutile', beneficial: 'Conseillé', required: 'Requis' }[s.flora.co2],
+      ]);
       if (s.flora.maxHeightCm) out.push(['Hauteur', `≤ ${s.flora.maxHeightCm} cm`]);
       out.push(['Multiplication', s.flora.propagation.join(', ')]);
     }
     if (s.fauna) {
-      out.push(['Taille adulte', `${fmt(s.fauna.adultSizeCm)} cm`], ['Comportement', TEMPERAMENTS[s.fauna.temperament]], ['Zone', ZONES[s.fauna.zone]]);
+      out.push(
+        ['Taille adulte', `${fmt(s.fauna.adultSizeCm)} cm`],
+        ['Comportement', TEMPERAMENTS[s.fauna.temperament]],
+        ['Zone', ZONES[s.fauna.zone]],
+      );
       out.push(['Régime', DIETS[s.fauna.diet]]);
       if (s.fauna.minGroup && s.fauna.minGroup > 1) out.push(['Groupe', `≥ ${s.fauna.minGroup}`]);
       if (s.fauna.minTankLiters) out.push(['Bac', `≥ ${s.fauna.minTankLiters} L`]);
@@ -184,12 +217,21 @@ export class SpeciesPage {
       .map((k) => {
         const sc = SCALES[k];
         const r = s[k] as Range;
-        const pct = (x: number) => Math.min(100, Math.max(0, ((x - sc.min) / (sc.max - sc.min)) * 100));
+        const pct = (x: number) =>
+          Math.min(100, Math.max(0, ((x - sc.min) / (sc.max - sc.min)) * 100));
         // Repère : dernière mesure du bac, sinon milieu de la plage actuelle du bac.
         const measured = v?.lastTest?.values[k];
         const tankRange = others.length ? idealRange(k, others, v?.tank) : undefined;
-        const ref = measured ?? (tankRange && !tankRange.conflict ? (tankRange.min + tankRange.max) / 2 : undefined);
-        return { label: sc.label, left: pct(r.min), width: pct(r.max) - pct(r.min), marker: ref != null ? pct(ref) : null, text: fmtRange(r.min, r.max, sc.unit) };
+        const ref =
+          measured ??
+          (tankRange && !tankRange.conflict ? (tankRange.min + tankRange.max) / 2 : undefined);
+        return {
+          label: sc.label,
+          left: pct(r.min),
+          width: pct(r.max) - pct(r.min),
+          marker: ref != null ? pct(ref) : null,
+          text: fmtRange(r.min, r.max, sc.unit),
+        };
       });
   });
 
@@ -211,7 +253,15 @@ export class SpeciesPage {
     effect(() => {
       const s = this.species();
       if (!s) return;
-      this.unit.set(s.kind === 'plant' ? (s.flora?.placement === 'floating' ? 'rosette' : s.flora?.form === 'tige' ? 'stem' : 'pot') : 'individual');
+      this.unit.set(
+        s.kind === 'plant'
+          ? s.flora?.placement === 'floating'
+            ? 'rosette'
+            : s.flora?.form === 'tige'
+              ? 'stem'
+              : 'pot'
+          : 'individual',
+      );
       if (s.fauna?.minGroup && s.fauna.minGroup > 1) this.quantity.set(String(s.fauna.minGroup));
     });
   }

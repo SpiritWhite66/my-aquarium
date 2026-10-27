@@ -15,7 +15,12 @@ export interface Diagnosis extends Entity {
   date: string; // ISO datetime
   question?: string;
   summary: string;
-  hypotheses: { title: string; probability: 'high' | 'medium' | 'low'; evidence?: string[]; against?: string[] }[];
+  hypotheses: {
+    title: string;
+    probability: 'high' | 'medium' | 'low';
+    evidence?: string[];
+    against?: string[];
+  }[];
   actions: DiagnosisAction[];
   followUp?: { inDays: number; measure?: string[] };
   warnings?: string[];
