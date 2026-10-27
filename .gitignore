@@ -37,3 +37,9 @@ yarn-error.log*
 # Playwright
 /test-results/
 /playwright-report/
+
+# Backend
+/api/dist/
+/shared/dist/
+/api/coverage/
+/shared/coverage/

@@ -91,7 +91,7 @@ Une vulnérabilité sans correctif disponible peut être acceptée temporairemen
 ## 7. Performance et robustesse
 
 - Démarrage de l'API (hors réveil Render) : **< 1 s**, mesuré en CI.
-- Taille de l'image Docker : **< 200 Mo**.
+- Taille de l'image Docker : **< 200 Mo compressés** (taille de téléchargement). Mesuré à la première construction : 401 Mo décompressés, dont 144 Mo pour le binaire Node ; les couches de l'appli ne font que 44 Mo.
 - Réponse p95 sur les routes de lecture, base réveillée : **< 300 ms** (mesure de fumée).
 - Mémoire en charge normale : **< 256 Mo** (moitié de l'offre Render).
 - Export et photos en flux : jamais de fichier entier en mémoire.

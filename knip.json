@@ -1,5 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["public/sw.js", "vitest.mutation.config.mts", "src/test-setup.mutation.testing.ts"],
-  "ignoreDependencies": ["@fontsource/figtree"]
+  "workspaces": {
+    ".": {
+      "entry": ["public/sw.js", "vitest.mutation.config.mts", "src/test-setup.mutation.testing.ts"],
+      "ignoreDependencies": ["@fontsource/figtree"]
+    },
+    "api": { "entry": ["src/server.ts", "src/db/migrate.ts"] },
+    "shared": {}
+  }
 }

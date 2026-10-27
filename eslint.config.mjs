@@ -17,6 +17,11 @@ export default tseslint.config(
       '.stryker-tmp/**',
       'public/**',
       'ai/**',
+      'api/dist/**',
+      'api/coverage/**',
+      'shared/coverage/**',
+      'api/drizzle/**',
+      'shared/dist/**',
     ],
   },
   {
@@ -97,6 +102,42 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
       '@eslint-community/eslint-comments/require-description': 'error',
       'security/detect-object-injection': 'off',
+    },
+  },
+  {
+    // Backend (API Fastify) et types partagés : mêmes règles que l'appli, pour Node.
+    files: ['api/**/*.ts', 'shared/**/*.ts'],
+    extends: [
+      eslint.configs.recommended,
+      ...tseslint.configs.strictTypeChecked,
+      ...tseslint.configs.stylisticTypeChecked,
+      security.configs.recommended,
+      commentsRecommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./api/tsconfig.json', './shared/tsconfig.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+      // Journaux structurés (pino via Fastify), jamais `console`.
+      'no-console': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/non-nullable-type-assertion-style': 'off',
+      // Même justification que pour l'appli : faux positifs en masse, couvert par le typage et CodeQL.
+      'security/detect-object-injection': 'off',
+      '@eslint-community/eslint-comments/require-description': 'error',
+      '@eslint-community/eslint-comments/disable-enable-pair': 'error',
+      '@eslint-community/eslint-comments/no-unlimited-disable': 'error',
     },
   },
   {

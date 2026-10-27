@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/coverage
+.git
+.angular
+src
+e2e
+public
+ai
+docs
+reports
+test-results
+playwright-report

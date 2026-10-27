@@ -24,14 +24,16 @@ flowchart LR
 
 ## 1. Socle de l'API
 
-- [ ] Monorepo : dossiers `api/` et `shared/` (types et schémas Zod communs), workspaces npm.
-- [ ] Fastify + TypeScript, config par variables d'environnement validées au démarrage.
-- [ ] Route `GET /health` (sans base).
-- [ ] Drizzle + Neon : connexion à la première requête, migrations versionnées, schémas `ref` et `aqua`.
-- [ ] Dockerfile multi-étapes `node:26-slim`, JS compilé, dépendances de production seulement.
-- [ ] CI conforme aux [attendus qualité](qualite-backend.md) : lint 0 avertissement, couverture 80 %, mutation, tests d'intégration et E2E de l'API, audits de sécurité.
-- [ ] Déploiement Render depuis `main`, après la CI.
-- [ ] CORS limité à l'URL GitHub Pages, en-têtes de sécurité, limite de débit.
+- [x] Monorepo : dossiers `api/` et `shared/` (types et schémas Zod communs), workspaces npm.
+- [x] Fastify + TypeScript, config par variables d'environnement validées au démarrage.
+- [x] Route `GET /health` (sans base).
+- [x] Drizzle + PostgreSQL : connexion à la première requête, migrations versionnées, schémas `ref` et `aqua` (testé sur PostgreSQL 17 local ; reste à essayer sur Neon).
+- [x] Dockerfile multi-étapes `node:26-slim`, JS compilé, dépendances de production seulement.
+- [~] CI conforme aux [attendus qualité](qualite-backend.md) : lint 0 avertissement, couverture 80 %, mutation, tests d'intégration et E2E de l'API, audits de sécurité.
+  - Fait : audit, build, lint, format, knip, tests unitaires + intégration (PostgreSQL réel) avec couverture 80 %, construction et démarrage de l’image.
+  - Reste : mutation (Stryker), tests E2E de l’API et OpenAPI, CodeQL, gitleaks, Trivy, tests de fumée en production.
+- [ ] Déploiement Render (attend les comptes) depuis `main`, après la CI.
+- [x] CORS limité à l'URL GitHub Pages, en-têtes de sécurité, limite de débit.
 
 **Terminé quand** : `/health` répond en production ; mesure du temps de réveil notée.
 

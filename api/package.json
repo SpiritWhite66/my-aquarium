@@ -1,0 +1,29 @@
+{
+  "name": "@aquarium/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API du backend de Mes aquariums (Fastify, Drizzle, PostgreSQL)",
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "start": "node dist/server.js",
+    "migrate": "node dist/db/migrate.js",
+    "db:generate": "drizzle-kit generate",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@aquarium/shared": "*",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/helmet": "^13.0.0",
+    "@fastify/rate-limit": "^10.0.0",
+    "drizzle-orm": "^0.45.4",
+    "fastify": "^5.0.0",
+    "postgres": "^3.4.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "drizzle-kit": "^0.31.0",
+    "typescript": "~6.0.2"
+  }
+}
