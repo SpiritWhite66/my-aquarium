@@ -8,6 +8,18 @@ updates:
     groups:
       npm:
         patterns: ['*']
+    ignore:
+      # TypeScript suit la version qu'accepte Angular : on le monte avec `ng update`, pas seul.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']
+      # Montées majeures d'Angular : avec `ng update`, qui adapte aussi le code.
+      - dependency-name: '@angular/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@angular-devkit/*'
+        update-types: ['version-update:semver-major']
+      # Les types de Node suivent la version de Node du projet (.nvmrc).
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
