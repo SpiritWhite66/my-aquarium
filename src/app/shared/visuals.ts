@@ -33,7 +33,4 @@ export function taskIcon(type: TaskType): string {
   )[type];
 }
 
-/** Les tâches liées aux plantes sont en vert, les autres en bleu (comme la maquette). */
-export function isPlantTask(type: TaskType): boolean {
-  return type === 'plant_trim' || type === 'fertilize' || type === 'co2_refill';
-}
+export { isPlantTask } from '../core/labels';

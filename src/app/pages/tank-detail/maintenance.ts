@@ -12,25 +12,14 @@ import { isPlantTask, taskIcon } from '../../shared/visuals';
 import { WaterChangeSheet } from '../../shared/water-change-sheet';
 import { DoseSheet } from '../../shared/dose-sheet';
 import type { MaintenanceTask, SettingChange } from '../../core/models';
-import { changeEffect, describeChange, effectVerdict } from '../../core/settings-history';
+import { describeChange, groupSettingChanges } from '../../core/settings-history';
+import { maintenanceTimeline } from '../../core/maintenance-view';
 import { PhotoCompare } from '../../shared/photo-compare';
 import { equipmentIcon, equipmentSummary } from '../gear/gear';
 import { EQUIPMENT_TYPES } from '../../core/labels';
 import { gearChecks } from '../../core/insights';
 import { CareRepo } from '../../core/data/care.repo';
 import { GearRepo } from '../../core/data/gear.repo';
-
-const EVENT_LABELS: Record<string, string> = {
-  added: 'Ajout',
-  birth: 'Naissance',
-  death: 'Décès',
-  disease: 'Maladie',
-  treatment: 'Traitement',
-  trim: 'Taille',
-  propagated: 'Bouturage',
-  moved: 'Déplacement',
-  note: 'Note',
-};
 
 @Component({
   selector: 'app-maintenance',
@@ -213,22 +202,9 @@ export class MaintenanceTab {
   protected readonly tankPhotos = computed(() => this.photoStore.photos().filter((p) => p.tankId === this.id() && !p.inhabitantId));
 
   /** Changements de réglages du bac, regroupés par enregistrement, du plus récent au plus ancien. */
-  protected readonly settings = computed(() => {
-    const groups = new Map<string, SettingChange[]>();
-    for (const c of this.gearStore.settingChanges().filter((c) => c.tankId === this.id())) {
-      const key = c.equipmentId + c.date;
-      groups.set(key, [...(groups.get(key) ?? []), c]);
-    }
-    const list = [...groups.entries()].map(([key, changes]) => ({ key, changes, ...changes[0] }));
-    const now = new Date();
-    return list
-      .map((g) => {
-        const next = list.find((o) => o.equipmentId === g.equipmentId && o.date > g.date && o.changes.some((c) => g.changes.some((d) => d.field === c.field)));
-        const effect = changeEffect(g.changes[0], this.careStore.observations(), this.photoStore.photos(), now, next?.date);
-        return { ...g, effect, verdict: effectVerdict(effect) };
-      })
-      .sort((a, b) => b.date.localeCompare(a.date));
-  });
+  protected readonly settings = computed(() =>
+    groupSettingChanges(this.gearStore.settingChanges(), this.id(), this.careStore.observations(), this.photoStore.photos(), new Date()),
+  );
 
   protected async removeSetting(changes: SettingChange[]): Promise<void> {
     if (!confirm('Retirer ce changement de l’historique ?')) return;
@@ -245,20 +221,7 @@ export class MaintenanceTab {
   protected readonly tasks = computed(() => this.view()?.tasks ?? []);
 
   /** Opérations d'entretien et événements des habitants (taille, bouture…) dans une seule chronologie. */
-  protected readonly history = computed(() => {
-    const id = this.id();
-    const byId = this.speciesStore.speciesById();
-    const inhabitants = new Map(this.populationStore.inhabitants().map((i) => [i.id, i]));
-    const logs = this.careStore.logs()
-      .filter((l) => l.tankId === id)
-      .map((l) => ({ id: l.id, date: l.date, title: l.label, note: l.note, plant: isPlantTask(l.type) }));
-    const events = this.populationStore.inhabitantEvents()
-      .filter((e) => e.tankId === id)
-      .map((e) => {
-        const sp = byId.get(inhabitants.get(e.inhabitantId)?.speciesId ?? '');
-        const delta = e.quantityDelta ? ` (${e.quantityDelta > 0 ? '+' : ''}${e.quantityDelta})` : '';
-        return { id: e.id, date: e.date, title: `${EVENT_LABELS[e.type]} — ${speciesName(sp)}${delta}`, note: e.note, plant: sp?.kind === 'plant' };
-      });
-    return [...logs, ...events].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30);
-  });
+  protected readonly history = computed(() =>
+    maintenanceTimeline(this.id(), this.careStore.logs(), this.populationStore.inhabitantEvents(), this.populationStore.inhabitants(), this.speciesStore.speciesById()),
+  );
 }

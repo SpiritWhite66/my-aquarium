@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
 import { CareStore } from '../../core/stores/care.store';
-import type { TaskType } from '../../core/models';
+import type { MaintenanceTask, TaskType } from '../../core/models';
 import { TASK_TYPES, parseNumber } from '../../core/labels';
 import { addDays } from '../../core/dates';
 import { Icon } from '../../shared/icon';
+import { fromEntity } from '../../shared/form-state';
 import { CareRepo } from '../../core/data/care.repo';
 
 @Component({
@@ -64,28 +65,14 @@ export class TaskFormPage {
   readonly taskId = input<string>();
 
   protected readonly typeList = Object.entries(TASK_TYPES) as [TaskType, string][];
-  protected readonly type = signal<TaskType>('water_change');
-  protected readonly label = signal(TASK_TYPES.water_change);
-  protected readonly every = signal('7');
-  protected readonly nextDue = signal(addDays(this.store.today(), 7));
+  private readonly existing = computed(() => this.careStore.tasks().find((t) => t.id === this.taskId()));
+  protected readonly type = fromEntity<MaintenanceTask, TaskType>(this.existing, (t) => t.type, 'water_change');
+  protected readonly label = fromEntity(this.existing, (t) => t.label, TASK_TYPES.water_change);
+  protected readonly every = fromEntity(this.existing, (t) => String(t.everyDays), '7');
+  protected readonly nextDue = fromEntity(this.existing, (t) => t.nextDue, addDays(this.store.today(), 7));
 
   protected readonly tankName = computed(() => this.store.tanks().find((t) => t.id === this.id())?.name ?? '');
-  private readonly existing = computed(() => this.careStore.tasks().find((t) => t.id === this.taskId()));
   protected readonly valid = computed(() => this.label().trim() && (parseNumber(this.every()) ?? 0) >= 1 && this.nextDue());
-
-  private loaded = false;
-
-  constructor() {
-    effect(() => {
-      const t = this.existing();
-      if (!t || this.loaded) return;
-      this.loaded = true;
-      this.type.set(t.type);
-      this.label.set(t.label);
-      this.every.set(String(t.everyDays));
-      this.nextDue.set(t.nextDue);
-    });
-  }
 
   protected setType(type: TaskType): void {
     // Le libellé suit le type tant qu'il n'a pas été personnalisé.

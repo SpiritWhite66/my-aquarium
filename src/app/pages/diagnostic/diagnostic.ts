@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { PhotoStore } from '../../core/stores/photo.store';
@@ -11,6 +11,7 @@ import { buildDossier, defaultPhotoSelection, diagnosticRequest, dossierFileName
 import { fmtShortDate } from '../../core/labels';
 import { measureStatus } from '../../core/follow-up';
 import { Icon } from '../../shared/icon';
+import { defaultTank } from '../../shared/form-state';
 import { PhotoUrls } from '../../shared/photo-urls';
 import { PhotoRepo } from '../../core/data/photo.repo';
 
@@ -164,7 +165,7 @@ export class DiagnosticPage {
 
   readonly bac = input<string>();
 
-  protected readonly tankId = signal('');
+  protected readonly tankId = defaultTank(() => this.store.tankViews().map((v) => v.tank.id), this.bac);
   protected readonly question = signal('');
   protected readonly copied = signal(false);
   protected readonly busy = signal(false);
@@ -230,15 +231,6 @@ export class DiagnosticPage {
     const d = this.dossier();
     return d ? missingInfo(d, this.selected().size) : [];
   });
-
-  constructor() {
-    effect(() => {
-      if (this.tankId()) return;
-      const tanks = this.store.tankViews();
-      const id = tanks.find((v) => v.tank.id === this.bac())?.tank.id ?? tanks[0]?.tank.id;
-      if (id) this.tankId.set(id);
-    });
-  }
 
   protected togglePhoto(id: string): void {
     this.selected.update((s) => {

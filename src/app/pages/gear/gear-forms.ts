@@ -1,12 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
 import { GearStore } from '../../core/stores/gear.store';
-import type { Co2Spec, ConsumableCategory, EquipmentType, FilterSpec, HeaterSpec, LightSpec, StockLevel } from '../../core/models';
+import type { Co2Spec, Consumable, ConsumableCategory, Equipment, EquipmentType, FilterSpec, HeaterSpec, LightSpec, StockLevel } from '../../core/models';
 import { photoperiod } from '../../core/insights';
 import { fmt } from '../../core/labels';
 import { CONSUMABLE_CATEGORIES, EQUIPMENT_TYPES, STOCK_LEVELS, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
+import { fromEntity } from '../../shared/form-state';
 import { describeChange, diffSettings } from '../../core/settings-history';
 import { todayIso } from '../../core/dates';
 import { GearRepo } from '../../core/data/gear.repo';
@@ -146,6 +147,7 @@ const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
 })
 export class EquipmentFormPage {
   protected readonly describe = describeChange;
+  protected readonly existing = computed(() => this.gearStore.equipment().find((e) => e.id === this.id()));
   protected readonly changeDate = signal(todayIso());
   protected readonly changeNote = signal('');
   /** Réglages suivis modifiés par rapport à la version enregistrée. */
@@ -160,10 +162,10 @@ export class EquipmentFormPage {
   protected readonly str = str;
   protected readonly num = parseNumber;
   protected readonly channelList = ['Blanc', 'Rouge', 'Vert', 'Bleu', 'Blanc chaud', 'UV'];
-  protected readonly light = signal<LightSpec>({});
-  protected readonly filter = signal<FilterSpec>({});
-  protected readonly heater = signal<HeaterSpec>({});
-  protected readonly co2 = signal<Co2Spec>({});
+  protected readonly light = fromEntity<Equipment, LightSpec>(this.existing, (e) => e.light ?? {}, {});
+  protected readonly filter = fromEntity<Equipment, FilterSpec>(this.existing, (e) => e.filter ?? {}, {});
+  protected readonly heater = fromEntity<Equipment, HeaterSpec>(this.existing, (e) => e.heater ?? {}, {});
+  protected readonly co2 = fromEntity<Equipment, Co2Spec>(this.existing, (e) => e.co2 ?? {}, {});
   protected readonly hours = computed(() => {
     const h = photoperiod(this.light());
     return h ? fmt(h) : '';
@@ -204,45 +206,18 @@ export class EquipmentFormPage {
   readonly bac = input<string>();
 
   protected readonly types = Object.entries(EQUIPMENT_TYPES) as [EquipmentType, string][];
-  protected readonly name = signal('');
-  protected readonly type = signal<EquipmentType>('filter');
-  protected readonly tankId = signal('');
-  protected readonly brand = signal('');
-  protected readonly model = signal('');
-  protected readonly specs = signal('');
-  protected readonly purchaseDate = signal('');
-  protected readonly warranty = signal('');
-  protected readonly price = signal('');
-  protected readonly notes = signal('');
-
-  protected readonly existing = computed(() => this.gearStore.equipment().find((e) => e.id === this.id()));
-  private loaded = false;
-
-  constructor() {
-    effect(() => {
-      const b = this.bac();
-      if (b && !this.id() && !this.tankId()) this.tankId.set(b);
-    });
-    effect(() => {
-      const e = this.existing();
-      if (!e || this.loaded) return;
-      this.loaded = true;
-      this.name.set(e.name);
-      this.type.set(e.type);
-      this.tankId.set(e.tankId ?? '');
-      this.brand.set(e.brand ?? '');
-      this.model.set(e.model ?? '');
-      this.specs.set(e.specs ?? '');
-      this.purchaseDate.set(e.purchaseDate ?? '');
-      this.warranty.set(str(e.warrantyMonths));
-      this.price.set(str(e.price));
-      this.notes.set(e.notes ?? '');
-      this.light.set(e.light ?? {});
-      this.filter.set(e.filter ?? {});
-      this.heater.set(e.heater ?? {});
-      this.co2.set(e.co2 ?? {});
-    });
-  }
+  // Chaque champ prend la valeur de la fiche enregistrée quand elle est chargée (modification), puis appartient à la saisie.
+  protected readonly name = fromEntity(this.existing, (e) => e.name, '');
+  protected readonly type = fromEntity<Equipment, EquipmentType>(this.existing, (e) => e.type, 'filter');
+  /** Nouvel équipement : le bac de l'URL (?bac=…) est présélectionné. */
+  protected readonly tankId = fromEntity(this.existing, (e) => e.tankId ?? '', () => (this.id() ? '' : (this.bac() ?? '')));
+  protected readonly brand = fromEntity(this.existing, (e) => e.brand ?? '', '');
+  protected readonly model = fromEntity(this.existing, (e) => e.model ?? '', '');
+  protected readonly specs = fromEntity(this.existing, (e) => e.specs ?? '', '');
+  protected readonly purchaseDate = fromEntity(this.existing, (e) => e.purchaseDate ?? '', '');
+  protected readonly warranty = fromEntity(this.existing, (e) => str(e.warrantyMonths), '');
+  protected readonly price = fromEntity(this.existing, (e) => str(e.price), '');
+  protected readonly notes = fromEntity(this.existing, (e) => e.notes ?? '', '');
 
   protected async save(): Promise<void> {
     if (!this.name().trim()) return;
@@ -330,33 +305,15 @@ export class ConsumableFormPage {
 
   protected readonly categories = Object.entries(CONSUMABLE_CATEGORIES) as [ConsumableCategory, string][];
   protected readonly levels = Object.entries(STOCK_LEVELS) as [StockLevel, string][];
-  protected readonly name = signal('');
-  protected readonly category = signal<ConsumableCategory>('food');
-  protected readonly level = signal<StockLevel>('full');
-  protected readonly brand = signal('');
-  protected readonly openedDate = signal('');
-  protected readonly expiryDate = signal('');
-  protected readonly price = signal('');
-  protected readonly notes = signal('');
-
   protected readonly existing = computed(() => this.gearStore.consumables().find((c) => c.id === this.id()));
-  private loaded = false;
-
-  constructor() {
-    effect(() => {
-      const c = this.existing();
-      if (!c || this.loaded) return;
-      this.loaded = true;
-      this.name.set(c.name);
-      this.category.set(c.category);
-      this.level.set(c.level);
-      this.brand.set(c.brand ?? '');
-      this.openedDate.set(c.openedDate ?? '');
-      this.expiryDate.set(c.expiryDate ?? '');
-      this.price.set(str(c.price));
-      this.notes.set(c.notes ?? '');
-    });
-  }
+  protected readonly name = fromEntity(this.existing, (c) => c.name, '');
+  protected readonly category = fromEntity<Consumable, ConsumableCategory>(this.existing, (c) => c.category, 'food');
+  protected readonly level = fromEntity<Consumable, StockLevel>(this.existing, (c) => c.level, 'full');
+  protected readonly brand = fromEntity(this.existing, (c) => c.brand ?? '', '');
+  protected readonly openedDate = fromEntity(this.existing, (c) => c.openedDate ?? '', '');
+  protected readonly expiryDate = fromEntity(this.existing, (c) => c.expiryDate ?? '', '');
+  protected readonly price = fromEntity(this.existing, (c) => str(c.price), '');
+  protected readonly notes = fromEntity(this.existing, (c) => c.notes ?? '', '');
 
   protected async save(): Promise<void> {
     if (!this.name().trim()) return;

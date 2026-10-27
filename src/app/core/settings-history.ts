@@ -116,3 +116,33 @@ export function effectVerdict(e: ChangeEffect): { level: 'ok' | 'warn' | 'info';
   if (diff >= 0.5) return { level: 'warn', text: `Plus d’algues : niveau moyen ${lv(e.before.level)} avant, ${lv(e.after.level)} après.` };
   return { level: 'info', text: `Pas de différence nette : niveau moyen ${lv(e.before.level)} avant, ${lv(e.after.level)} après.` };
 }
+
+export interface SettingGroup extends SettingChange {
+  /** Clé stable : matériel + date d'enregistrement. */
+  key: string;
+  /** Réglages modifiés ensemble (même matériel, même date). */
+  changes: SettingChange[];
+  effect: ChangeEffect;
+  verdict: ReturnType<typeof effectVerdict>;
+}
+
+/**
+ * Changements de réglages d'un bac regroupés par enregistrement (un matériel, une date), du plus récent
+ * au plus ancien, chacun avec son effet sur les algues. L'« après » s'arrête au changement suivant
+ * du même réglage sur le même matériel.
+ */
+export function groupSettingChanges(changes: SettingChange[], tankId: string, observations: Observation[], photos: Photo[], now: Date): SettingGroup[] {
+  const groups = new Map<string, SettingChange[]>();
+  for (const c of changes.filter((c) => c.tankId === tankId)) {
+    const key = c.equipmentId + c.date;
+    groups.set(key, [...(groups.get(key) ?? []), c]);
+  }
+  const list = [...groups.entries()].map(([key, changes]) => ({ key, changes, ...changes[0] }));
+  return list
+    .map((g) => {
+      const next = list.find((o) => o.equipmentId === g.equipmentId && o.date > g.date && o.changes.some((c) => g.changes.some((d) => d.field === c.field)));
+      const effect = changeEffect(g.changes[0], observations, photos, now, next?.date);
+      return { ...g, effect, verdict: effectVerdict(effect) };
+    })
+    .sort((a, b) => b.date.localeCompare(a.date));
+}

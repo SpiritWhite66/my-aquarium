@@ -17,6 +17,7 @@ import {
 import { PARAM_BY_KEY, idealRange, isAlive, levelOf } from '../../core/rules';
 import { KINDS, UNITS, fmt, fmtRange, parseNumber, unitLabel } from '../../core/labels';
 import { Icon } from '../../shared/icon';
+import { defaultTank } from '../../shared/form-state';
 import { speciesIcon } from '../../shared/visuals';
 import { CareRepo } from '../../core/data/care.repo';
 import { LivestockRepo } from '../../core/data/livestock.repo';
@@ -91,7 +92,7 @@ export class AiImportPage {
   protected readonly probLabels = { high: 'Très probable', medium: 'Possible', low: 'Peu probable' } as const;
   protected readonly prioLabels = { now: 'Maintenant', soon: 'Bientôt', later: 'Plus tard' } as const;
 
-  protected readonly tankId = signal('');
+  protected readonly tankId = defaultTank(() => this.store.tankViews().map((v) => v.tank.id), this.bac);
   protected readonly raw = signal('');
   protected readonly errors = signal<string[]>([]);
   protected readonly preview = signal<Preview | null>(null);
@@ -122,12 +123,6 @@ export class AiImportPage {
   });
 
   constructor() {
-    effect(() => {
-      if (this.tankId()) return;
-      const tanks = this.store.tankViews();
-      const id = tanks.find((v) => v.tank.id === this.bac())?.tank.id ?? tanks[0]?.tank.id;
-      if (id) this.tankId.set(id);
-    });
     // Texte reçu par partage : analyse directe une fois le catalogue chargé.
     effect(() => {
       const shared = this.text();

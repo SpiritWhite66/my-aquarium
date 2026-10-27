@@ -223,3 +223,8 @@ export const DOSE_UNITS: Record<import('./models').DoseUnit, string> = { ml: 'ml
 
 export const ALGAE_LEVELS = ['Aucune', 'Un peu', 'Moyen', 'Beaucoup'] as const;
 export const ALGAE_TYPES = ['Filamenteuses', 'Barbe noire (BBA)', 'Diatomées (brunes)', 'Cyanobactéries', 'Points verts', 'Duvet vert', 'Eau verte'] as const;
+
+/** Les tâches liées aux plantes sont en vert, les autres en bleu (comme la maquette). */
+export function isPlantTask(type: TaskType): boolean {
+  return type === 'plant_trim' || type === 'fertilize' || type === 'co2_refill';
+}

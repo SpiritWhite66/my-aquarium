@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { AquariumStore } from '../../core/store';
@@ -6,6 +6,7 @@ import type { Tank, TankType } from '../../core/models';
 import { TANK_TYPES, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { TankRepo } from '../../core/data/tank.repo';
+import { fromEntity } from '../../shared/form-state';
 
 @Component({
   selector: 'app-tank-form',
@@ -91,43 +92,22 @@ export class TankFormPage {
   readonly id = input<string>();
 
   protected readonly typeList = Object.entries(TANK_TYPES) as [TankType, string][];
-  protected readonly name = signal('');
-  protected readonly type = signal<TankType>('planted');
-  protected readonly volumeGross = signal('');
-  protected readonly volumeNet = signal('');
-  protected readonly startDate = signal(this.store.today());
-  protected readonly photoperiod = signal('');
-  protected readonly substrate = signal('');
-  protected readonly notes = signal('');
-  protected readonly co2 = signal(false);
-  protected readonly cycling = signal(false);
-  protected readonly co2Target = signal('');
+  protected readonly existing = computed(() => this.store.tanks().find((t) => t.id === this.id()));
+  // Chaque champ prend la valeur du bac enregistré quand il est chargé (modification), puis appartient à la saisie.
+  protected readonly name = fromEntity(this.existing, (t) => t.name, '');
+  protected readonly type = fromEntity<Tank, TankType>(this.existing, (t) => t.type, 'planted');
+  protected readonly volumeGross = fromEntity(this.existing, (t) => String(t.volumeGross).replace('.', ','), '');
+  protected readonly volumeNet = fromEntity(this.existing, (t) => (t.volumeNet != null ? String(t.volumeNet).replace('.', ',') : ''), '');
+  protected readonly startDate = fromEntity(this.existing, (t) => t.startDate, this.store.today());
+  protected readonly photoperiod = fromEntity(this.existing, (t) => (t.lighting?.photoperiodHours != null ? String(t.lighting.photoperiodHours) : ''), '');
+  protected readonly substrate = fromEntity(this.existing, (t) => t.substrate ?? '', '');
+  protected readonly notes = fromEntity(this.existing, (t) => t.notes ?? '', '');
+  protected readonly co2 = fromEntity(this.existing, (t) => t.co2, false);
+  protected readonly cycling = fromEntity(this.existing, (t) => !!t.cycling, false);
+  protected readonly co2Target = fromEntity(this.existing, (t) => (t.co2Target != null ? String(t.co2Target) : ''), '');
   protected readonly defaults = signal(true);
 
-  protected readonly existing = computed(() => this.store.tanks().find((t) => t.id === this.id()));
   protected readonly valid = computed(() => this.name().trim() && (parseNumber(this.volumeGross()) ?? 0) > 0);
-
-  private loaded = false;
-
-  constructor() {
-    // Remplit le formulaire une seule fois quand le bac est chargé.
-    effect(() => {
-      const t = this.existing();
-      if (!t || this.loaded) return;
-      this.loaded = true;
-      this.name.set(t.name);
-      this.type.set(t.type);
-      this.volumeGross.set(String(t.volumeGross).replace('.', ','));
-      this.volumeNet.set(t.volumeNet != null ? String(t.volumeNet).replace('.', ',') : '');
-      this.startDate.set(t.startDate);
-      this.photoperiod.set(t.lighting?.photoperiodHours != null ? String(t.lighting.photoperiodHours) : '');
-      this.substrate.set(t.substrate ?? '');
-      this.notes.set(t.notes ?? '');
-      this.co2.set(t.co2);
-      this.cycling.set(!!t.cycling);
-      this.co2Target.set(t.co2Target != null ? String(t.co2Target) : '');
-    });
-  }
 
   protected val(e: Event): string {
     return (e.target as HTMLInputElement).value;

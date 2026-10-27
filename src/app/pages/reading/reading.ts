@@ -1,13 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
 import { WaterStore } from '../../core/stores/water.store';
 import { ALGAE_LEVELS, ALGAE_TYPES } from '../../core/labels';
 import type {
-  AlgaeLevel, ParamKey } from '../../core/models';
+  AlgaeLevel, ParamKey, WaterTest } from '../../core/models';
 import { EXTRA_PARAMS, MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf, measuredParams } from '../../core/rules';
 import { fmt, fmtRange, fmtShortDate, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
+import { defaultTank, fromEntity } from '../../shared/form-state';
 import { CareRepo } from '../../core/data/care.repo';
 
 /** Saisie rapide d'un relevé : valeurs précédentes en indication, contrôle immédiat de la plage. */
@@ -120,13 +121,17 @@ export class ReadingPage {
   readonly edit = input<string>();
 
   protected readonly nowLocal = toLocalInput(new Date().toISOString());
-  protected readonly when = signal(this.nowLocal);
   protected readonly editing = computed(() => this.waterStore.waterTests().find((t) => t.id === this.edit()));
-  private loadedEdit = false;
-
-  protected readonly tankId = signal('');
-  protected readonly raw = signal<Partial<Record<ParamKey, string>>>({});
-  protected readonly note = signal('');
+  // En correction, les champs prennent les valeurs du relevé enregistré, puis appartiennent à la saisie.
+  protected readonly when = fromEntity(this.editing, (t) => toLocalInput(t.date), this.nowLocal);
+  /** Bac du relevé corrigé ; sinon celui de l'URL, sinon le premier. */
+  protected readonly tankId = defaultTank(() => this.store.tankViews().map((v) => v.tank.id), this.bac, () => this.editing()?.tankId);
+  protected readonly raw = fromEntity<WaterTest, Partial<Record<ParamKey, string>>>(
+    this.editing,
+    (t) => Object.fromEntries(Object.entries(t.values).map(([k, v]) => [k, String(v).replace('.', ',')])),
+    {},
+  );
+  protected readonly note = fromEntity(this.editing, (t) => t.note ?? '', '');
   /** Affiche aussi Fe, K, Mg et conductivité, même jamais mesurés. */
   protected readonly showExtra = signal(false);
   protected readonly hiddenExtra = computed(() => {
@@ -188,27 +193,6 @@ export class ReadingPage {
       return next;
     });
   }
-
-  constructor() {
-    // Bac choisi : celui de l'URL, sinon le premier.
-    effect(() => {
-      if (this.tankId()) return;
-      const fromUrl = this.bac();
-      const tanks = this.store.tankViews();
-      const id = tanks.find((v) => v.tank.id === fromUrl)?.tank.id ?? tanks[0]?.tank.id;
-      if (id) this.tankId.set(id);
-    });
-  }
-
-  private readonly loadEdit = effect(() => {
-    const t = this.editing();
-    if (!t || this.loadedEdit) return;
-    this.loadedEdit = true;
-    this.tankId.set(t.tankId);
-    this.raw.set(Object.fromEntries(Object.entries(t.values).map(([k, v]) => [k, String(v).replace('.', ',')])));
-    this.note.set(t.note ?? '');
-    this.when.set(toLocalInput(t.date));
-  });
 
   protected set(key: ParamKey, value: string): void {
     this.raw.update((r) => ({ ...r, [key]: value }));
