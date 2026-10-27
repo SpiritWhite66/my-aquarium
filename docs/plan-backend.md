@@ -17,7 +17,7 @@ flowchart LR
 
 ## 0. Prérequis (côté toi)
 
-- [ ] Valider les ADR (statut « Acceptée ») et répondre aux questions ouvertes de BACKEND.md.
+- [x] Valider les ADR (statut « Acceptée ») et répondre aux questions ouvertes de BACKEND.md.
 - [ ] Créer les comptes gratuits : Render, Neon, Backblaze B2 (sans carte).
 - [ ] Vérifier les quotas gratuits du moment.
 - [ ] Activer sur GitHub : Dependency graph, Secret scanning, Push protection.

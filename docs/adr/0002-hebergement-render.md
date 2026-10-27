@@ -1,6 +1,6 @@
 # ADR-0002 : héberger l'API sur Render (offre gratuite)
 
-- Statut : Proposée
+- Statut : Acceptée (2026-10-27)
 - Date : 2026-10-27
 
 ## Contexte

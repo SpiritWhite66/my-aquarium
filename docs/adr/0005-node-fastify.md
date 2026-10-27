@@ -1,6 +1,6 @@
 # ADR-0005 : Node.js + TypeScript + Fastify
 
-- Statut : Proposée
+- Statut : Acceptée (2026-10-27)
 - Date : 2026-10-27
 
 ## Contexte

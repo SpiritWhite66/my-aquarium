@@ -1,6 +1,6 @@
 # ADR-0001 : un seul service backend, découpé en modules
 
-- Statut : Proposée
+- Statut : Acceptée (2026-10-27)
 - Date : 2026-10-27
 
 ## Contexte

@@ -1,6 +1,6 @@
 # ADR-0003 : PostgreSQL hébergé chez Neon
 
-- Statut : Proposée
+- Statut : Acceptée (2026-10-27)
 - Date : 2026-10-27
 
 ## Contexte
