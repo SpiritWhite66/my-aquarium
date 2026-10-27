@@ -27,10 +27,11 @@ beforeEach(() => {
   click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
 });
 afterEach(async () => {
+  // L'appli d'abord : ses vérifications en cours finissent avant qu'on retire les fausses API.
+  await closeApp(app);
   click.mockRestore();
   vi.unstubAllGlobals();
   delete (window as unknown as Record<string, unknown>)['showSaveFilePicker'];
-  await closeApp(app);
 });
 
 function fakeNotification(permission = 'granted') {

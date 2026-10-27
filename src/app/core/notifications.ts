@@ -106,7 +106,8 @@ export class NotificationService {
     const options = { body: d.body, icon: 'icons/icon-192x192.png', badge: 'icons/icon-192x192.png', tag: 'aquarium-daily' };
     const reg = await this.registration();
     if (reg) await reg.showNotification(d.title, options);
-    else new Notification(d.title, options);
+    // L'API peut manquer (navigateur sans notifications, ou retirée entre-temps) : rien à afficher.
+    else if (typeof Notification !== 'undefined') new Notification(d.title, options);
   }
 
   private async registration(): Promise<ServiceWorkerRegistration | undefined> {
