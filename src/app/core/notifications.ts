@@ -91,7 +91,7 @@ export class NotificationService {
 
   /** Affiche tout de suite la notification du jour (ou un exemple). */
   async test(): Promise<void> {
-    const today = this.digests()[this.store.today()] as Digest | undefined;
+    const today = this.digests()[this.store.today()];
     await this.show(
       today ?? {
         title: 'Rappels activés',

@@ -69,7 +69,9 @@ test.describe('sauvegarde et restauration', () => {
 
   test('écarte les lignes orphelines et le signale', async ({ app }) => {
     const data = sampleBackup();
-    data.data.waterTests.push({ ...data.data.waterTests[0], id: 'w9', tankId: 'disparu' });
+    const [first] = data.data.waterTests;
+    if (!first) throw new Error('relevé de départ manquant');
+    data.data.waterTests.push({ ...first, id: 'w9', tankId: 'disparu' });
     await app.importFile({
       name: 's.json',
       mimeType: 'application/json',

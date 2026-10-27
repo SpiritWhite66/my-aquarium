@@ -113,4 +113,5 @@ Une vulnérabilité sans correctif disponible peut être acceptée temporairemen
   - Désactivations assumées, à reprendre dans l'API : `security/detect-object-injection` (faux positifs en masse ; couvert par le typage et CodeQL), règles `no-unsafe-*` et `require-await` dans les tests seulement (simulacres et `JSON.parse`).
   - Les assertions non nulles `!` sont remplacées par `must()` (échec explicite si la valeur manque).
   - Prettier est configuré sans formatage des modèles Angular en ligne (il y ajoutait des espaces visibles) ; `catalog.ts` (lu par regex par `build-ai`) et `app.html` sont ignorés.
-  - Pas encore activé dans l'appli : `noUncheckedIndexedAccess` (à prévoir dans l'API dès le départ).
+  - `noUncheckedIndexedAccess` activé dans l'appli (désactivé dans les tests unitaires : un indice absent y fait déjà échouer le test). À activer dans l'API dès le départ.
+  - Gestionnaire d'erreurs global : toute erreur non gérée (dont une promesse `void` qui échoue) est tracée en console et affichée dans un bandeau d'alerte. L'API devra renvoyer des erreurs exploitables par ce bandeau.

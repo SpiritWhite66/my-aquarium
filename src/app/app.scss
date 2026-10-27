@@ -145,3 +145,17 @@
 .content:focus {
   outline: none;
 }
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--dg);
+  border-radius: 12px;
+  background: var(--dgb);
+  color: var(--ink);
+  font-size: 14px;
+}

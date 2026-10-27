@@ -45,8 +45,9 @@ export class PhotoRepo {
         await this.db.photos.bulkPut(processed);
         // Première photo d'un bac : elle devient sa photo de couverture.
         const tank = await this.db.tanks.get(target.tankId);
-        if (tank && !tank.coverPhotoId && !target.inhabitantId && processed.length) {
-          await this.db.tanks.update(tank.id, { coverPhotoId: processed[0].id, updatedAt: now() });
+        const first = processed[0];
+        if (tank && !tank.coverPhotoId && !target.inhabitantId && first) {
+          await this.db.tanks.update(tank.id, { coverPhotoId: first.id, updatedAt: now() });
         }
       },
     );

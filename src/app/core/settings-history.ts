@@ -4,6 +4,7 @@
 import type { DailySchedule, Equipment, Observation, Photo, SettingChange } from './models';
 import { fmt } from './labels';
 import { photoperiod } from './insights';
+import { must } from './assert';
 
 type Field = SettingChange['field'];
 
@@ -195,7 +196,11 @@ export function groupSettingChanges(
     const key = c.equipmentId + c.date;
     groups.set(key, [...(groups.get(key) ?? []), c]);
   }
-  const list = [...groups.entries()].map(([key, changes]) => ({ key, changes, ...changes[0] }));
+  const list = [...groups.entries()].map(([key, changes]) => ({
+    key,
+    changes,
+    ...must(changes[0]),
+  }));
   return list
     .map((g) => {
       const next = list.find(
@@ -204,7 +209,7 @@ export function groupSettingChanges(
           o.date > g.date &&
           o.changes.some((c) => g.changes.some((d) => d.field === c.field)),
       );
-      const effect = changeEffect(g.changes[0], observations, photos, now, next?.date);
+      const effect = changeEffect(must(g.changes[0]), observations, photos, now, next?.date);
       return { ...g, effect, verdict: effectVerdict(effect) };
     })
     .sort((a, b) => b.date.localeCompare(a.date));

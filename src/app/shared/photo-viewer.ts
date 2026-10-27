@@ -24,6 +24,7 @@ import { localDay } from '../core/dates';
 import { browserNav } from '../core/browser';
 import { nth } from '../core/data/util';
 import { PhotoRepo } from '../core/data/photo.repo';
+import { must } from '../core/assert';
 
 /** Visionneuse plein écran : navigation, légende, photo de couverture, téléchargement, suppression. */
 @Component({
@@ -122,7 +123,7 @@ export class PhotoViewer {
   protected go(step: number): void {
     const list = this.photos();
     if (list.length < 2) return;
-    this.selectedId.set(list[(this.index() + step + list.length) % list.length].id);
+    this.selectedId.set(must(list[(this.index() + step + list.length) % list.length]).id);
   }
 
   protected onKey(e: KeyboardEvent): void {

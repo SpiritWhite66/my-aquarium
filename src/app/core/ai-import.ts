@@ -10,6 +10,7 @@ import type {
   Species,
   SpeciesKind,
 } from './models';
+import { must } from './assert';
 
 export type Confidence = 'high' | 'medium' | 'low';
 
@@ -102,7 +103,7 @@ function typeOk(type: string, v: unknown): boolean {
 function validate(s: Schema, v: unknown, path: string, errors: string[]): void {
   if (s['$ref']) {
     const name = (s['$ref'] as string).replace('#/$defs/', '');
-    validate(DEFS[name], v, path, errors);
+    validate(must(DEFS[name], `schéma ${name}`), v, path, errors);
     return;
   }
   if ('const' in s && v !== s['const']) {
@@ -134,7 +135,8 @@ function validate(s: Schema, v: unknown, path: string, errors: string[]): void {
       if (!(key in obj)) errors.push(`${path}.${key} manquant`);
     }
     for (const [key, val] of Object.entries(obj)) {
-      if (Object.hasOwn(props, key)) validate(props[key], val, `${path}.${key}`, errors);
+      const sub = Object.hasOwn(props, key) ? props[key] : undefined;
+      if (sub) validate(sub, val, `${path}.${key}`, errors);
       else if (s['additionalProperties'] === false)
         errors.push(`${path}.${key} n’est pas prévu par le format`);
     }
@@ -146,7 +148,12 @@ export function validatePayload(value: unknown): string[] {
   validate(ROOT, value, 'json', errors);
   if (errors.length) return errors;
   const v = value as { kind: string; data: unknown };
-  validate(DEFS[DATA_DEF[v.kind]], v.data, 'json.data', errors);
+  validate(
+    must(DEFS[must(DATA_DEF[v.kind], 'type de réponse')], 'schéma des données'),
+    v.data,
+    'json.data',
+    errors,
+  );
   return errors;
 }
 
@@ -155,7 +162,9 @@ export function validatePayload(value: unknown): string[] {
  * (objet seul ou tableau d'objets).
  */
 export function parseAiText(text: string): ParseResult {
-  const blocks = [...text.matchAll(/```(?:json)?\s*([\s\S]*?)```/g)].map((m) => m[1].trim());
+  const blocks = [...text.matchAll(/```(?:json)?\s*([\s\S]*?)```/g)].map((m) =>
+    (m[1] ?? '').trim(),
+  );
   const sources = blocks.length ? blocks : [text.trim()];
   const payloads: AiPayload[] = [];
   const errors: string[] = [];

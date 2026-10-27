@@ -28,7 +28,7 @@ export function localDay(iso: string): string {
 }
 
 export function parseIsoDate(isoDate: string): Date {
-  const [y, m, d] = localDay(isoDate).split('-').map(Number);
+  const [y = NaN, m = NaN, d = NaN] = localDay(isoDate).split('-').map(Number);
   return new Date(y, m - 1, d);
 }
 

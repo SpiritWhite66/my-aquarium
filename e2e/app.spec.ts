@@ -95,7 +95,7 @@ test.describe('accessibilité (axe)', () => {
       expect(
         serious.map(
           (v) =>
-            `${v.id} (${String(v.nodes.length)}) : ${v.help} — ${v.nodes[0]?.target.join(' ')}`,
+            `${v.id} (${String(v.nodes.length)}) : ${v.help} — ${v.nodes[0]?.target.join(' ') ?? ''}`,
         ),
       ).toEqual([]);
     });

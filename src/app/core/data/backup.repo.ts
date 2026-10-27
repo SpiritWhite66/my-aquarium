@@ -90,7 +90,9 @@ export class BackupRepo {
       await this.db.photoFiles.clear();
       for (const table of BACKUP_TABLES) {
         const rows =
-          table === 'species' ? d[table].map((s) => ({ ...s, source: 'custom' })) : d[table];
+          table === 'species'
+            ? (d[table] ?? []).map((s) => ({ ...s, source: 'custom' }))
+            : (d[table] ?? []);
         await this.db.table(table).bulkPut(rows);
       }
       await this.db.photoFiles.bulkPut([...files].map(([id, f]) => ({ id, ...f })));

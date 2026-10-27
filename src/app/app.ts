@@ -5,6 +5,7 @@ import { AquariumStore } from './core/store';
 import { ThemeService } from './core/theme';
 import { BackupService } from './core/backup';
 import { NotificationService } from './core/notifications';
+import { ErrorReport } from './core/error-report';
 import { Icon } from './shared/icon';
 
 /** Coquille : barre latérale sur ordinateur, barre d'onglets en bas sur mobile. */
@@ -17,6 +18,7 @@ import { Icon } from './shared/icon';
 })
 export class App {
   protected readonly store = inject(AquariumStore);
+  protected readonly errors = inject(ErrorReport);
   // Instancié ici pour appliquer le thème dès le démarrage.
   private readonly theme = inject(ThemeService);
   // Demande la persistance du stockage dès le démarrage.

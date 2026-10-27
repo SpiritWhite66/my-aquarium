@@ -183,7 +183,7 @@ export function tasksToIcs(tasks: MaintenanceTask[], tanks: Tank[], now = new Da
  */
 export function bpmFromTaps(taps: number[]): number | undefined {
   if (taps.length < 2) return undefined;
-  const span = must(taps.at(-1)) - taps[0];
+  const span = must(taps.at(-1)) - must(taps[0]);
   if (span <= 0) return undefined;
   return Math.round(((taps.length - 1) * 60_000) / span);
 }
@@ -396,14 +396,15 @@ export function latestKhPh(
   tests: WaterTest[],
 ): { kh: number; ph: number; date: string } | undefined {
   for (let i = tests.length - 1; i >= 0; i--) {
-    const ph = tests[i].values.ph;
+    const ti = must(tests[i]);
+    const ph = ti.values.ph;
     if (ph == null) continue;
-    const t = new Date(tests[i].date).getTime();
+    const t = new Date(ti.date).getTime();
     for (let j = i; j >= 0; j--) {
-      const kh = tests[j].values.kh;
+      const tj = must(tests[j]);
+      const kh = tj.values.kh;
       if (kh == null) continue;
-      if (t - new Date(tests[j].date).getTime() <= 7 * 86_400_000)
-        return { kh, ph, date: tests[i].date };
+      if (t - new Date(tj.date).getTime() <= 7 * 86_400_000) return { kh, ph, date: ti.date };
       break;
     }
   }
@@ -413,7 +414,7 @@ export function latestKhPh(
 // ---------- Contrôles du matériel d'un bac ----------
 
 const minutes = (hhmm: string) => {
-  const [h, m] = hhmm.split(':').map(Number);
+  const [h = NaN, m = 0] = hhmm.split(':').map(Number);
   return h * 60 + (m || 0);
 };
 

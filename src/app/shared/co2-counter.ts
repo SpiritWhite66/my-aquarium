@@ -137,8 +137,8 @@ export class Co2Counter {
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
   protected readonly elapsed = computed(() => {
-    const t = this.taps();
-    return t.length ? Math.round((this.now() - t[0]) / 1000) : 0;
+    const first = this.taps()[0];
+    return first === undefined ? 0 : Math.round((this.now() - first) / 1000);
   });
   protected readonly bpm = computed(() => bpmFromTaps(this.taps()));
   /** Valeur retenue : la saisie manuelle prime sur le comptage. */

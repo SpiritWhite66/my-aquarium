@@ -92,7 +92,7 @@ export function measureStatus(diagnosis: Diagnosis, data: FollowUpData): Measure
     const known = found.filter((f) => f.v != null);
     const detail =
       known.length === 1 && found.length === 1
-        ? dec(must(known[0].v))
+        ? dec(must(known[0]?.v))
         : known.map((f) => `${PARAM_BY_KEY[f.k].short} ${dec(must(f.v))}`).join(' · ');
     return { label, done, detail: detail || undefined };
   });

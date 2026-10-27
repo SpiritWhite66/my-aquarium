@@ -1,5 +1,10 @@
 import type { ApplicationConfig } from '@angular/core';
-import { LOCALE_ID, isDevMode, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ErrorHandler,
+  LOCALE_ID,
+  isDevMode,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import {
@@ -10,12 +15,14 @@ import {
 } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
+import { AppErrorHandler } from './core/error-report';
 
 registerLocaleData(localeFr);
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    { provide: ErrorHandler, useClass: AppErrorHandler },
     { provide: LOCALE_ID, useValue: 'fr-FR' },
     provideRouter(
       routes,

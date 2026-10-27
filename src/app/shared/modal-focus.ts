@@ -1,4 +1,5 @@
 import { DestroyRef, Directive, ElementRef, inject } from '@angular/core';
+import { must } from '../core/assert';
 
 /** Visible : ni l'attribut hidden, ni display: none, ni visibility: hidden (indépendant de la mise en page). */
 function visible(el: HTMLElement): boolean {
@@ -32,8 +33,8 @@ export class ModalFocus {
       e.preventDefault();
       return;
     }
-    const first = items[0];
-    const last = items[items.length - 1];
+    const first = must(items[0]);
+    const last = must(items.at(-1));
     const active = document.activeElement;
     if (e.shiftKey && (active === first || active === this.el)) {
       e.preventDefault();

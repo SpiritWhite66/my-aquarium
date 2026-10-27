@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ThemeService } from './core/theme';
+import { ErrorReport } from './core/error-report';
 import { bootShell } from './testing/app.testing';
 
 let shell: Awaited<ReturnType<typeof bootShell>>;
@@ -134,5 +135,18 @@ describe('coquille de l’appli', () => {
       expect(document.activeElement?.id).toBe('contenu');
       shell.el.remove();
     });
+  });
+
+  it('affiche une erreur imprévue dans un bandeau d’alerte, que l’on peut fermer', async () => {
+    shell = await bootShell();
+    expect(shell.el.querySelector('[role=alert]')).toBeNull();
+    TestBed.inject(ErrorReport).report(new Error('écriture refusée'));
+    await shell.settle();
+    const banner = shell.el.querySelector('.error-banner');
+    expect(banner?.getAttribute('role')).toBe('alert');
+    expect(banner?.textContent).toContain('n’a pas abouti');
+    banner?.querySelector('button')?.click();
+    await shell.settle();
+    expect(shell.el.querySelector('.error-banner')).toBeNull();
   });
 });

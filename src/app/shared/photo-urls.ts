@@ -25,7 +25,7 @@ export class PhotoUrls {
     effect(() => {
       const ids = this.ids();
       const cache = this.ready();
-      const gone = [...cache.keys()].filter((key) => !ids.has(key.split(':')[0]));
+      const gone = [...cache.keys()].filter((key) => !ids.has(key.split(':')[0] ?? ''));
       if (!gone.length) return;
       const next = new Map(cache);
       for (const key of gone) {

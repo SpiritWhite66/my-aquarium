@@ -3,6 +3,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    // Dans les tests, un indice absent fait déjà échouer le test (TypeError) : l'option n'apporterait que des `!`.
+    "noUncheckedIndexedAccess": false,
     "types": ["vitest/globals"]
   },
   "include": ["src/**/*.d.ts", "src/**/*.spec.ts", "src/**/*.testing.ts"]

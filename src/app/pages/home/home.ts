@@ -115,6 +115,7 @@ export class HomePage {
 
   protected readonly readingLink = computed(() => {
     const tanks = this.store.tankViews();
-    return tanks.length === 1 ? { bac: tanks[0].tank.id } : {};
+    const [only] = tanks;
+    return tanks.length === 1 && only ? { bac: only.tank.id } : {};
   });
 }
