@@ -2,6 +2,8 @@
 
 Statut : proposition, rien n'est encore implémenté.
 
+Les décisions sont détaillées dans les [ADR](adr/README.md).
+
 ## 1. Point de départ
 
 - L'appli est une PWA hors ligne : toutes les données vivent dans IndexedDB (Dexie). Elle doit **continuer à marcher sans réseau**.
