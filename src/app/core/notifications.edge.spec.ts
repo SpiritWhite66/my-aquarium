@@ -255,6 +255,7 @@ describe('affichage', () => {
     fakeNotification('granted');
     const { store } = await seedDue({ enabled: true, time: '09:00' });
     await prepared(store);
+    await new Promise((r) => setTimeout(r, 60)); // laisse l'ouverture de l'appli finir sa propre vérification
     vi.setSystemTime(new Date(2026, 9, 27, 9, 30));
     Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
     document.dispatchEvent(new Event('visibilitychange'));

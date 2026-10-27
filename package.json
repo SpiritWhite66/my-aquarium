@@ -9,7 +9,8 @@
     "prebuild": "npm run ai",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "mutation": "stryker run"
   },
   "private": true,
   "packageManager": "npm@11.19.1",

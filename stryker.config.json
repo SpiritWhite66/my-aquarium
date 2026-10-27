@@ -6,8 +6,16 @@
   },
   "coverageAnalysis": "perTest",
   "mutate": [
-    "src/app/core/{rules,insights,reminders,follow-up,dates,settings-history,labels,ai-import,diagnostic,backup-format,archive,store,notifications,photos}.ts",
-    "src/app/core/data/{care,gear,livestock,photo,tank,backup,prefs}.repo.ts"
+    "src/app/core/*.ts",
+    "!src/app/core/*.spec.ts",
+    "!src/app/core/*.testing.ts",
+    "!src/app/core/models.ts",
+    "!src/app/core/catalog.ts",
+    "!src/app/core/db.ts",
+    "!src/app/core/theme.ts",
+    "!src/app/core/clock.ts",
+    "!src/app/core/backup.ts",
+    "src/app/core/data/*.repo.ts"
   ],
   "reporters": [
     "clear-text",
@@ -25,9 +33,9 @@
   "cleanTempDir": true,
   "ignoreStatic": true,
   "thresholds": {
-    "high": 80,
-    "low": 60,
-    "break": null
+    "high": 90,
+    "low": 75,
+    "break": 75
   },
   "timeoutMS": 20000
 }

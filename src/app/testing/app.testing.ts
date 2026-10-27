@@ -66,7 +66,7 @@ export async function seedAll(db: AquariumDb): Promise<void> {
 }
 
 /** Démarre l'appli sur une base neuve. `seed` : remplit la base avant l'affichage (par défaut : jeu de données complet). */
-export async function bootApp(seed: ((db: AquariumDb) => Promise<void>) | false = seedAll): Promise<App> {
+export async function bootApp(seed: ((db: AquariumDb) => PromiseLike<unknown>) | false = seedAll): Promise<App> {
   useFakeIndexedDb();
   const db = new AquariumDb(`ui-${n++}`);
   TestBed.configureTestingModule({
