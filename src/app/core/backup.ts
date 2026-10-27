@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { AquariumStore } from './store';
 import { daysBetween, localDay, toIsoDate } from './dates';
 import { BackupRepo } from './data/backup.repo';
+import { readPref, writePref } from './local-prefs';
 
 /** Délai après lequel on rappelle de faire une sauvegarde. */
 export const BACKUP_REMINDER_DAYS = 14;
@@ -19,8 +20,8 @@ export class BackupService {
   /** null : inconnu ou non pris en charge. */
   readonly persisted = signal<boolean | null>(null);
   readonly usage = signal<{ used: number; quota: number } | null>(null);
-  readonly lastBackup = signal<string | null>(read('lastBackup'));
-  private readonly snoozedUntil = signal<string | null>(read('backupSnooze'));
+  readonly lastBackup = signal<string | null>(readPref('lastBackup'));
+  private readonly snoozedUntil = signal<string | null>(readPref('backupSnooze'));
 
   /** Nombre de jours depuis la dernière sauvegarde (null : jamais). */
   readonly daysSince = computed(() => {
@@ -96,7 +97,7 @@ export class BackupService {
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     }
-    write('lastBackup', exportedAt);
+    writePref('lastBackup', exportedAt);
     this.lastBackup.set(exportedAt);
   }
 
@@ -105,24 +106,8 @@ export class BackupService {
     const until = new Date();
     until.setDate(until.getDate() + 3);
     const iso = toIsoDate(until);
-    write('backupSnooze', iso);
+    writePref('backupSnooze', iso);
     this.snoozedUntil.set(iso);
-  }
-}
-
-function read(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function write(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    /* stockage indisponible */
   }
 }
 

@@ -4,14 +4,13 @@ import { AquariumStore } from '../../core/store';
 import { CareStore } from '../../core/stores/care.store';
 import { GearStore } from '../../core/stores/gear.store';
 import { WaterStore } from '../../core/stores/water.store';
-import { MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf, measuredParams } from '../../core/rules';
-import { agoLabel, fmt, fmtRange, fmtShortDate, speciesName } from '../../core/labels';
+import { agoLabel, fmt, fmtShortDate } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { ParamChart } from '../../shared/param-chart';
-import { CYCLING_LABELS, CO2_TARGET, DROP_CHECKER, co2Advice, co2FromKhPh, co2FromPhDrop, co2Status, cyclingPhase, latestKhPh, trendOf } from '../../core/insights';
+import { CYCLING_LABELS, CO2_TARGET, DROP_CHECKER, co2Status, cyclingPhase } from '../../core/insights';
 import { Co2Counter } from '../../shared/co2-counter';
 import { PhDaySheet } from '../../shared/ph-day-sheet';
-import { algaeScore, describeChange } from '../../core/settings-history';
+import { algaeNotes, co2Estimate, co2HistoryLabel, fertilizerDoses, lastCo2Reading, paramCells, paramCharts, phDayReading, recentTests, settingMarks, testSummary } from '../../core/water-view';
 import { ALGAE_LEVELS } from '../../core/labels';
 import { CareRepo } from '../../core/data/care.repo';
 import { TankRepo } from '../../core/data/tank.repo';
@@ -227,25 +226,12 @@ import { TankRepo } from '../../core/data/tank.repo';
 export class WaterTab {
   protected readonly algaeLabels = ALGAE_LEVELS;
   /** Niveau d'algues des 16 dernières notes (rapides ou bilans visuels). */
-  protected readonly algaeNotes = computed(() =>
-    this.careStore.observations()
-      .filter((o) => o.tankId === this.id())
-      .slice(-16)
-      .map((o) => ({ date: o.date, level: algaeScore(o) as 0 | 1 | 2 | 3, types: o.algaeTypes?.join(', ') })),
-  );
+  protected readonly algaeNotes = computed(() => algaeNotes(this.careStore.observations(), this.id()));
   protected readonly nutrient = new Set<string>(['no3', 'po4', 'k', 'fe', 'mg']);
   /** Doses d'engrais du bac, repérées sur les courbes des nutriments. */
-  protected readonly doses = computed(() =>
-    this.careStore.logs()
-      .filter((l) => l.tankId === this.id() && l.type === 'fertilize')
-      .map((l) => ({ date: l.date, label: l.label })),
-  );
+  protected readonly doses = computed(() => fertilizerDoses(this.careStore.logs(), this.id()));
   /** Changements de réglages du matériel, repérés sur les courbes. */
-  protected readonly marks = computed(() =>
-    this.gearStore.settingChanges()
-      .filter((c) => c.tankId === this.id())
-      .map((c) => ({ date: c.date, label: `${c.equipmentName} · ${describeChange(c)}` })),
-  );
+  protected readonly marks = computed(() => settingMarks(this.gearStore.settingChanges(), this.id()));
   protected readonly store = inject(AquariumStore);
   protected readonly careStore = inject(CareStore);
   protected readonly gearStore = inject(GearStore);
@@ -260,76 +246,26 @@ export class WaterTab {
   protected readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.id()));
   private readonly species = computed(() => this.view()?.members.map((m) => m.species) ?? []);
 
-  protected readonly cells = computed(() => {
-    const v = this.view();
-    const values = v?.lastTest?.values ?? {};
-    return measuredParams(v?.tests ?? []).map((key) => {
-      const value = values[key];
-      const range = idealRange(key, this.species(), v?.tank);
-      return {
-        key,
-        label: PARAM_BY_KEY[key].short,
-        value: fmt(value),
-        level: value == null ? 'ok' : levelOf(key, value, range),
-        high: value != null && range ? value > range.max : false,
-      };
-    });
-  });
+  protected readonly cells = computed(() => paramCells(this.view(), this.species()));
 
-  protected readonly charts = computed(() => {
-    const v = this.view();
-    if (!v) return [];
-    const keys = [...new Set(v.tests.flatMap((t) => Object.keys(t.values)))] as (keyof typeof PARAM_BY_KEY)[];
-    // Les paramètres hors plage d'abord, puis l'ordre habituel.
-    const order = (k: string) => (v.alerts.some((a) => a.key === k) ? -1 : 0) * 100 + measuredParams(v.tests).indexOf(k as never);
-    return keys
-      .sort((a, b) => order(a) - order(b))
-      .map((key) => {
-        const def = PARAM_BY_KEY[key];
-        const range = idealRange(key, this.species(), v.tank);
-        const last = v.lastTest?.values[key];
-        return {
-          key,
-          label: def.label,
-          range,
-          rangeLabel: range ? fmtRange(range.min, range.max, def.unit) : '',
-          from: range?.from.length ? range.from.map(speciesName).join(', ') : '',
-          conflict: range?.conflict ?? false,
-          level: last == null ? 'ok' : levelOf(key, last, range),
-          unit: def.unit,
-          trend: trendOf(v.tests, key, range),
-        };
-      });
-  });
+  protected readonly charts = computed(() => paramCharts(this.view(), this.species()));
 
   protected readonly fmtN = fmt;
   protected readonly dropInfo = DROP_CHECKER;
   protected readonly counting = signal(false);
   private readonly co2List = computed(() => this.waterStore.co2Readings().filter((r) => r.tankId === this.id()));
-  protected readonly co2Last = computed(() => this.co2List().filter((r) => r.bubblesPerMinute != null || r.dropChecker).at(-1));
+  protected readonly co2Last = computed(() => lastCo2Reading(this.co2List()));
   protected readonly phSheet = signal(false);
   /** Dernière mesure de pH sur la journée (moins de 14 jours), avec conseil de débit. */
-  protected readonly phDay = computed(() => {
-    const r = this.co2List().filter((x) => x.phBefore != null && x.phAfter != null).at(-1);
-    if (!r || Date.now() - new Date(r.date).getTime() > 14 * 864e5) return undefined;
-    const m = co2FromPhDrop(r.phBefore!, r.phAfter!);
-    return m ? { ...co2Advice(m.mgL, this.co2Last()?.bubblesPerMinute), ...m, phBefore: r.phBefore!, phAfter: r.phAfter!, phBeforeTime: r.phBeforeTime, phAfterTime: r.phAfterTime, date: r.date } : undefined;
-  });
+  protected readonly phDay = computed(() => phDayReading(this.co2List(), this.co2Last()?.bubblesPerMinute));
   protected readonly co2State = computed(() => {
     const r = this.co2Last();
     return r?.bubblesPerMinute != null ? co2Status(r.bubblesPerMinute, this.view()?.tank.co2Target) : undefined;
   });
   protected readonly co2Target = CO2_TARGET;
   /** CO2 dissous estimé à partir du dernier KH + pH, avec conseil de débit. */
-  protected readonly co2Est = computed(() => {
-    const kp = latestKhPh(this.view()?.tests ?? []);
-    const mg = kp && co2FromKhPh(kp.kh, kp.ph);
-    if (!kp || mg == null) return undefined;
-    return { ...co2Advice(mg, this.co2Last()?.bubblesPerMinute), ...kp };
-  });
-  protected readonly co2History = computed(() =>
-    this.co2List().slice(-6, -1).reverse().filter((r) => r.bubblesPerMinute != null).map((r) => `${r.bubblesPerMinute} (${fmtShortDate(r.date)})`).join(' · '),
-  );
+  protected readonly co2Est = computed(() => co2Estimate(this.view()?.tests ?? [], this.co2Last()?.bubblesPerMinute));
+  protected readonly co2History = computed(() => co2HistoryLabel(this.co2List()));
   protected readonly cyclingLabels = CYCLING_LABELS;
   protected readonly cyclingSteps = [
     { key: 'ammonia', label: 'NH4' },
@@ -348,13 +284,9 @@ export class WaterTab {
     if (t) this.tankRepo.saveTank({ ...t, cycling: false });
   }
 
-  protected readonly history = computed(() => [...(this.view()?.tests ?? [])].reverse().slice(0, 20));
+  protected readonly history = computed(() => recentTests(this.view()?.tests));
 
-  protected summary(values: Record<string, number>): string {
-    return Object.entries(values)
-      .map(([k, v]) => `${PARAM_BY_KEY[k as keyof typeof PARAM_BY_KEY]?.short ?? k} ${fmt(v)}`)
-      .join(' · ');
-  }
+  protected readonly summary = testSummary;
 
   protected remove(id: string): void {
     if (confirm('Supprimer ce relevé ?')) this.careRepo.deleteWaterTest(id);

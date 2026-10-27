@@ -1,4 +1,5 @@
 import { Injectable, effect, signal } from '@angular/core';
+import { readPref, writePref } from './local-prefs';
 
 export type ThemeChoice = 'light' | 'dark' | 'auto';
 
@@ -13,20 +14,12 @@ export class ThemeService {
       const root = document.documentElement;
       if (c === 'auto') root.removeAttribute('data-theme');
       else root.setAttribute('data-theme', c);
-      try {
-        localStorage.setItem('theme', c);
-      } catch {
-        /* stockage indisponible */
-      }
+      writePref('theme', c);
     });
   }
 }
 
 function read(): ThemeChoice {
-  try {
-    const v = localStorage.getItem('theme');
-    return v === 'light' || v === 'dark' ? v : 'auto';
-  } catch {
-    return 'auto';
-  }
+  const v = readPref('theme');
+  return v === 'light' || v === 'dark' ? v : 'auto';
 }

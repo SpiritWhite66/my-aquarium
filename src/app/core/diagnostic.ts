@@ -20,7 +20,7 @@ import type {
 } from './models';
 import { PARAM_BY_KEY, measuredParams, compatibilityIssues, idealRange, isAlive, testAlerts } from './rules';
 import { co2FromKhPh, co2FromPhDrop, gearChecks, latestKhPh, photoperiod, trendOf } from './insights';
-import { daysBetween, localDay } from './dates';
+import { addDays, daysBetween, localDay } from './dates';
 import { sinceDiagnosis } from './follow-up';
 
 export interface DossierInput {
@@ -191,4 +191,52 @@ export function diagnosticRequest(tankName: string, question?: string, followUpO
     q ? `Mon problème : ${q}` : 'Fais un bilan général et dis-moi ce qui peut être amélioré.',
     'Le dossier JSON et les photos sont joints.',
   ].join('\n');
+}
+
+// ---------- Préparation du dossier à l'écran ----------
+
+/** Suivi coché par défaut si le dernier diagnostic du bac date de moins de 90 jours. */
+export function followUpByDefault(previous: Diagnosis | undefined, today: string): boolean {
+  return !!previous && daysBetween(localDay(previous.date), today) <= 90;
+}
+
+/** « suivi prévu dans 3 j » / « aujourd’hui » / « le jeu. 5 nov. » (vide si le diagnostic n'a pas prévu de suivi). */
+export function followUpDueLabel(previous: Diagnosis | undefined, today: string, formatDate: (iso: string) => string): string {
+  if (!previous?.followUp) return '';
+  const due = addDays(localDay(previous.date), previous.followUp.inDays);
+  const days = daysBetween(today, due);
+  return days > 0 ? `suivi prévu dans ${days} j` : days === 0 ? 'suivi prévu aujourd’hui' : `suivi prévu le ${formatDate(due)}`;
+}
+
+/**
+ * Photos cochées par défaut (au plus 3). Sans suivi : les plus récentes. En suivi : celles prises depuis
+ * le diagnostic précédent, plus la dernière d'avant pour comparer. `photos` : de la plus récente à la plus ancienne.
+ */
+export function defaultPhotoSelection(photos: Photo[], previous: Diagnosis | undefined, followUp: boolean): Set<string> {
+  if (!followUp || !previous) return new Set(photos.slice(0, 3).map((p) => p.id));
+  const after = photos.filter((p) => p.date > previous.date).slice(0, 3);
+  const before = photos.find((p) => p.date <= previous.date);
+  return new Set([...after, ...(before ? [before] : [])].map((p) => p.id));
+}
+
+/** Informations absentes du dossier qui limiteraient l'analyse. */
+export function missingInfo(dossier: Pick<Dossier, 'water' | 'equipment'>, selectedPhotos: number): string[] {
+  const out: string[] = [];
+  const last = dossier.water.tests.at(-1)?.values ?? {};
+  if (!dossier.water.tests.length) out.push('relevés d’eau');
+  else {
+    if (last['no3'] == null) out.push('NO3');
+    if (last['po4'] == null) out.push('PO4');
+    if (last['kh'] == null) out.push('KH');
+  }
+  if (!dossier.equipment.some((e) => e.light?.schedule)) out.push('horaires d’éclairage (Matériel)');
+  if (!dossier.equipment.some((e) => e.filter?.flowLh)) out.push('débit du filtre');
+  if (!selectedPhotos) out.push('photos');
+  return out;
+}
+
+/** Nom de fichier du dossier : dossier-<bac>-<jour>.json */
+export function dossierFileName(tankName: string, today: string): string {
+  const slug = tankName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `dossier-${slug}-${today}.json`;
 }

@@ -7,10 +7,9 @@ import { WaterStore } from '../../core/stores/water.store';
 import { GearStore } from '../../core/stores/gear.store';
 import { SpeciesStore } from '../../core/stores/species.store';
 import { PopulationStore } from '../../core/stores/population.store';
-import { buildDossier, diagnosticRequest, photoFileName } from '../../core/diagnostic';
+import { buildDossier, defaultPhotoSelection, diagnosticRequest, dossierFileName, followUpByDefault, followUpDueLabel, missingInfo, photoFileName } from '../../core/diagnostic';
 import { fmtShortDate } from '../../core/labels';
 import { measureStatus } from '../../core/follow-up';
-import { addDays, daysBetween, localDay } from '../../core/dates';
 import { Icon } from '../../shared/icon';
 import { PhotoUrls } from '../../shared/photo-urls';
 import { PhotoRepo } from '../../core/data/photo.repo';
@@ -176,10 +175,7 @@ export class DiagnosticPage {
   /** Dernier diagnostic du bac. */
   protected readonly previous = computed(() => this.careStore.diagnoses().filter((d) => d.tankId === this.tankId()).at(-1));
   /** Suivi coché par défaut si le dernier diagnostic date de moins de 90 jours. */
-  protected readonly followUp = linkedSignal(() => {
-    const p = this.previous();
-    return !!p && daysBetween(localDay(p.date), this.store.today()) <= 90;
-  });
+  protected readonly followUp = linkedSignal(() => followUpByDefault(this.previous(), this.store.today()));
   private readonly followUpData = computed(() => ({
     tests: this.waterStore.waterTests(),
     co2Readings: this.waterStore.co2Readings(),
@@ -194,26 +190,13 @@ export class DiagnosticPage {
   });
   protected readonly missingMeasures = computed(() => this.measures().some((m) => m.done === false));
   protected readonly doneCount = computed(() => this.previous()?.actions.filter((a) => a.done).length ?? 0);
-  protected readonly dueLabel = computed(() => {
-    const p = this.previous();
-    if (!p?.followUp) return '';
-    const due = addDays(localDay(p.date), p.followUp.inDays);
-    const days = daysBetween(this.store.today(), due);
-    return days > 0 ? `suivi prévu dans ${days} j` : days === 0 ? 'suivi prévu aujourd’hui' : `suivi prévu le ${this.date(due)}`;
-  });
+  protected readonly dueLabel = computed(() => followUpDueLabel(this.previous(), this.store.today(), this.date));
 
   /**
    * Par défaut : les 3 photos les plus récentes. En suivi : celles prises depuis le diagnostic,
    * plus la dernière d'avant pour comparer.
    */
-  protected readonly selected = linkedSignal(() => {
-    const photos = this.photos();
-    const prev = this.previous();
-    if (!this.followUp() || !prev) return new Set(photos.slice(0, 3).map((p) => p.id));
-    const after = photos.filter((p) => p.date > prev.date).slice(0, 3);
-    const before = photos.find((p) => p.date <= prev.date);
-    return new Set([...after, ...(before ? [before] : [])].map((p) => p.id));
-  });
+  protected readonly selected = linkedSignal(() => defaultPhotoSelection(this.photos(), this.previous(), this.followUp()));
 
   private readonly chosenPhotos = computed(() => this.photos().filter((p) => this.selected().has(p.id)));
 
@@ -245,19 +228,7 @@ export class DiagnosticPage {
   /** Informations absentes qui limiteraient l'analyse. */
   protected readonly missing = computed(() => {
     const d = this.dossier();
-    if (!d) return [];
-    const out: string[] = [];
-    const last = d.water.tests.at(-1)?.values ?? {};
-    if (!d.water.tests.length) out.push('relevés d’eau');
-    else {
-      if (last.no3 == null) out.push('NO3');
-      if (last.po4 == null) out.push('PO4');
-      if (last.kh == null) out.push('KH');
-    }
-    if (!d.equipment.some((e) => e.light?.schedule)) out.push('horaires d’éclairage (Matériel)');
-    if (!d.equipment.some((e) => e.filter?.flowLh)) out.push('débit du filtre');
-    if (!this.selected().size) out.push('photos');
-    return out;
+    return d ? missingInfo(d, this.selected().size) : [];
   });
 
   constructor() {
@@ -280,8 +251,7 @@ export class DiagnosticPage {
 
   private async files(): Promise<File[]> {
     const d = this.dossier()!;
-    const slug = this.view()!.tank.name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-');
-    const json = new File([JSON.stringify(d, null, 2)], `dossier-${slug}-${this.store.today()}.json`, { type: 'application/json' });
+    const json = new File([JSON.stringify(d, null, 2)], dossierFileName(this.view()!.tank.name, this.store.today()), { type: 'application/json' });
     const photos: File[] = [];
     for (const [i, p] of this.chosenPhotos().entries()) {
       const img = await this.photoRepo.photoFile(p.id);
