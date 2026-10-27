@@ -127,7 +127,10 @@ describe('matériel du bac', () => {
 
 describe('réglages du matériel', () => {
   const daysAgo = (n: number) => new Date(Date.now() - n * 864e5).toISOString();
-  const change = (id: string, o: Record<string, unknown> = {}) => ({ id, updatedAt: U, tankId: 'a', equipmentId: 'e1', equipmentName: 'Rampe', date: daysAgo(40), field: 'light.intensityPct' as const, from: '80 %', to: '60 %', ...o });
+  // Une seule date : les changements enregistrés ensemble ont exactement la même (sinon, une milliseconde
+  // d'écart entre deux appels à Date.now() les sépare en deux groupes).
+  const FORTY_DAYS_AGO = daysAgo(40);
+  const change = (id: string, o: Record<string, unknown> = {}) => ({ id, updatedAt: U, tankId: 'a', equipmentId: 'e1', equipmentName: 'Rampe', date: FORTY_DAYS_AGO, field: 'light.intensityPct' as const, from: '80 %', to: '60 %', ...o });
 
   it('n’apparaît pas sans changement', async () => {
     await boot();
