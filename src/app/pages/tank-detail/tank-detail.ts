@@ -47,10 +47,10 @@ import { PhotoUrls } from '../../shared/photo-urls';
             </span>
           </div>
           <nav class="seg" aria-label="Sections du bac">
-            <a routerLink="population" routerLinkActive="on">Population</a>
-            <a routerLink="eau" routerLinkActive="on">Eau</a>
-            <a routerLink="entretien" routerLinkActive="on">Entretien</a>
-            <a routerLink="photos" routerLinkActive="on">Photos</a>
+            <a routerLink="population" routerLinkActive="on" ariaCurrentWhenActive="page">Population</a>
+            <a routerLink="eau" routerLinkActive="on" ariaCurrentWhenActive="page">Eau</a>
+            <a routerLink="entretien" routerLinkActive="on" ariaCurrentWhenActive="page">Entretien</a>
+            <a routerLink="photos" routerLinkActive="on" ariaCurrentWhenActive="page">Photos</a>
           </nav>
         </div>
         <router-outlet />

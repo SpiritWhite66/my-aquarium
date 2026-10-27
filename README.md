@@ -14,6 +14,8 @@ npm start          # http://localhost:4200
 npm test -- --watch=false               # tests unitaires et d'interface
 npm test -- --watch=false --coverage    # + couverture (seuil : 80 %)
 npm run mutation                        # tests de mutation (Stryker), ~35 min
+npm run build && npm run e2e           # tests de bout en bout (Playwright) sur l'appli compilée
+E2E_WEBKIT=1 npm run e2e                # + WebKit (proche de Safari iOS, paquets système requis)
 npm run build
 ```
 

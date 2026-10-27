@@ -6,14 +6,14 @@
       <b>Mes aquariums</b>
     </div>
     @for (n of nav; track n.path) {
-      <a class="nav" [routerLink]="n.path" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: n.exact }">
+      <a class="nav" [routerLink]="n.path" routerLinkActive="on" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: n.exact }">
         <app-icon [name]="n.icon" />{{ n.label }}
       </a>
     }
     @if (store.tankViews().length) {
       <p class="sb">Bacs</p>
       @for (v of store.tankViews(); track v.tank.id) {
-        <a class="tk" [routerLink]="['/bacs', v.tank.id]" routerLinkActive="on">
+        <a class="tk" [routerLink]="['/bacs', v.tank.id]" routerLinkActive="on" ariaCurrentWhenActive="page">
           <span class="dot" [style.color]="'var(--' + (v.level === 'ok' ? 'ok' : v.level === 'warn' ? 'wn' : 'dg') + ')'" aria-hidden="true"></span>
           {{ v.tank.name }}<span class="sr-only"> · {{ v.level === 'ok' ? 'tout va bien' : v.level === 'warn' ? 'à surveiller' : 'danger' }}</span>
         </a>
@@ -27,7 +27,7 @@
 
   <nav class="tabs" aria-label="Navigation principale">
     @for (n of nav; track n.path) {
-      <a class="tab" [routerLink]="n.path" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: n.exact }">
+      <a class="tab" [routerLink]="n.path" routerLinkActive="on" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: n.exact }">
         <span class="ic"><app-icon [name]="n.icon" /></span>{{ n.label }}
       </a>
     }
