@@ -1,6 +1,6 @@
 # ADR-0010 : droit d'accès et portabilité : export des données
 
-- Statut : Proposée
+- Statut : Acceptée (2026-10-27)
 - Date : 2026-10-27
 - Portée : ADR transverse
 

@@ -1,6 +1,6 @@
 # ADR-0012 : pas de traceurs non essentiels (cookies)
 
-- Statut : Proposée
+- Statut : Acceptée (2026-10-27)
 - Date : 2026-10-27
 - Portée : ADR transverse
 

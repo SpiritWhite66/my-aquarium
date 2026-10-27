@@ -1,6 +1,6 @@
 # ADR-0013 : contenus des utilisateurs : signalement et modération
 
-- Statut : Proposée
+- Statut : Acceptée (2026-10-27)
 - Date : 2026-10-27
 - Portée : ADR transverse
 

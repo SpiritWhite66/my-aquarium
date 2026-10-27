@@ -1,6 +1,6 @@
 # ADR-0011 : CGU, politique de confidentialité, mentions légales et consentement
 
-- Statut : Proposée
+- Statut : Acceptée (2026-10-27)
 - Date : 2026-10-27
 - Portée : ADR transverse
 
@@ -21,7 +21,7 @@
 
 ## Conséquences
 - Les textes sont à rédiger (modèles CNIL) puis à faire relire si possible ; ce dépôt ne remplace pas un conseil juridique.
-- Pas de nom ou d'adresse personnelle publiée si l'éditeur est un particulier : la LCEN permet de les confier à l'hébergeur et de rester anonyme, à vérifier.
+- L'éditeur est **un particulier, à titre non professionnel** : la LCEN (art. 6) lui permet de ne publier que le nom de l'hébergeur et un moyen de contact, en communiquant son identité à l'hébergeur. Les mentions légales suivent ce modèle. À revoir si l'activité devient professionnelle.
 
 ## Alternatives écartées
 - **Acceptation implicite (« en utilisant l'appli vous acceptez »)** : non opposable, consentement non démontrable.

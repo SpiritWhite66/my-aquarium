@@ -1,6 +1,6 @@
 # ADR-0014 : sécurité applicative et de l'infrastructure
 
-- Statut : Proposée
+- Statut : Acceptée (2026-10-27)
 - Date : 2026-10-27
 - Portée : ADR transverse
 

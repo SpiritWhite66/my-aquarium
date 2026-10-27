@@ -1,6 +1,6 @@
 # ADR-0008 : conformité RGPD : principes, registre, sous-traitants
 
-- Statut : Proposée
+- Statut : Acceptée (2026-10-27)
 - Date : 2026-10-27
 - Portée : ADR transverse
 
