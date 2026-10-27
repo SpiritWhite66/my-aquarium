@@ -74,7 +74,7 @@ describe('fiche d’un habitant', () => {
 describe('événements', () => {
   it('propose des événements d’animal et les inscrit avec la note saisie', async () => {
     await open();
-    const labels = [...app.el().querySelectorAll('.ev button')].map((b) => b.textContent!.trim());
+    const labels = [...app.el().querySelectorAll('.ev button')].map((b) => b.textContent.trim());
     expect(labels.length).toBeGreaterThan(2);
     app.type(field('note'), ' 2 morts ce matin ');
     const dead = app.find('.ev button', /Décès/)!;
@@ -98,7 +98,7 @@ describe('événements', () => {
   it('un habitant végétal a ses propres événements', async () => {
     await app.db.inhabitants.put({ id: 'p1', updatedAt: '', tankId: 'a', speciesId: 'rotala-rotundifolia', quantity: 8, unit: 'stem', addedDate: '2026-09-01', status: 'healthy' });
     await app.go('/bacs/a/habitants/p1', 'Rotala');
-    const labels = [...app.el().querySelectorAll('.ev button')].map((b) => b.textContent!.trim()).join(' | ');
+    const labels = [...app.el().querySelectorAll('.ev button')].map((b) => b.textContent.trim()).join(' | ');
     expect(labels).toMatch(/Taille|Bouture|Multipli/i);
     expect(labels).not.toMatch(/Naissance/);
   });

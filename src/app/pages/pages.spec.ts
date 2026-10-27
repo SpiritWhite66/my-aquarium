@@ -37,7 +37,7 @@ describe('pages', () => {
     it(`affiche ${url}`, async () => {
       app = await bootApp();
       const el = await app.go(url, text);
-      expect(el.textContent!.length).toBeGreaterThan(20);
+      expect(el.textContent.length).toBeGreaterThan(20);
     });
   }
 

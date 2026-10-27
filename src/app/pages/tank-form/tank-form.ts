@@ -7,6 +7,7 @@ import { TANK_TYPES, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { TankRepo } from '../../core/data/tank.repo';
 import { fromEntity } from '../../shared/form-state';
+import { must } from '../../core/assert';
 
 @Component({
   selector: 'app-tank-form',
@@ -123,7 +124,7 @@ export class TankFormPage {
         id: this.id(),
         name: this.name().trim(),
         type: this.type(),
-        volumeGross: parseNumber(this.volumeGross())!,
+        volumeGross: must(parseNumber(this.volumeGross())),
         volumeNet: parseNumber(this.volumeNet()),
         startDate: this.startDate(),
         substrate: this.substrate().trim() || undefined,
@@ -136,17 +137,17 @@ export class TankFormPage {
       },
       !prev && this.defaults(),
     );
-    this.router.navigate(['/bacs', id]);
+    void this.router.navigate(['/bacs', id]);
   }
 
   protected async toggleArchive(t: Tank): Promise<void> {
     await this.tankRepo.archiveTank(t.id, !t.archived);
-    this.router.navigate(['/bacs']);
+    void this.router.navigate(['/bacs']);
   }
 
   protected async remove(t: Tank): Promise<void> {
     if (!confirm(`Supprimer « ${t.name} » et tout son historique ? Cette action est définitive.`)) return;
     await this.tankRepo.deleteTank(t.id);
-    this.router.navigate(['/bacs']);
+    void this.router.navigate(['/bacs']);
   }
 }

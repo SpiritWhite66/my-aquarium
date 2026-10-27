@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, computed, inject, input, linkedSignal, output, viewChild } from '@angular/core';
+import type { ElementRef} from '@angular/core';
+import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, input, linkedSignal, output, viewChild } from '@angular/core';
 import type { MaintenanceTask } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { afterWaterChange, percentFromLabel } from '../core/insights';
@@ -24,7 +25,7 @@ import { CareRepo } from '../core/data/care.repo';
     .pcts .on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
   `,
   template: `
-    <div class="backdrop" (click)="closed.emit()">
+    <div class="backdrop" role="presentation" (click)="closed.emit()">
       <div #root class="sheet" appModal role="dialog" aria-modal="true" aria-labelledby="wc-title" tabindex="-1"
         (click)="$event.stopPropagation()" (keydown.escape)="closed.emit()">
         <div class="row between">
@@ -62,7 +63,7 @@ export class WaterChangeSheet {
   private readonly store = inject(AquariumStore);
   protected readonly careRepo = inject(CareRepo);
   readonly task = input.required<MaintenanceTask>();
-  readonly closed = output<void>();
+  readonly closed = output();
 
   protected readonly presets = [10, 20, 30, 40, 50];
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import type { ParamKey, Range, WaterTest } from '../core/models';
 import { levelOf } from '../core/rules';
 import { fmt } from '../core/labels';
+import { must } from '../core/assert';
 
 const W = 320;
 const H = 96;
@@ -64,7 +65,7 @@ export class ParamChart {
     const data = this.tests()
       .filter((t) => t.values[key] != null)
       .slice(-12)
-      .map((t) => ({ time: new Date(t.date).getTime(), value: t.values[key]! }));
+      .map((t) => ({ time: new Date(t.date).getTime(), value: must(t.values[key]) }));
 
     const values = data.map((d) => d.value);
     if (range) values.push(range.min, range.max);

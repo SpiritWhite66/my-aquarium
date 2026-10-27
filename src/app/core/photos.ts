@@ -44,16 +44,18 @@ export async function processPhoto(file: File): Promise<Processed> {
 export function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
+    reader.onload = () => { resolve(reader.result as string); };
+    reader.onerror = () => { reject(reader.error ?? new Error('Lecture du fichier impossible')); };
     reader.readAsDataURL(blob);
   });
 }
 
 export function dataUrlToBlob(dataUrl: string): Blob {
-  const m = /^data:([^;,]+)?(;base64)?,(.*)$/s.exec(dataUrl);
+  const comma = dataUrl.indexOf(',');
+  const m = dataUrl.startsWith('data:') && comma > 0 ? /^([^;]*)(;base64)?$/.exec(dataUrl.slice(5, comma)) : null;
   if (!m) throw new Error('Photo illisible dans la sauvegarde.');
+  const payload = dataUrl.slice(comma + 1);
   const type = m[1] || 'application/octet-stream';
-  const bytes = m[2] ? Uint8Array.from(atob(m[3]), (c) => c.charCodeAt(0)) : new TextEncoder().encode(decodeURIComponent(m[3]));
+  const bytes = m[2] ? Uint8Array.from(atob(payload), (c) => c.charCodeAt(0)) : new TextEncoder().encode(decodeURIComponent(payload));
   return new Blob([bytes], { type });
 }

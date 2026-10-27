@@ -12,6 +12,7 @@ test('le dossier de diagnostic contient les relevés du bac', async ({ app, page
   await page.getByRole('button', { name: 'Télécharger' }).click();
   const file = await first;
   expect(file.suggestedFilename()).toMatch(/^dossier-salon-.*\.json$/);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- chemin issu de Playwright
   const dossier = await readFile(await file.path(), 'utf8');
   expect(dossier).toContain('Algues vertes sur les vitres');
   expect(dossier).toContain('"no3": 20');

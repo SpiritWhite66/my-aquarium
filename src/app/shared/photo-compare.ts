@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, computed, inject, input, linkedSignal, output, signal, viewChild } from '@angular/core';
+import type { ElementRef} from '@angular/core';
+import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, input, linkedSignal, output, signal, viewChild } from '@angular/core';
 import type { Photo } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { PopulationStore } from '../core/stores/population.store';
@@ -117,7 +118,7 @@ export class PhotoCompare {
   /** Paire à afficher à l'ouverture (sinon la plus ancienne et la plus récente). */
   readonly initialFirst = input<string>();
   readonly initialSecond = input<string>();
-  readonly closed = output<void>();
+  readonly closed = output();
 
   protected readonly mode = signal<'slider' | 'side'>('slider');
   protected readonly pos = signal(50);

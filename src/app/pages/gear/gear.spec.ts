@@ -14,7 +14,7 @@ describe('page matériel', () => {
   it('range les équipements par bac, avec ceux en réserve à part', async () => {
     app = await bootApp();
     await app.go('/materiel', 'Éclairage');
-    const titles = [...app.el().querySelectorAll('section h2')].map((h) => h.textContent!.trim());
+    const titles = [...app.el().querySelectorAll('section h2')].map((h) => h.textContent.trim());
     expect(titles).toEqual(['Bac salon 1', 'Nano 1', 'En réserve 1']);
     expect(app.find('a.li', 'Filtre de rechange')!.getAttribute('href')).toBe('/materiel/equipement/e3');
   });

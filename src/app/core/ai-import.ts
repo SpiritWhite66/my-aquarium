@@ -76,8 +76,8 @@ function typeOk(type: string, v: unknown): boolean {
 
 function validate(s: Schema, v: unknown, path: string, errors: string[]): void {
   if (s['$ref']) {
-    const name = String(s['$ref']).replace('#/$defs/', '');
-    return validate(DEFS[name], v, path, errors);
+    const name = (s['$ref'] as string).replace('#/$defs/', '');
+    validate(DEFS[name], v, path, errors); return;
   }
   if ('const' in s && v !== s['const']) {
     errors.push(`${path} doit valoir ${JSON.stringify(s['const'])}`);
@@ -87,15 +87,15 @@ function validate(s: Schema, v: unknown, path: string, errors: string[]): void {
     errors.push(`${path} : « ${String(v)} » n’est pas accepté (${(s['enum'] as unknown[]).join(', ')})`);
     return;
   }
-  if (s['type'] && !typeOk(String(s['type']), v)) {
-    errors.push(`${path} doit être de type ${String(s['type'])}`);
+  if (s['type'] && !typeOk(s['type'] as string, v)) {
+    errors.push(`${path} doit être de type ${s['type'] as string}`);
     return;
   }
   if (typeof v === 'number' && typeof s['minimum'] === 'number' && v < s['minimum']) {
     errors.push(`${path} doit être ≥ ${s['minimum']}`);
   }
   if (Array.isArray(v) && s['items']) {
-    v.forEach((item, i) => validate(s['items'] as Schema, item, `${path}[${i}]`, errors));
+    v.forEach((item, i) => { validate(s['items'] as Schema, item, `${path}[${i}]`, errors); });
   }
   if (typeOk('object', v) && (s['properties'] || s['required'])) {
     const obj = v as Record<string, unknown>;
@@ -104,7 +104,7 @@ function validate(s: Schema, v: unknown, path: string, errors: string[]): void {
       if (!(key in obj)) errors.push(`${path}.${key} manquant`);
     }
     for (const [key, val] of Object.entries(obj)) {
-      if (props[key]) validate(props[key], val, `${path}.${key}`, errors);
+      if (Object.hasOwn(props, key)) validate(props[key], val, `${path}.${key}`, errors);
       else if (s['additionalProperties'] === false) errors.push(`${path}.${key} n’est pas prévu par le format`);
     }
   }

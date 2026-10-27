@@ -170,7 +170,7 @@ describe('photos', () => {
     await withPhotos();
     app.click(thumb(/^Bac, .*1 oct/));
     expect(dialog()?.getAttribute('aria-label')).toBe('Photo');
-    const pos = () => app.find('.count')!.textContent!.trim();
+    const pos = () => app.find('.count')!.textContent.trim();
     const start = Number(pos().split('/')[0]);
     app.press('button[aria-label="Photo suivante"]');
     expect(Number(pos().split('/')[0])).toBe((start % 3) + 1);

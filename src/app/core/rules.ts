@@ -2,6 +2,7 @@
 // Fonctions pures, sans dépendance à Angular, pour être testées et réutilisées par le futur serveur MCP.
 
 import type { Inhabitant, ParamKey, Range, Species, Tank, WaterTest } from './models';
+import { must } from './assert';
 
 export type Level = 'ok' | 'warn' | 'danger';
 
@@ -73,7 +74,7 @@ export function idealRange(key: ParamKey, species: Species[], tank?: Tank): Idea
   let min = -Infinity;
   let max = Infinity;
   for (const s of ranged) {
-    const rg = s[key as 'temp' | 'ph' | 'gh' | 'kh']!;
+    const rg = must(s[key as 'temp' | 'ph' | 'gh' | 'kh']);
     min = Math.max(min, rg.min);
     max = Math.min(max, rg.max);
   }
@@ -111,7 +112,7 @@ export interface ParamAlert {
 export function testAlerts(test: WaterTest | undefined, species: Species[], tank: Tank): ParamAlert[] {
   if (!test) return [];
   const out: ParamAlert[] = [];
-  for (const [k, value] of Object.entries(test.values) as [ParamKey, number][]) {
+  for (const [k, value] of Object.entries(test.values) as [ParamKey, number | undefined][]) {
     if (value == null) continue;
     const range = idealRange(k, species, tank);
     if (!range) continue;

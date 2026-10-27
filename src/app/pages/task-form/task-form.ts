@@ -8,6 +8,7 @@ import { addDays } from '../../core/dates';
 import { Icon } from '../../shared/icon';
 import { fromEntity } from '../../shared/form-state';
 import { CareRepo } from '../../core/data/care.repo';
+import { must } from '../../core/assert';
 
 @Component({
   selector: 'app-task-form',
@@ -87,7 +88,7 @@ export class TaskFormPage {
       tankId: this.id(),
       type: this.type(),
       label: this.label().trim(),
-      everyDays: Math.round(parseNumber(this.every())!),
+      everyDays: Math.round(must(parseNumber(this.every()))),
       nextDue: this.nextDue(),
       active: true,
     });
@@ -96,7 +97,7 @@ export class TaskFormPage {
 
   protected async remove(): Promise<void> {
     if (!confirm('Supprimer cette tâche ?')) return;
-    await this.careRepo.deleteTask(this.taskId()!);
+    await this.careRepo.deleteTask(must(this.taskId()));
     this.location.back();
   }
 }

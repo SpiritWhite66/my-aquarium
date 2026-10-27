@@ -30,7 +30,7 @@ export function defaultTank(tankIds: () => string[], requested: () => string | u
     computation: ({ ids, requested, forced }, previous) => {
       if (forced && forced !== previous?.source.forced) return forced;
       if (previous?.value && (ids.includes(previous.value) || previous.value === forced)) return previous.value;
-      return ids.find((id) => id === requested) ?? ids[0] ?? '';
+      return ids.find((id) => id === requested) ?? ids.at(0) ?? '';
     },
   });
 }

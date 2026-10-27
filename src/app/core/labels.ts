@@ -2,6 +2,7 @@
 
 import type {
   ConsumableCategory,
+  DoseUnit,
   EquipmentType,
   StockLevel,
   FaunaInfo,
@@ -219,7 +220,7 @@ export function parseNumber(raw: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-export const DOSE_UNITS: Record<import('./models').DoseUnit, string> = { ml: 'ml', g: 'g', pump: 'pression(s)', drop: 'goutte(s)', tab: 'comprimé(s)' };
+export const DOSE_UNITS: Record<DoseUnit, string> = { ml: 'ml', g: 'g', pump: 'pression(s)', drop: 'goutte(s)', tab: 'comprimé(s)' };
 
 export const ALGAE_LEVELS = ['Aucune', 'Un peu', 'Moyen', 'Beaucoup'] as const;
 export const ALGAE_TYPES = ['Filamenteuses', 'Barbe noire (BBA)', 'Diatomées (brunes)', 'Cyanobactéries', 'Points verts', 'Duvet vert', 'Eau verte'] as const;

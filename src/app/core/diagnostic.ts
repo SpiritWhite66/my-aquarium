@@ -12,7 +12,6 @@ import type {
   MaintenanceLog,
   MaintenanceTask,
   Observation,
-  ParamKey,
   Photo,
   Species,
   Tank,
@@ -22,6 +21,7 @@ import { PARAM_BY_KEY, measuredParams, compatibilityIssues, idealRange, isAlive,
 import { co2FromKhPh, co2FromPhDrop, gearChecks, latestKhPh, photoperiod, trendOf } from './insights';
 import { addDays, daysBetween, localDay } from './dates';
 import { sinceDiagnosis } from './follow-up';
+import { must } from './assert';
 
 export interface DossierInput {
   tank: Tank;
@@ -53,7 +53,7 @@ export function buildDossier(i: DossierInput) {
   const byId = new Map(i.species.map((s) => [s.id, s]));
   const members = i.inhabitants
     .filter((h) => h.tankId === tank.id && isAlive(h) && byId.has(h.speciesId))
-    .map((h) => ({ h, s: byId.get(h.speciesId)! }));
+    .map((h) => ({ h, s: must(byId.get(h.speciesId)) }));
   const species = members.map((m) => m.s);
   const tests = i.tests.filter((t) => t.tankId === tank.id).sort((a, b) => a.date.localeCompare(b.date));
   const params = measuredParams(tests);
@@ -108,7 +108,7 @@ export function buildDossier(i: DossierInput) {
         params
           .map((k) => [k, trendOf(tests, k, idealRange(k, species, tank))] as const)
           .filter(([, t]) => t)
-          .map(([k, t]) => [k, { perWeek: t!.perWeek, daysToLimit: t!.daysToLimit, limit: t!.limit }]),
+          .map(([k, t]) => [k, { perWeek: must(t).perWeek, daysToLimit: must(t).daysToLimit, limit: must(t).limit }]),
       ),
     },
     co2: tank.co2
@@ -119,7 +119,7 @@ export function buildDossier(i: DossierInput) {
           phDrop: i.co2Readings
             .filter((r) => r.tankId === tank.id && r.phBefore != null && r.phAfter != null)
             .slice(-5)
-            .map((r) => ({ date: localDay(r.date), phBefore: r.phBefore, phBeforeTime: r.phBeforeTime, phAfter: r.phAfter, phAfterTime: r.phAfterTime, ...co2FromPhDrop(r.phBefore!, r.phAfter!) })),
+            .map((r) => ({ date: localDay(r.date), phBefore: r.phBefore, phBeforeTime: r.phBeforeTime, phAfter: r.phAfter, phAfterTime: r.phAfterTime, ...co2FromPhDrop(must(r.phBefore), must(r.phAfter)) })),
         }
       : undefined,
     equipment: gear.map((e) => ({
@@ -225,9 +225,9 @@ export function missingInfo(dossier: Pick<Dossier, 'water' | 'equipment'>, selec
   const last = dossier.water.tests.at(-1)?.values ?? {};
   if (!dossier.water.tests.length) out.push('relevés d’eau');
   else {
-    if (last['no3'] == null) out.push('NO3');
-    if (last['po4'] == null) out.push('PO4');
-    if (last['kh'] == null) out.push('KH');
+    if (last.no3 == null) out.push('NO3');
+    if (last.po4 == null) out.push('PO4');
+    if (last.kh == null) out.push('KH');
   }
   if (!dossier.equipment.some((e) => e.light?.schedule)) out.push('horaires d’éclairage (Matériel)');
   if (!dossier.equipment.some((e) => e.filter?.flowLh)) out.push('débit du filtre');

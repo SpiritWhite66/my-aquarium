@@ -5,7 +5,6 @@ import type { Tank } from './models';
 
 describe('dossier de diagnostic', () => {
   const tank: Tank = { id: 't', updatedAt: '', name: 'Bac salon', type: 'planted', volumeGross: 60, startDate: '2026-03-01', co2: true, archived: false };
-  const other: Tank = { ...tank, id: 'o', name: 'Autre' };
   const base = {
     species: BUILTIN_SPECIES, events: [], tasks: [], logs: [], co2Readings: [], observations: [], diagnoses: [], photos: [], today: '2026-10-25',
     inhabitants: [

@@ -67,7 +67,7 @@ test.describe('accessibilité (axe)', () => {
       await page.waitForLoadState('networkidle');
       const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
       const serious = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-      expect(serious.map((v) => `${v.id} (${v.nodes.length}) : ${v.help} — ${v.nodes[0]?.target.join(' ')}`)).toEqual([]);
+      expect(serious.map((v) => `${v.id} (${String(v.nodes.length)}) : ${v.help} — ${v.nodes[0]?.target.join(' ')}`)).toEqual([]);
     });
   }
 });

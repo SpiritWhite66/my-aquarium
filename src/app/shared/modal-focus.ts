@@ -19,13 +19,15 @@ export class ModalFocus {
   private readonly opener = document.activeElement as HTMLElement | null;
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.opener?.isConnected && this.opener.focus());
+    inject(DestroyRef).onDestroy(() => {
+      if (this.opener?.isConnected) this.opener.focus();
+    });
   }
 
   protected onKey(e: KeyboardEvent): void {
     if (e.key !== 'Tab') return;
     const items = [...this.el.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(visible);
-    if (!items.length) return e.preventDefault();
+    if (!items.length) { e.preventDefault(); return; }
     const first = items[0];
     const last = items[items.length - 1];
     const active = document.activeElement;

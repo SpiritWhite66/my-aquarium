@@ -7,6 +7,9 @@ import { readPref, writePref } from './local-prefs';
 /** Délai après lequel on rappelle de faire une sauvegarde. */
 export const BACKUP_REMINDER_DAYS = 14;
 
+/** `navigator.storage` manque sur certains navigateurs (anciens, ou navigation privée). */
+const maybeStorage = (): Partial<StorageManager> | undefined => (navigator as { storage?: StorageManager }).storage;
+
 /**
  * Protection des données locales :
  * - demande au navigateur de ne pas effacer le stockage (sinon il peut le vider s'il manque de place) ;
@@ -39,12 +42,12 @@ export class BackupService {
   });
 
   constructor() {
-    this.init();
+    void this.init();
   }
 
   private async init(): Promise<void> {
-    const storage = navigator.storage;
-    if (!storage?.persist) return;
+    const storage = maybeStorage();
+    if (!storage?.persist || !storage.persisted) return;
     try {
       // Les navigateurs accordent souvent la persistance d'office à une PWA installée.
       const already = await storage.persisted();
@@ -56,13 +59,13 @@ export class BackupService {
   }
 
   async refreshUsage(): Promise<void> {
-    const e = await navigator.storage?.estimate?.();
+    const e = await maybeStorage()?.estimate?.();
     if (e?.usage != null && e.quota) this.usage.set({ used: e.usage, quota: e.quota });
   }
 
   /** Redemande la persistance (après installation de l'app, par exemple). */
   async requestPersist(): Promise<void> {
-    this.persisted.set((await navigator.storage?.persist?.()) ?? null);
+    this.persisted.set((await maybeStorage()?.persist?.()) ?? null);
   }
 
   /** Télécharge la sauvegarde complète (photos comprises). */
@@ -95,7 +98,7 @@ export class BackupService {
       a.href = url;
       a.download = name;
       a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setTimeout(() => { URL.revokeObjectURL(url); }, 60_000);
     }
     writePref('lastBackup', exportedAt);
     this.lastBackup.set(exportedAt);

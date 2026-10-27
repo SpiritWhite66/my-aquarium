@@ -14,7 +14,7 @@ export class TankRepo {
 
   async saveTank(tank: New<Tank>, withDefaultTasks = false): Promise<string> {
     const id = tank.id ?? newId();
-    await this.db.tanks.put({ ...tank, id, updatedAt: now() } as Tank);
+    await this.db.tanks.put({ ...tank, id, updatedAt: now() });
     if (withDefaultTasks)
       await this.db.tasks.bulkPut(defaultTasks(id, tank.type, tank.co2, this.clock.today()));
     return id;
@@ -44,7 +44,7 @@ export class TankRepo {
       ],
       async () => {
         await this.db.photoFiles.bulkDelete(
-          (await this.db.photos.where('tankId').equals(id).primaryKeys()) as string[],
+          (await this.db.photos.where('tankId').equals(id).primaryKeys()),
         );
         // Le matériel du bac est conservé, en réserve.
         await this.db.equipment.where('tankId').equals(id).modify({ tankId: undefined });

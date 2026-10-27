@@ -49,7 +49,7 @@ describe('maintenanceTimeline', () => {
   });
 
   it('garde les 30 plus récents', () => {
-    const logs = Array.from({ length: 35 }, (_, i) => log('l' + i, new Date(Date.UTC(2026, 8, 1 + i)).toISOString()));
+    const logs = Array.from({ length: 35 }, (_, i) => log(`l${i}`, new Date(Date.UTC(2026, 8, 1 + i)).toISOString()));
     const out = maintenanceTimeline('t', logs, [], [], species);
     expect(out).toHaveLength(30);
     expect(out[0].id).toBe('l34');
@@ -83,7 +83,7 @@ describe('groupSettingChanges', () => {
 
   it('l’« après » s’arrête au changement suivant du même réglage', () => {
     const obs = (id: string, date: string, level: 0 | 1 | 2 | 3): Observation =>
-      ({ id, updatedAt: '', tankId: 't', date, overall: 'good', findings: [], algaeLevel: level, manual: true }) as Observation;
+      ({ id, updatedAt: '', tankId: 't', date, overall: 'good', findings: [], algaeLevel: level, manual: true });
     const observations = [obs('a', '2026-10-05T00:00:00Z', 1), obs('b', '2026-10-15T00:00:00Z', 3)];
     const out = groupSettingChanges(
       [change('1', 'e1', '2026-10-01T10:00:00Z', 'light.intensityPct'), change('2', 'e1', '2026-10-10T10:00:00Z', 'light.intensityPct')],

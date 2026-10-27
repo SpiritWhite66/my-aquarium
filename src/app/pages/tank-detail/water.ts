@@ -281,7 +281,7 @@ export class WaterTab {
 
   protected endCycling(): void {
     const t = this.view()?.tank;
-    if (t) this.tankRepo.saveTank({ ...t, cycling: false });
+    if (t) void this.tankRepo.saveTank({ ...t, cycling: false });
   }
 
   protected readonly history = computed(() => recentTests(this.view()?.tests));
@@ -289,6 +289,6 @@ export class WaterTab {
   protected readonly summary = testSummary;
 
   protected remove(id: string): void {
-    if (confirm('Supprimer ce relevé ?')) this.careRepo.deleteWaterTest(id);
+    if (confirm('Supprimer ce relevé ?')) void this.careRepo.deleteWaterTest(id);
   }
 }

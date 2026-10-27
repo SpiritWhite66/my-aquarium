@@ -8,6 +8,7 @@ import type { FaunaInfo, FloraInfo, Range, Species, SpeciesKind } from '../../co
 import { DIETS, DIFFICULTIES, GROWTHS, KINDS, LIGHTS, PLACEMENTS, TEMPERAMENTS, ZONES, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { LivestockRepo } from '../../core/data/livestock.repo';
+import { must } from '../../core/assert';
 
 type RangeKey = 'temp' | 'ph' | 'gh' | 'kh';
 const RANGES: { key: RangeKey; label: string }[] = [
@@ -191,7 +192,7 @@ export class SpeciesFormPage {
   protected readonly fauna = signal<FaunaInfo>({ adultSizeCm: 0, temperament: 'peaceful', zone: 'middle', diet: 'omnivore' });
   protected readonly error = signal('');
 
-  protected readonly source = computed(() => (this.id() ? this.speciesStore.speciesById().get(this.id()!) : undefined));
+  protected readonly source = computed(() => (this.id() ? this.speciesStore.speciesById().get(must(this.id())) : undefined));
   protected readonly title = computed(() => (!this.id() ? 'Nouvelle espèce' : this.source()?.source === 'builtin' ? 'Personnaliser la fiche' : 'Modifier la fiche'));
 
   private loaded = false;
@@ -277,7 +278,7 @@ export class SpeciesFormPage {
     } else {
       id = await this.livestockRepo.saveSpecies({ ...data, id: prev?.id });
     }
-    this.router.navigate(['/catalogue', id], { replaceUrl: true });
+    void this.router.navigate(['/catalogue', id], { replaceUrl: true });
   }
 
   protected async remove(): Promise<void> {
@@ -290,6 +291,6 @@ export class SpeciesFormPage {
     }
     if (!confirm('Supprimer cette fiche personnelle ?')) return;
     await this.livestockRepo.deleteSpecies(s.id);
-    this.router.navigate(['/catalogue'], { replaceUrl: true });
+    void this.router.navigate(['/catalogue'], { replaceUrl: true });
   }
 }

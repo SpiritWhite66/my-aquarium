@@ -14,8 +14,8 @@ afterEach(async () => {
 const U = '';
 const today = todayIso();
 const task = (id: string, o: Record<string, unknown> = {}) => ({ id, updatedAt: U, tankId: 'a', type: 'custom' as const, label: id, everyDays: 7, nextDue: today, active: true, ...o });
-const alerts = () => [...app.el().querySelectorAll('.alert')].map((a) => a.textContent!.replace(/\s+/g, ' ').trim());
-const tasks = () => [...app.el().querySelectorAll('.task')].map((a) => a.textContent!.replace(/\s+/g, ' ').trim());
+const alerts = () => [...app.el().querySelectorAll('.alert')].map((a) => a.textContent.replace(/\s+/g, ' ').trim());
+const tasks = () => [...app.el().querySelectorAll('.task')].map((a) => a.textContent.replace(/\s+/g, ' ').trim());
 
 async function boot(seed: (db: App["db"]) => PromiseLike<unknown> = async () => undefined) {
   app = await bootApp(async (db) => {

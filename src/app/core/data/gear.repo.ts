@@ -22,7 +22,7 @@ export class GearRepo {
     const id = e.id ?? newId();
     await this.db.transaction('rw', [this.db.equipment, this.db.settingChanges], async () => {
       const before = e.id ? await this.db.equipment.get(e.id) : undefined;
-      await this.db.equipment.put({ ...e, id, updatedAt: now() } as Equipment);
+      await this.db.equipment.put({ ...e, id, updatedAt: now() });
       if (!before) return;
       const date =
         change?.effective && change.effective !== this.clock.today()
@@ -62,7 +62,7 @@ export class GearRepo {
 
   async saveConsumable(c: New<Consumable>): Promise<string> {
     const id = c.id ?? newId();
-    await this.db.consumables.put({ ...c, id, updatedAt: now() } as Consumable);
+    await this.db.consumables.put({ ...c, id, updatedAt: now() });
     return id;
   }
 
@@ -75,7 +75,7 @@ export class GearRepo {
   }
 
   async addCo2Reading(r: New<Co2Reading>): Promise<void> {
-    await this.db.co2Readings.put({ ...r, id: r.id ?? newId(), updatedAt: now() } as Co2Reading);
+    await this.db.co2Readings.put({ ...r, id: r.id ?? newId(), updatedAt: now() });
   }
 
   async deleteCo2Reading(id: string): Promise<void> {

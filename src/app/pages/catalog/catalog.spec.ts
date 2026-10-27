@@ -5,7 +5,7 @@ import { bootApp, closeApp, type App } from '../../testing/app.testing';
 let app: App;
 afterEach(() => closeApp(app));
 
-const names = () => [...app.el().querySelectorAll('.sp .n')].map((n) => n.textContent!.trim());
+const names = () => [...app.el().querySelectorAll('.sp .n')].map((n) => n.textContent.trim());
 const search = () => app.el().querySelector<HTMLInputElement>('.search input')!;
 const chip = (label: string) => app.find('.filters button', label)!;
 

@@ -176,7 +176,7 @@ describe('CO2', () => {
 
   it('résume les 5 dernières mesures de baisse de pH avec le CO2 déduit', () => {
     const readings = Array.from({ length: 7 }, (_, n) => reading(n + 1, { phBefore: 7.4, phAfter: 6.6, phBeforeTime: '09:00', phAfterTime: '17:00' }));
-    readings.push(reading(8, { phBefore: 7 }) as never);
+    readings.push(reading(8, { phBefore: 7 }));
     const d = buildDossier(input({ co2Readings: readings }));
     expect(d.co2!.phDrop).toHaveLength(5);
     expect(d.co2!.phDrop[0]).toEqual({ date: '2026-10-03', phBefore: 7.4, phBeforeTime: '09:00', phAfter: 6.6, phAfterTime: '17:00', drop: 0.8, mgL: 18.9 });

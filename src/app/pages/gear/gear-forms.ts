@@ -11,6 +11,7 @@ import { fromEntity } from '../../shared/form-state';
 import { describeChange, diffSettings } from '../../core/settings-history';
 import { todayIso } from '../../core/dates';
 import { GearRepo } from '../../core/data/gear.repo';
+import { must } from '../../core/assert';
 
 const v = (e: Event) => (e.target as HTMLInputElement).value;
 const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
@@ -247,7 +248,7 @@ export class EquipmentFormPage {
 
   protected async remove(): Promise<void> {
     if (!confirm('Supprimer cet équipement ?')) return;
-    await this.gearRepo.deleteEquipment(this.existing()!.id);
+    await this.gearRepo.deleteEquipment(must(this.existing()).id);
     this.location.back();
   }
 }
@@ -334,7 +335,7 @@ export class ConsumableFormPage {
 
   protected async remove(): Promise<void> {
     if (!confirm('Supprimer ce consommable ?')) return;
-    await this.gearRepo.deleteConsumable(this.existing()!.id);
+    await this.gearRepo.deleteConsumable(must(this.existing()).id);
     this.location.back();
   }
 }

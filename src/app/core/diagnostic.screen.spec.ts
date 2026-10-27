@@ -4,7 +4,7 @@ import type { Diagnosis, Photo } from './models';
 import { defaultPhotoSelection, dossierFileName, followUpByDefault, followUpDueLabel, missingInfo } from './diagnostic';
 
 const diag = (date: string, followUp?: Diagnosis['followUp']): Diagnosis =>
-  ({ id: 'g', updatedAt: '', tankId: 't', date, summary: '', hypotheses: [], actions: [], followUp }) as Diagnosis;
+  ({ id: 'g', updatedAt: '', tankId: 't', date, summary: '', hypotheses: [], actions: [], followUp });
 const photo = (id: string, date: string): Photo => ({ id, updatedAt: '', tankId: 't', date, width: 1, height: 1 });
 
 describe('followUpByDefault', () => {
@@ -65,7 +65,7 @@ describe('missingInfo', () => {
     expect(missingInfo(d, 2)).toEqual(['NO3', 'PO4', 'KH']);
   });
   it('matériel et photos', () => {
-    expect(missingInfo({ ...full, equipment: [] } as never, 0)).toEqual(['horaires d’éclairage (Matériel)', 'débit du filtre', 'photos']);
+    expect(missingInfo({ ...full, equipment: [] }, 0)).toEqual(['horaires d’éclairage (Matériel)', 'débit du filtre', 'photos']);
   });
 });
 

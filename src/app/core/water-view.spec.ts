@@ -134,7 +134,7 @@ describe('CO2', () => {
 
 describe('repères et listes', () => {
   const obs = (id: string, tankId: string, algaeLevel?: 0 | 1 | 2 | 3, algaeTypes?: string[]): Observation =>
-    ({ id, updatedAt: '', tankId, date: day(Number(id)), overall: 'good', findings: [], algaeLevel, algaeTypes }) as Observation;
+    ({ id, updatedAt: '', tankId, date: day(Number(id)), overall: 'good', findings: [], algaeLevel, algaeTypes });
 
   it('algaeNotes : les 16 dernières notes du bac seulement', () => {
     const list = [...Array.from({ length: 20 }, (_, i) => obs(String(i + 1), 't', 1)), obs('99', 'autre', 3)];

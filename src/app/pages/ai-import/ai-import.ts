@@ -137,7 +137,7 @@ export class AiImportPage {
     const prompt = await fetch('ai/prompt.md').then((r) => r.text());
     await navigator.clipboard.writeText(prompt);
     this.copied.set(true);
-    setTimeout(() => this.copied.set(false), 2500);
+    setTimeout(() => { this.copied.set(false); }, 2500);
   }
 
   protected async pasteFromClipboard(): Promise<void> {
@@ -313,7 +313,7 @@ export class AiImportPage {
         target = 'population';
       }
 
-      this.router.navigate(['/bacs', tankId, target]);
+      void this.router.navigate(['/bacs', tankId, target]);
     } finally {
       this.saving.set(false);
     }

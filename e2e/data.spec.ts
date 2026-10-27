@@ -9,12 +9,15 @@ test.describe('sauvegarde et restauration', () => {
     await page.getByRole('button', { name: 'Exporter' }).click();
     const file = await download;
     expect(file.suggestedFilename()).toMatch(/\.zip$/);
+    // Chemin d'un fichier de téléchargement fourni par Playwright, pas d'une saisie externe.
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- chemin issu de Playwright
     const zip = await readFile(await file.path());
     await expect(app.status()).toContainText('Sauvegarde téléchargée');
 
     // Suppression des deux bacs depuis leur fiche.
     for (const name of ['Salon', 'Nano']) {
       await page.goto('/reglages');
+      // eslint-disable-next-line security/detect-non-literal-regexp -- `name` vient de la liste ci-dessus
       await page.getByRole('link', { name: new RegExp(`^${name} \\d+ L`) }).click();
       await page.getByRole('button', { name: 'Supprimer' }).click();
       await expect(page).not.toHaveURL(/modifier/);
@@ -36,7 +39,7 @@ test.describe('sauvegarde et restauration', () => {
     await expect(page.getByRole('heading', { name: 'Nano', level: 1 })).toBeVisible();
   });
 
-  test('refuse une sauvegarde abîmée sans rien effacer', async ({ app, page }) => {
+  test('refuse une sauvegarde abîmée sans rien effacer', async ({ app }) => {
     await app.seed();
     const bad = { format: 'my-aquarium', version: 2, exportedAt: '', data: { tanks: [{ id: 'x', name: 3 }] } };
     await app.importFile({ name: 'abimee.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(bad)) });
@@ -44,7 +47,7 @@ test.describe('sauvegarde et restauration', () => {
     await expect(await app.tankLink('Salon')).toBeVisible();
   });
 
-  test('refuse un fichier qui n’est pas une sauvegarde', async ({ app, page }) => {
+  test('refuse un fichier qui n’est pas une sauvegarde', async ({ app }) => {
     await app.seed();
     await app.importFile({ name: 'photo.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(JPEG_B64, 'base64') });
     await expect(app.status()).not.toContainText('Données importées');
@@ -80,8 +83,8 @@ test('reprend une base de l’ancienne version (v7, images dans la table des pho
           idx.forEach((i) => s.createIndex(i, i));
         }
       };
-      req.onsuccess = () => ok(req.result);
-      req.onerror = () => ko(req.error);
+      req.onsuccess = () => { ok(req.result); };
+      req.onerror = () => { ko(req.error ?? new Error('Ouverture de la base impossible')); };
     });
     const tx = db.transaction(['tanks', 'photos'], 'readwrite');
     tx.objectStore('tanks').put({ id: 'old', updatedAt: '', name: 'Ancien bac', type: 'planted', volumeGross: 60, startDate: '2025-01-01', co2: false, archived: false, coverPhotoId: 'a' });

@@ -25,6 +25,7 @@ jobs:
       - run: npm ci
       # Bloque le déploiement si une dépendance livrée dans l'appli a une faille grave.
       - run: npm audit --omit=dev --audit-level=high
+      - run: npm run lint
       - run: npm test -- --watch=false --coverage
       # L'app est servie sous https://<utilisateur>.github.io/<dépôt>/
       - run: npm run build -- --base-href "/${{ github.event.repository.name }}/"

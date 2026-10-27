@@ -2,6 +2,7 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AquariumStore } from '../core/store';
 import { PhotoStore } from '../core/stores/photo.store';
 import { PhotoRepo } from '../core/data/photo.repo';
+import { must } from '../core/assert';
 
 type Variant = 'thumb' | 'full';
 
@@ -28,7 +29,7 @@ export class PhotoUrls {
       if (!gone.length) return;
       const next = new Map(cache);
       for (const key of gone) {
-        URL.revokeObjectURL(next.get(key)!);
+        URL.revokeObjectURL(must(next.get(key)));
         next.delete(key);
       }
       this.ready.set(next);
@@ -39,7 +40,7 @@ export class PhotoUrls {
     if (!id || !this.ids().has(id)) return undefined;
     const key = `${id}:${variant}`;
     const url = this.ready().get(key);
-    if (!url) this.load(id, variant, key);
+    if (!url) void this.load(id, variant, key);
     return url;
   }
 

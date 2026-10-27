@@ -100,7 +100,7 @@ describe('parseAiText', () => {
   });
 
   it('numérote les blocs fautifs quand il y en a plusieurs', () => {
-    const r = parseAiText(`${block(inventory(item()))}\n${'```json\n{ cassé\n```'}`);
+    const r = parseAiText(`${block(inventory(item()))}\n\`\`\`json\n{ cassé\n\`\`\``);
     expect(r).toEqual({ ok: false, errors: ['Bloc 2 : ce n’est pas du JSON valide.'] });
     const r2 = parseAiText(`${block(inventory(item({ quantity: 0 })))}\n${block(inventory(item()))}`);
     expect(r2).toMatchObject({ ok: false, errors: ['Bloc 1 : json.data.items[0].quantity doit être ≥ 1'] });
@@ -114,7 +114,7 @@ describe('parseAiText', () => {
   it('limite à huit erreurs par élément', () => {
     const bad = inventory(...Array.from({ length: 12 }, () => item({ quantity: 0 })));
     const r = parseAiText(JSON.stringify(bad));
-    expect(r.ok === false && r.errors).toHaveLength(8);
+    expect(!r.ok && r.errors).toHaveLength(8);
   });
 
   it('un tableau vide ne contient rien à importer', () => {

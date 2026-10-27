@@ -40,7 +40,7 @@ describe('tâches à venir', () => {
   it('liste les tâches avec leur fréquence et leur échéance', async () => {
     await boot((db) => db.tasks.bulkPut([task('Retard', { nextDue: addDays(today, -3) }), task('Auj', { nextDue: today, everyDays: 1 }), task('Demain', { nextDue: addDays(today, 1), everyDays: 30 }), task('Plus tard', { nextDue: addDays(today, 5), everyDays: 14 }), task('Off', { active: false })]).then(() => undefined));
     await app.go('/bacs/a/entretien', 'Retard');
-    const rows = [...app.el().querySelectorAll('.t')].map((r) => r.textContent!.replace(/\s+/g, ' ').trim());
+    const rows = [...app.el().querySelectorAll('.t')].map((r) => r.textContent.replace(/\s+/g, ' ').trim());
     expect(rows).toHaveLength(4);
     expect(rows.find((r) => r.startsWith('Retard'))).toContain('Hebdo · en retard de 3 j');
     expect(rows.find((r) => r.startsWith('Auj'))).toContain('Quotidien · aujourd’hui');
@@ -141,7 +141,7 @@ describe('réglages du matériel', () => {
   it('résume chaque changement avec sa note et un verdict prudent', async () => {
     await boot((db) => db.settingChanges.bulkPut([change('c1', { note: 'Moins de lumière' }), change('c2', { field: 'light.schedule', from: '10:00–18:00', to: '10:00–17:00' }), change('c3', { equipmentId: 'e9', equipmentName: 'Autre', date: daysAgo(2) }), change('c4', { tankId: 'b' })]).then(() => undefined));
     await app.go('/bacs/a/entretien', 'Réglages du matériel');
-    const articles = [...app.el().querySelectorAll('article.sc')].map((a) => a.textContent!.replace(/\s+/g, ' '));
+    const articles = [...app.el().querySelectorAll('article.sc')].map((a) => a.textContent.replace(/\s+/g, ' '));
     expect(articles).toHaveLength(2);
     const rampe = articles.find((a) => a.includes('Rampe'))!;
     expect(rampe).toContain('Intensité : 80 % → 60 %');
@@ -223,7 +223,7 @@ describe('historique', () => {
       ]);
     });
     await app.go('/bacs/a/entretien', 'Changement d’eau');
-    const events = [...app.el().querySelectorAll('.ev')].map((e) => e.textContent!.replace(/\s+/g, ' ').trim());
+    const events = [...app.el().querySelectorAll('.ev')].map((e) => e.textContent.replace(/\s+/g, ' ').trim());
     expect(events).toHaveLength(3);
     expect(events[0]).toContain('Rasbora galaxy (-2)');
     expect(events[1]).toContain('Changement d’eau');

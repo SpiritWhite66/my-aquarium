@@ -7,7 +7,7 @@ export class Clock {
   readonly today = signal(todayIso());
 
   constructor() {
-    const timer = setInterval(() => this.today.set(todayIso()), 60_000);
-    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    const timer = setInterval(() => { this.today.set(todayIso()); }, 60_000);
+    inject(DestroyRef).onDestroy(() => { clearInterval(timer); });
   }
 }

@@ -8,3 +8,6 @@ export const newId = () => crypto.randomUUID();
 
 /** Maintenant + `i` ms : garde l'ordre de saisie de plusieurs lignes enregistrées ensemble. */
 export const nowPlus = (i: number) => new Date(Date.now() + i).toISOString();
+
+/** Lecture d'un indice qui peut sortir du tableau (un indice négatif ne compte pas comme « depuis la fin »). */
+export const nth = <T>(list: readonly T[], i: number): T | undefined => list[i];

@@ -56,7 +56,7 @@ export function digestFor(
     const due = data.tasks.filter((t) => t.active && t.nextDue <= day && name.has(t.tankId));
     count += due.length;
     const multi = name.size > 1;
-    lines.push(...due.slice(0, 4).map((t) => `${t.label}${multi ? ' (' + name.get(t.tankId) + ')' : ''}`));
+    lines.push(...due.slice(0, 4).map((t) => `${t.label}${multi ? ` (${name.get(t.tankId) ?? ''})` : ''}`));
     if (due.length > 4) lines.push(`et ${due.length - 4} autre(s)`);
   }
   if (prefs.followUps) {

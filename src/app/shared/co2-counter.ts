@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
+import type { ElementRef} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import type { DropChecker, Tank } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { WaterStore } from '../core/stores/water.store';
@@ -9,6 +10,7 @@ import { Icon } from './icon';
 import { ModalFocus } from './modal-focus';
 import { GearRepo } from '../core/data/gear.repo';
 import { TankRepo } from '../core/data/tank.repo';
+import { browserNav } from '../core/browser';
 
 /**
  * Compteur de bulles CO2 : on tape à chaque bulle dans le compte-bulles,
@@ -36,7 +38,7 @@ import { TankRepo } from '../core/data/tank.repo';
     .hint { font-size: 13px; }
   `,
   template: `
-    <div class="backdrop" (click)="closed.emit()">
+    <div class="backdrop" role="presentation" (click)="closed.emit()">
       <div #root class="sheet" appModal role="dialog" aria-modal="true" aria-labelledby="co2-title" tabindex="-1"
         (click)="$event.stopPropagation()" (keydown.escape)="closed.emit()">
         <div class="row between">
@@ -101,7 +103,7 @@ export class Co2Counter {
   protected readonly gearRepo = inject(GearRepo);
   protected readonly tankRepo = inject(TankRepo);
   readonly tank = input.required<Tank>();
-  readonly closed = output<void>();
+  readonly closed = output();
 
   protected readonly dropInfo = DROP_CHECKER;
   protected readonly colors: { key: DropChecker; css: string }[] = [
@@ -143,15 +145,15 @@ export class Co2Counter {
 
   constructor() {
     afterNextRender(() => this.root()?.nativeElement.focus());
-    const timer = setInterval(() => this.now.set(Date.now()), 500);
-    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    const timer = setInterval(() => { this.now.set(Date.now()); }, 500);
+    inject(DestroyRef).onDestroy(() => { clearInterval(timer); });
   }
 
   protected tap(): void {
     const t = Date.now();
     this.now.set(t);
     this.taps.update((list) => [...list, t]);
-    navigator.vibrate?.(15);
+    browserNav().vibrate?.(15);
   }
 
   protected reset(): void {

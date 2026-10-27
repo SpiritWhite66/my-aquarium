@@ -42,19 +42,21 @@ export class NotificationService {
       if (!p.enabled || !this.store.ready()) return;
       const until = addDays(this.store.today(), DIGEST_DAYS - 1);
       if (until !== p.digestsUntil || JSON.stringify(digests) !== JSON.stringify(p.digests ?? {})) {
-        this.prefsRepo.saveNotificationPrefs({ digests, digestsUntil: until });
+        void this.prefsRepo.saveNotificationPrefs({ digests, digestsUntil: until });
       }
-      this.check();
+      void this.check();
     });
     if (typeof window === 'undefined') return;
-    const timer = setInterval(() => this.check(), 5 * 60_000);
-    const onVisible = () => document.visibilityState === 'visible' && this.check();
+    const timer = setInterval(() => { void this.check(); }, 5 * 60_000);
+    const onVisible = (): void => {
+      if (document.visibilityState === 'visible') void this.check();
+    };
     document.addEventListener('visibilitychange', onVisible);
     inject(DestroyRef).onDestroy(() => {
       clearInterval(timer);
       document.removeEventListener('visibilitychange', onVisible);
     });
-    this.refreshBackground();
+    void this.refreshBackground();
   }
 
   /** Active les rappels : demande l'autorisation, puis la synchronisation en arrière-plan si possible. */
@@ -71,13 +73,13 @@ export class NotificationService {
   async disable(): Promise<void> {
     await this.prefsRepo.saveNotificationPrefs({ enabled: false });
     const reg = await this.registration();
-    await (reg as PeriodicReg | undefined)?.periodicSync?.unregister(SYNC_TAG).catch(() => undefined);
+    await reg?.periodicSync?.unregister(SYNC_TAG).catch(() => undefined);
     this.background.set(false);
   }
 
   /** Affiche tout de suite la notification du jour (ou un exemple). */
   async test(): Promise<void> {
-    const today = this.digests()[this.store.today()];
+    const today = this.digests()[this.store.today()] as Digest | undefined;
     await this.show(today ?? { title: 'Rappels activés', body: 'Rien à faire aujourd’hui. Tu seras prévenu les jours où une tâche est due.' });
   }
 
@@ -110,13 +112,13 @@ export class NotificationService {
     else if (typeof Notification !== 'undefined') new Notification(d.title, options);
   }
 
-  private async registration(): Promise<ServiceWorkerRegistration | undefined> {
+  private async registration(): Promise<PeriodicReg | undefined> {
     if (!('serviceWorker' in navigator)) return undefined;
     return (await navigator.serviceWorker.getRegistration()) ?? undefined;
   }
 
   private async registerBackground(): Promise<void> {
-    const reg = (await this.registration()) as PeriodicReg | undefined;
+    const reg = await this.registration();
     if (!reg?.periodicSync) return;
     try {
       const status = await navigator.permissions.query({ name: 'periodic-background-sync' as PermissionName });
@@ -129,7 +131,7 @@ export class NotificationService {
   }
 
   private async refreshBackground(): Promise<void> {
-    const reg = (await this.registration()) as PeriodicReg | undefined;
+    const reg = await this.registration();
     const tags = await reg?.periodicSync?.getTags().catch((): string[] => []);
     this.background.set(!!tags?.includes(SYNC_TAG));
   }

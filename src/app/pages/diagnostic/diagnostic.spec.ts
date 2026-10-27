@@ -42,7 +42,7 @@ async function boot(opts: { photos?: number; diagnosisAgo?: number | null; tests
     if (!tests) await db.waterTests.clear();
     for (let n = 1; n <= photos; n++) {
       await db.photos.put(photo(`p${n}`, n * 2));
-      await db.photoFiles.put({ id: `p${n}`, full: new Blob(['full' + n]), thumb: new Blob(['t']) });
+      await db.photoFiles.put({ id: `p${n}`, full: new Blob([`full${n}`]), thumb: new Blob(['t']) });
     }
   });
 }
@@ -142,7 +142,7 @@ describe('page de diagnostic', () => {
     it('signale les mesures demandées, faites ou non, et propose un relevé', async () => {
       await boot();
       await app.go('/diagnostic?bac=a', 'Mesures demandées');
-      const items = [...app.el().querySelectorAll('.fu-l:last-of-type li')].map((l) => l.textContent!.trim());
+      const items = [...app.el().querySelectorAll('.fu-l:last-of-type li')].map((l) => l.textContent.trim());
       expect(items).toEqual(['NO3', 'Observer les poissons']);
       expect(app.find('a', 'Faire un relevé avant d’envoyer')!.getAttribute('href')).toBe('/releve?bac=a');
       expect(app.find('li.m-unk')?.textContent).toContain('Observer les poissons');

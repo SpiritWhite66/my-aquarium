@@ -23,13 +23,13 @@ export async function streamZip(
   entries: AsyncIterable<ArchiveEntry> | Iterable<ArchiveEntry>,
   onChunk: (chunk: Chunk) => void | Promise<void>,
 ): Promise<void> {
-  let failure: Error | null = null;
+  let failure = null as Error | null;
   let chain: Promise<void> = Promise.resolve();
   let done!: () => void;
   const finished = new Promise<void>((r) => (done = r));
   const zip = new Zip((err, chunk, final) => {
     if (err) failure = err;
-    else chain = chain.then(() => onChunk(chunk as Chunk));
+    else chain = chain.then(() => onChunk(chunk));
     if (err || final) done();
   });
   for await (const e of entries) {
@@ -55,12 +55,12 @@ export async function writeZip(entries: AsyncIterable<ArchiveEntry> | Iterable<A
 /** Liste les fichiers d'un ZIP (stockés ou compressés). */
 export async function readZip(file: Blob): Promise<Map<string, Blob>> {
   const out = new Map<string, Blob>();
-  let failure: Error | null = null;
+  let failure = null as Error | null;
   const unzip = new Unzip((entry) => {
     const chunks: BlobPart[] = [];
     entry.ondata = (err, data, final) => {
       if (err) failure = err;
-      else chunks.push(data as Uint8Array<ArrayBuffer>);
+      else chunks.push(data);
       if (final && !entry.name.endsWith('/')) out.set(entry.name, new Blob(chunks));
     };
     entry.start();

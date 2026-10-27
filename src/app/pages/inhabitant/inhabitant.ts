@@ -215,16 +215,16 @@ export class InhabitantPage {
     await this.livestockRepo.moveInhabitant(i, to, qty);
     this.moveQty.set(0);
     // Déplacement complet : on suit l'habitant dans son nouveau bac.
-    if (qty >= i.quantity) this.router.navigate(['/bacs', to, 'habitants', i.id], { replaceUrl: true });
+    if (qty >= i.quantity) void this.router.navigate(['/bacs', to, 'habitants', i.id], { replaceUrl: true });
   }
 
   protected setQuantity(i: Inhabitant, raw: string): void {
     const q = Math.max(0, Math.round(Number(raw.replace(',', '.'))));
-    if (Number.isFinite(q)) this.livestockRepo.updateInhabitant(i.id, { quantity: q, approximate: false });
+    if (Number.isFinite(q)) void this.livestockRepo.updateInhabitant(i.id, { quantity: q, approximate: false });
   }
 
   protected setStatus(i: Inhabitant, status: HealthStatus): void {
-    this.livestockRepo.updateInhabitant(i.id, { status });
+    void this.livestockRepo.updateInhabitant(i.id, { status });
   }
 
   protected async record(i: Inhabitant, e: QuickEvent): Promise<void> {

@@ -6,7 +6,7 @@ import { PhotoStore } from '../../core/stores/photo.store';
 import { CareStore } from '../../core/stores/care.store';
 import { SpeciesStore } from '../../core/stores/species.store';
 import { PopulationStore } from '../../core/stores/population.store';
-import { dueLabel, fmtShortDate, frequencyLabel, speciesName } from '../../core/labels';
+import { dueLabel, fmtShortDate, frequencyLabel } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { isPlantTask, taskIcon } from '../../shared/visuals';
 import { WaterChangeSheet } from '../../shared/water-change-sheet';
@@ -214,7 +214,7 @@ export class MaintenanceTab {
   protected done(task: MaintenanceTask): void {
     if (task.type === 'water_change') this.waterChange.set(task);
     else if (task.type === 'fertilize') this.dosing.set(task);
-    else this.careRepo.completeTask(task);
+    else void this.careRepo.completeTask(task);
   }
 
   protected readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.id()));

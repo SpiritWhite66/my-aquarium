@@ -9,7 +9,7 @@ afterEach(async () => {
   await shell.db.delete();
 });
 
-const links = (el: HTMLElement, sel: string) => [...el.querySelectorAll<HTMLAnchorElement>(sel)].map((a) => [a.textContent!.trim(), a.getAttribute('href')]);
+const links = (el: HTMLElement, sel: string) => [...el.querySelectorAll<HTMLAnchorElement>(sel)].map((a) => [a.textContent.trim(), a.getAttribute('href')]);
 const NAV = [['Accueil', '/'], ['Bacs', '/bacs'], ['Catalogue', '/catalogue'], ['Matériel', '/materiel'], ['Réglages', '/reglages']];
 
 describe('coquille de l’appli', () => {
@@ -23,7 +23,7 @@ describe('coquille de l’appli', () => {
 
   it('marque l’entrée de la page courante, et l’accueil seulement à l’accueil', async () => {
     shell = await bootShell();
-    const on = () => [...shell.el.querySelectorAll('nav.tabs a.on')].map((a) => a.textContent!.trim());
+    const on = () => [...shell.el.querySelectorAll('nav.tabs a.on')].map((a) => a.textContent.trim());
     expect(on()).toEqual(['Accueil']);
     await shell.router.navigateByUrl('/bacs/a/eau');
     await shell.settle();
@@ -42,7 +42,7 @@ describe('coquille de l’appli', () => {
     });
     await new Promise((r) => setTimeout(r, 100));
     await shell.settle();
-    const tanks = [...shell.el.querySelectorAll('aside a.tk')].map((a) => [a.textContent!.replace(/\s+/g, ' ').trim(), a.getAttribute('href')]);
+    const tanks = [...shell.el.querySelectorAll('aside a.tk')].map((a) => [a.textContent.replace(/\s+/g, ' ').trim(), a.getAttribute('href')]);
     expect(tanks).toHaveLength(2);
     const nano = tanks.find((t) => t[0]!.includes('Nano'))!;
     expect(nano[1]).toBe('/bacs/b');
@@ -69,7 +69,7 @@ describe('coquille de l’appli', () => {
       shell = await bootShell();
       const skip = shell.el.querySelector<HTMLAnchorElement>('a.skip')!;
       expect(skip.getAttribute('href')).toBe('#contenu');
-      expect(skip.textContent!.trim()).toBe('Aller au contenu');
+      expect(skip.textContent.trim()).toBe('Aller au contenu');
       expect(shell.el.querySelector('a.skip')!.compareDocumentPosition(shell.el.querySelector('.shell')!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
       document.body.append(shell.el);
       const event = new MouseEvent('click', { bubbles: true, cancelable: true });

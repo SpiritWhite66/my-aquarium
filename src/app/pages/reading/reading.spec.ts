@@ -9,7 +9,7 @@ afterEach(async () => {
 const field = (id: string) => app.el().querySelector<HTMLInputElement>('#' + id)!;
 const set = (id: string, value: string) => app.type(field(id), value);
 const save = () => app.press('header button.fill', 'Enregistrer');
-const pills = () => [...app.el().querySelectorAll('.checks .pill')].map((p) => p.textContent!.trim());
+const pills = () => [...app.el().querySelectorAll('.checks .pill')].map((p) => p.textContent.trim());
 const waterTests = async (tankId: string) => (await app.db.waterTests.where('tankId').equals(tankId).toArray()).filter((t) => t.id.length > 3);
 
 describe('nouveau relevé', () => {

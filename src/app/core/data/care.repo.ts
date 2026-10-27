@@ -29,7 +29,7 @@ export class CareRepo {
           ...test,
           id: test.id ?? newId(),
           updatedAt: now(),
-        } as WaterTest);
+        });
         // Un relevé valide la tâche « Test de l'eau » du bac si elle est due.
         const tasks = await this.db.tasks.where('tankId').equals(test.tankId).toArray();
         const due = tasks.find((t) => t.type === 'water_test' && t.active && t.nextDue <= today);
@@ -51,7 +51,7 @@ export class CareRepo {
       ...task,
       id: task.id ?? newId(),
       updatedAt: now(),
-    } as MaintenanceTask);
+    });
   }
 
   async deleteTask(id: string): Promise<void> {
@@ -135,7 +135,7 @@ export class CareRepo {
   }
 
   async addLog(log: New<MaintenanceLog>): Promise<void> {
-    await this.db.logs.put({ ...log, id: log.id ?? newId(), updatedAt: now() } as MaintenanceLog);
+    await this.db.logs.put({ ...log, id: log.id ?? newId(), updatedAt: now() });
   }
 
   /** Enregistre un diagnostic ; les actions cochées deviennent des tâches. */
@@ -162,7 +162,7 @@ export class CareRepo {
     });
     await this.db.transaction('rw', [this.db.tasks, this.db.diagnoses], async () => {
       await this.db.tasks.bulkPut(tasks);
-      await this.db.diagnoses.put({ ...d, id, actions, updatedAt: now() } as Diagnosis);
+      await this.db.diagnoses.put({ ...d, id, actions, updatedAt: now() });
     });
     return id;
   }
@@ -177,7 +177,7 @@ export class CareRepo {
   }
 
   async addObservation(o: New<Observation>): Promise<void> {
-    await this.db.observations.put({ ...o, id: o.id ?? newId(), updatedAt: now() } as Observation);
+    await this.db.observations.put({ ...o, id: o.id ?? newId(), updatedAt: now() });
   }
 
   async setFindingResolved(o: Observation, index: number, resolved: boolean): Promise<void> {

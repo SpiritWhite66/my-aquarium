@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { AQUARIUM_DB } from '../db';
-import { newId, now, type New } from './util';
 import { DEFAULT_PREFS, type NotificationPrefs } from '../reminders';
 
 /** Préférences de cet appareil (non incluses dans les sauvegardes). */

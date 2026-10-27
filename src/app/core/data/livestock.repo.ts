@@ -22,7 +22,7 @@ export class LivestockRepo {
           updatedAt: now(),
         });
       } else {
-        await this.db.inhabitants.put({ ...data, id, updatedAt: now() } as Inhabitant);
+        await this.db.inhabitants.put({ ...data, id, updatedAt: now() });
       }
       await this.addEvent({
         inhabitantId: id,
@@ -55,7 +55,7 @@ export class LivestockRepo {
       ...e,
       id: e.id ?? newId(),
       updatedAt: now(),
-    } as InhabitantEvent);
+    });
   }
 
   /** Enregistre un événement et ajuste la quantité (naissance, décès, bouture…). */
@@ -90,7 +90,7 @@ export class LivestockRepo {
       [this.db.inhabitants, this.db.photos, this.db.photoFiles, this.db.inhabitantEvents],
       async () => {
         await this.db.photoFiles.bulkDelete(
-          (await this.db.photos.where('inhabitantId').equals(id).primaryKeys()) as string[],
+          (await this.db.photos.where('inhabitantId').equals(id).primaryKeys()),
         );
         await this.db.inhabitants.delete(id);
         await this.db.photos.where('inhabitantId').equals(id).delete();
@@ -182,7 +182,7 @@ export class LivestockRepo {
   /** Supprime une fiche personnelle ; les habitants d'une fiche personnalisée retrouvent la fiche intégrée. */
   async deleteSpecies(id: string): Promise<void> {
     const s = await this.db.species.get(id);
-    if (!s || s.source !== 'custom') return;
+    if (s?.source !== 'custom') return;
     await this.db.transaction('rw', [this.db.inhabitants, this.db.species], async () => {
       if (s.overrides) await this.replaceSpecies(id, s.overrides);
       await this.db.species.delete(id);
@@ -191,7 +191,7 @@ export class LivestockRepo {
 
   async saveSpecies(species: New<Species>): Promise<string> {
     const id = species.id ?? `custom-${newId()}`;
-    await this.db.species.put({ ...species, id, source: 'custom', updatedAt: now() } as Species);
+    await this.db.species.put({ ...species, id, source: 'custom', updatedAt: now() });
     return id;
   }
 }

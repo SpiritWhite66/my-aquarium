@@ -79,7 +79,7 @@ describe('trendOf', () => {
     const old = [wt(day(-100), { no3: 1 }), wt(day(-90), { no3: 2 }), wt(day(20), { no3: 30 }), wt(day(27), { no3: 40 })];
     expect(trendOf(old, 'no3', range, 60, NOW)).toBeUndefined();
     expect(trendOf(old, 'no3', range, 365, NOW)).toBeDefined();
-    expect(trendOf(weekly([10, 20, 30]), 'ph' as never, range, 60, NOW)).toBeUndefined();
+    expect(trendOf(weekly([10, 20, 30]), 'ph', range, 60, NOW)).toBeUndefined();
     const holes = [wt(day(0), { no3: 10 }), wt(day(7), { ph: 7 }), wt(day(14), { no3: 20 }), wt(day(21), { no3: 30 })];
     expect(trendOf(holes, 'no3', range, 60, NOW)?.last).toBe(30);
   });
@@ -350,7 +350,7 @@ describe('horaires', () => {
 describe('gearChecks', () => {
   const tank = (o: Partial<Tank> = {}) => ({ id: 't', volumeGross: 60, type: 'planted', co2: false, ...o }) as Tank;
   const light = (on: string, off: string, extra = {}): Equipment => ({ id: 'l', updatedAt: '', type: 'light', name: 'L', light: { schedule: { on, off }, ...extra } });
-  const filter = (flowLh: number, type: 'filter' | 'pump' = 'filter'): Equipment => ({ id: 'f' + flowLh, updatedAt: '', type, name: 'F', filter: { flowLh } });
+  const filter = (flowLh: number, type: 'filter' | 'pump' = 'filter'): Equipment => ({ id: `f${flowLh}`, updatedAt: '', type, name: 'F', filter: { flowLh } });
   const co2 = (o: Partial<Equipment['co2']> = {}): Equipment => ({ id: 'c', updatedAt: '', type: 'co2', name: 'C', co2: o });
   const titles = (t: Tank, g: Equipment[]) => gearChecks(t, g).map((c) => `${c.level}|${c.title}`);
 

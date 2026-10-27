@@ -228,6 +228,6 @@ export class SpeciesPage {
       addedDate: this.store.today(),
       status: 'healthy',
     });
-    this.router.navigate(['/bacs', this.tankId(), 'population']);
+    void this.router.navigate(['/bacs', this.tankId(), 'population']);
   }
 }

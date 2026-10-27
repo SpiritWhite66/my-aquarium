@@ -95,7 +95,7 @@ export async function bootApp(seed: ((db: AquariumDb) => PromiseLike<unknown>) |
     async go(url, text) {
       await harness.navigateByUrl(url);
       await flush();
-      if (text) await until(() => (typeof text === 'string' ? el().textContent!.includes(text) : text.test(el().textContent ?? '')));
+      if (text) await until(() => (typeof text === 'string' ? el().textContent.includes(text) : text.test(el().textContent)));
       else await flush();
       return el();
     },
@@ -111,10 +111,10 @@ export async function bootApp(seed: ((db: AquariumDb) => PromiseLike<unknown>) |
       harness.detectChanges();
     },
     find(selector, text) {
-      return [...el().querySelectorAll<HTMLElement>(selector)].find((e) => !text || (typeof text === 'string' ? e.textContent!.includes(text) : text.test(e.textContent ?? ''))) ?? null;
+      return [...el().querySelectorAll<HTMLElement>(selector)].find((e) => !text || (typeof text === 'string' ? e.textContent.includes(text) : text.test(e.textContent))) ?? null;
     },
     press(selector, text) {
-      const target = [...el().querySelectorAll<HTMLElement>(selector)].find((e) => !text || (typeof text === 'string' ? e.textContent!.includes(text) : text.test(e.textContent ?? '')));
+      const target = [...el().querySelectorAll<HTMLElement>(selector)].find((e) => !text || (typeof text === 'string' ? e.textContent.includes(text) : text.test(e.textContent)));
       if (!target) throw new Error(`Introuvable : ${selector} ${String(text ?? '')}`);
       target.click();
       harness.detectChanges();

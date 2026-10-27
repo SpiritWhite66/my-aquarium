@@ -7,6 +7,7 @@ import { co2Advice, co2FromKhPh, co2FromPhDrop, latestKhPh, trendOf } from './in
 import { fmt, fmtRange, fmtShortDate, speciesName } from './labels';
 import { algaeScore, describeChange } from './settings-history';
 import type { AlgaeLevel } from './models';
+import { must } from './assert';
 
 /** Ce qu'il faut savoir d'un bac pour dessiner son onglet Eau. */
 export interface WaterContext {
@@ -67,9 +68,9 @@ export function lastCo2Reading(readings: Co2Reading[]): Co2Reading | undefined {
 export function phDayReading(readings: Co2Reading[], currentBpm: number | undefined, now = Date.now()) {
   const r = readings.filter((x) => x.phBefore != null && x.phAfter != null).at(-1);
   if (!r || now - new Date(r.date).getTime() > 14 * 864e5) return undefined;
-  const m = co2FromPhDrop(r.phBefore!, r.phAfter!);
+  const m = co2FromPhDrop(must(r.phBefore), must(r.phAfter));
   return m
-    ? { ...co2Advice(m.mgL, currentBpm), ...m, phBefore: r.phBefore!, phAfter: r.phAfter!, phBeforeTime: r.phBeforeTime, phAfterTime: r.phAfterTime, date: r.date }
+    ? { ...co2Advice(m.mgL, currentBpm), ...m, phBefore: must(r.phBefore), phAfter: must(r.phAfter), phBeforeTime: r.phBeforeTime, phAfterTime: r.phAfterTime, date: r.date }
     : undefined;
 }
 
@@ -117,6 +118,6 @@ export function recentTests(tests: WaterTest[] | undefined): WaterTest[] {
 /** « NH4 0,5 · NO2 0 » */
 export function testSummary(values: Record<string, number>): string {
   return Object.entries(values)
-    .map(([k, v]) => `${PARAM_BY_KEY[k as keyof typeof PARAM_BY_KEY]?.short ?? k} ${fmt(v)}`)
+    .map(([k, v]) => `${(PARAM_BY_KEY as Record<string, { short: string } | undefined>)[k]?.short ?? k} ${fmt(v)}`)
     .join(' · ');
 }

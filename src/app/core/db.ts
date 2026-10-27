@@ -77,7 +77,7 @@ export class AquariumDb extends Dexie {
       .upgrade(async (tx) => {
         const ids = (await tx.table('photos').toCollection().primaryKeys()) as string[];
         for (let i = 0; i < ids.length; i += 20) {
-          const batch = (await tx.table('photos').bulkGet(ids.slice(i, i + 20))) as (Photo & Partial<Omit<PhotoFile, 'id'>>)[];
+          const batch = (await tx.table('photos').bulkGet(ids.slice(i, i + 20))) as (Photo & Partial<Omit<PhotoFile, 'id'>> | undefined)[];
           const files: PhotoFile[] = [];
           const metas: Photo[] = [];
           for (const p of batch) {

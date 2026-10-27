@@ -178,7 +178,7 @@ export class ReadingPage {
     return out;
   });
 
-  private readonly hasWater = computed(() => Object.values(this.raw()).some((v) => parseNumber(v ?? '') != null));
+  private readonly hasWater = computed(() => Object.values(this.raw()).some((v) => parseNumber(v) != null));
   protected readonly hasValue = computed(() => this.hasWater() || this.algae() != null);
 
   protected readonly algaeLevels = ALGAE_LEVELS;

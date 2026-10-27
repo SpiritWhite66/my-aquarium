@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { AQUARIUM_DB } from '../db';
-import { newId, now, type New } from './util';
+import { newId, now } from './util';
 import { processPhoto } from '../photos';
 import type { Photo, PhotoFile } from '../models';
 

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { AQUARIUM_DB } from '../db';
-import { newId, now, type New } from './util';
+import { now } from './util';
 import { isZip, readZip, streamZip, type ArchiveEntry, type ZipSink, writeZip } from '../archive';
 import { BACKUP_TABLES, BACKUP_VERSION, checkBackup } from '../backup-format';
 import type { Entity, ExportFile } from '../models';
@@ -41,7 +41,7 @@ export class BackupRepo {
       exportedAt,
       data: data as ExportFile['data'],
     };
-    const ids = (await this.db.photos.toCollection().primaryKeys()) as string[];
+    const ids = (await this.db.photos.toCollection().primaryKeys());
     const db = this.db;
     async function* entries(): AsyncGenerator<ArchiveEntry> {
       yield { name: 'data.json', data: new Blob([JSON.stringify(file)], { type: 'application/json' }) };

@@ -190,7 +190,7 @@ export class SettingsPage {
     else await this.notif.disable();
   }
   protected setPref(patch: Partial<NotificationPrefs>): void {
-    this.prefsRepo.saveNotificationPrefs(patch);
+    void this.prefsRepo.saveNotificationPrefs(patch);
   }
 
   protected readonly store = inject(AquariumStore);
@@ -228,7 +228,7 @@ export class SettingsPage {
     a.href = url;
     a.download = 'aquariums-rappels.ics';
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => { URL.revokeObjectURL(url); }, 1000);
   }
 
   protected readonly exporting = signal(false);

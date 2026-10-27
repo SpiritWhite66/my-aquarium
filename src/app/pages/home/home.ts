@@ -14,6 +14,7 @@ import type { MaintenanceTask } from '../../core/models';
 import { idealRange } from '../../core/rules';
 import { stockAlerts, trendOf } from '../../core/insights';
 import { CareRepo } from '../../core/data/care.repo';
+import { must } from '../../core/assert';
 
 @Component({
   selector: 'app-home',
@@ -50,12 +51,12 @@ export class HomePage {
       ...(() => {
         const range = idealRange('no3', v.members.map((m) => m.species), v.tank);
         const t = trendOf(v.tests, 'no3', range);
-        if (!t || t.limit !== 'max' || t.daysToLimit == null || t.daysToLimit > 7 || v.alerts.some((a) => a.key === 'no3')) return [];
+        if (t?.limit !== 'max' || t.daysToLimit == null || t.daysToLimit > 7 || v.alerts.some((a) => a.key === 'no3')) return [];
         return [{
           tankId: v.tank.id,
           level: 'warn' as const,
           title: `Nitrates en hausse — ${v.tank.name}`,
-          detail: `+${fmt(t.perWeek)} mg/L par semaine : ${fmt(range!.max)} mg/L atteints dans ~${t.daysToLimit} j. Prévois un changement d’eau.`,
+          detail: `+${fmt(t.perWeek)} mg/L par semaine : ${fmt(must(range).max)} mg/L atteints dans ~${t.daysToLimit} j. Prévois un changement d’eau.`,
           link: 'eau',
         }];
       })(),
@@ -83,7 +84,7 @@ export class HomePage {
   protected done(task: MaintenanceTask): void {
     if (task.type === 'water_change') this.waterChange.set(task);
     else if (task.type === 'fertilize') this.dosing.set(task);
-    else this.careRepo.completeTask(task);
+    else void this.careRepo.completeTask(task);
   }
 
   protected readonly stock = computed(() =>

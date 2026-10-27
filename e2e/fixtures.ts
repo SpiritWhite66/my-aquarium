@@ -73,6 +73,7 @@ export class App {
 
   async openTank(name: string, tab = 'population') {
     await (await this.tankLink(name)).click();
+    // eslint-disable-next-line security/detect-non-literal-regexp -- `tab` est un nom d'onglet fixé par les tests
     if (tab !== 'population') await this.page.getByRole('navigation', { name: 'Sections du bac' }).getByRole('link', { name: new RegExp(tab, 'i') }).click();
   }
 }

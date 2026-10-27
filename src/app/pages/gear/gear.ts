@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { GearStore } from '../../core/stores/gear.store';
@@ -183,6 +183,6 @@ export class GearPage {
   protected readonly summary = equipmentSummary;
 
   protected setLevel(c: Consumable, level: StockLevel): void {
-    this.gearRepo.setConsumableLevel(c.id, level);
+    void this.gearRepo.setConsumableLevel(c.id, level);
   }
 }

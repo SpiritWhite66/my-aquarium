@@ -5,6 +5,7 @@ import type { Co2Reading, Diagnosis, MaintenanceLog, Observation, ParamKey, Phot
 import { addDays, daysBetween, localDay } from './dates';
 import { PARAM_BY_KEY } from './rules';
 import { algaeScore, describeChange } from './settings-history';
+import { must } from './assert';
 
 /** Mots reconnus dans les mesures demandées par l'IA (« NO3 », « pH à 11h30 et 21h », « photo »…). */
 const MEASURE_PATTERNS: { re: RegExp; kind: 'param' | 'phDrop' | 'photo'; keys?: ParamKey[] }[] = [
@@ -50,17 +51,17 @@ export function measureStatus(diagnosis: Diagnosis, data: FollowUpData): Measure
     if (!p) return { label };
     if (p.kind === 'phDrop') {
       const r = data.co2Readings.filter((x) => x.tankId === diagnosis.tankId && x.date > since && x.phBefore != null && x.phAfter != null).at(-1);
-      return { label, done: !!r, detail: r ? `pH ${dec(r.phBefore!)} → ${dec(r.phAfter!)}` : undefined };
+      return { label, done: !!r, detail: r ? `pH ${dec(must(r.phBefore))} → ${dec(must(r.phAfter))}` : undefined };
     }
     if (p.kind === 'photo') {
       const n = data.photos.filter((x) => x.tankId === diagnosis.tankId && x.date > since).length;
       return { label, done: n > 0, detail: n ? `${n} photo(s)` : undefined };
     }
-    const keys = MEASURE_PATTERNS.filter((m) => m.kind === 'param' && m.re.test(label)).flatMap((m) => m.keys!);
+    const keys = MEASURE_PATTERNS.filter((m) => m.kind === 'param' && m.re.test(label)).flatMap((m) => must(m.keys));
     const found = [...new Set(keys)].map((k) => ({ k, v: tests.filter((t) => t.values[k] != null).at(-1)?.values[k] }));
     const done = found.every((f) => f.v != null);
     const known = found.filter((f) => f.v != null);
-    const detail = known.length === 1 && found.length === 1 ? dec(known[0].v!) : known.map((f) => `${PARAM_BY_KEY[f.k].short} ${dec(f.v!)}`).join(' · ');
+    const detail = known.length === 1 && found.length === 1 ? dec(must(known[0].v)) : known.map((f) => `${PARAM_BY_KEY[f.k].short} ${dec(must(f.v))}`).join(' · ');
     return { label, done, detail: detail || undefined };
   });
 }

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, computed, inject, input, linkedSignal, output, viewChild } from '@angular/core';
+import type { ElementRef} from '@angular/core';
+import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, input, linkedSignal, output, viewChild } from '@angular/core';
 import type { DoseUnit, MaintenanceTask } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { GearStore } from '../core/stores/gear.store';
@@ -8,6 +9,7 @@ import { Icon } from './icon';
 import { ModalFocus } from './modal-focus';
 import { localDay } from '../core/dates';
 import { CareRepo } from '../core/data/care.repo';
+import { must } from '../core/assert';
 
 interface Row {
   product: string;
@@ -34,7 +36,7 @@ interface Row {
     .add { align-self: flex-start; font-size: 13px; font-weight: 600; border: 0; background: none; color: var(--pl); cursor: pointer; padding: 0; text-decoration: underline; }
   `,
   template: `
-    <div class="backdrop" (click)="closed.emit()">
+    <div class="backdrop" role="presentation" (click)="closed.emit()">
       <div #root class="sheet" appModal role="dialog" aria-modal="true" aria-labelledby="dose-title" tabindex="-1"
         (click)="$event.stopPropagation()" (keydown.escape)="closed.emit()">
         <div class="row between">
@@ -78,7 +80,7 @@ export class DoseSheet {
   readonly tankId = input.required<string>();
   /** Tâche de fertilisation à valider (facultatif). */
   readonly task = input<MaintenanceTask>();
-  readonly closed = output<void>();
+  readonly closed = output();
 
   protected readonly units = Object.entries(DOSE_UNITS) as [DoseUnit, string][];
   protected readonly val = (e: Event) => (e.target as HTMLInputElement).value;
@@ -89,7 +91,7 @@ export class DoseSheet {
   private readonly doseLogs = computed(() => this.careStore.logs().filter((l) => l.tankId === this.tankId() && l.type === 'fertilize' && l.details?.product));
 
   /** Produits proposés : engrais du stock, puis produits déjà dosés. */
-  protected readonly products = computed(() => [...new Set([...this.fertilizers().map((c) => c.name), ...this.doseLogs().map((l) => l.details!.product!)])]);
+  protected readonly products = computed(() => [...new Set([...this.fertilizers().map((c) => c.name), ...this.doseLogs().map((l) => must(must(l.details).product))])]);
 
   /** Dernière session de fertilisation (même jour que la plus récente dose). */
   private readonly lastSession = computed(() => {
@@ -106,9 +108,9 @@ export class DoseSheet {
   protected readonly rows = linkedSignal<Row[]>(() => {
     const last = this.lastSession();
     if (last.length) {
-      return last.map((l) => ({ product: l.details!.product!, amount: l.details?.amount != null ? String(l.details.amount).replace('.', ',') : '', unit: l.details?.unit ?? 'ml', consumableId: l.details?.consumableId }));
+      return last.map((l) => ({ product: must(must(l.details).product), amount: l.details?.amount != null ? String(l.details.amount).replace('.', ',') : '', unit: l.details?.unit ?? 'ml', consumableId: l.details?.consumableId }));
     }
-    const f = this.fertilizers()[0];
+    const f = this.fertilizers().at(0);
     return [{ product: f?.name ?? '', amount: '', unit: 'ml', consumableId: f?.id }];
   });
 

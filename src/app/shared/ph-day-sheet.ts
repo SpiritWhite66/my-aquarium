@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
+import type { ElementRef} from '@angular/core';
+import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import type { Tank } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { GearStore } from '../core/stores/gear.store';
@@ -27,7 +28,7 @@ import { GearRepo } from '../core/data/gear.repo';
     ol { margin: 0; padding-left: 18px; font-size: 13px; color: var(--mu); display: flex; flex-direction: column; gap: 4px; }
   `,
   template: `
-    <div class="backdrop" (click)="closed.emit()">
+    <div class="backdrop" role="presentation" (click)="closed.emit()">
       <div #root class="sheet" appModal role="dialog" aria-modal="true" aria-labelledby="ph-title" tabindex="-1"
         (click)="$event.stopPropagation()" (keydown.escape)="closed.emit()">
         <div class="row between">
@@ -74,7 +75,7 @@ export class PhDaySheet {
   private readonly waterStore = inject(WaterStore);
   protected readonly gearRepo = inject(GearRepo);
   readonly tank = input.required<Tank>();
-  readonly closed = output<void>();
+  readonly closed = output();
 
   protected readonly fmt = fmt;
   protected readonly target = CO2_TARGET;

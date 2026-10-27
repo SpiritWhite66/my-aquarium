@@ -90,7 +90,7 @@ describe('vérification des lignes', () => {
   });
 
   it('accepte une tâche de fréquence 1 ou plus', () => {
-    const task = (everyDays: number) => ({ id: 'k' + everyDays, tankId: 't', type: 'custom', label: 'x', everyDays, nextDue: '2026-10-01', active: true });
+    const task = (everyDays: number) => ({ id: `k${everyDays}`, tankId: 't', type: 'custom', label: 'x', everyDays, nextDue: '2026-10-01', active: true });
     expect(fails({ tanks: [tank()], tasks: [task(1), task(30)] })).toBe('');
   });
 

@@ -14,6 +14,8 @@ import { Icon } from '../../shared/icon';
 import { defaultTank } from '../../shared/form-state';
 import { PhotoUrls } from '../../shared/photo-urls';
 import { PhotoRepo } from '../../core/data/photo.repo';
+import { browserNav } from '../../core/browser';
+import { must } from '../../core/assert';
 
 const MAX_PHOTOS = 6;
 
@@ -242,8 +244,8 @@ export class DiagnosticPage {
   }
 
   private async files(): Promise<File[]> {
-    const d = this.dossier()!;
-    const json = new File([JSON.stringify(d, null, 2)], dossierFileName(this.view()!.tank.name, this.store.today()), { type: 'application/json' });
+    const d = must(this.dossier());
+    const json = new File([JSON.stringify(d, null, 2)], dossierFileName(must(this.view()).tank.name, this.store.today()), { type: 'application/json' });
     const photos: File[] = [];
     for (const [i, p] of this.chosenPhotos().entries()) {
       const img = await this.photoRepo.photoFile(p.id);
@@ -257,15 +259,15 @@ export class DiagnosticPage {
     if (!this.dossier()) return;
     const files = await this.files();
     const prev = this.followUp() ? this.previous() : undefined;
-    const text = diagnosticRequest(this.view()!.tank.name, this.question(), prev ? this.date(prev.date) : undefined);
+    const text = diagnosticRequest(must(this.view()).tank.name, this.question(), prev ? this.date(prev.date) : undefined);
     this.busy.set(true);
     try {
-      if (navigator.canShare?.({ files, text })) {
+      if (browserNav().canShare?.({ files, text })) {
         await navigator.share({ files, text });
         this.message.set('Dossier envoyé. Quand l’IA a répondu, colle sa réponse dans « Importer depuis l’IA ».');
       } else {
         await this.downloadFiles(files);
-        await navigator.clipboard?.writeText(text).catch(() => undefined);
+        await browserNav().clipboard?.writeText(text).catch(() => undefined);
         this.message.set('Fichiers téléchargés et demande copiée : joins-les dans Claude et colle la demande.');
       }
     } catch {
@@ -288,7 +290,7 @@ export class DiagnosticPage {
       a.href = url;
       a.download = f.name;
       a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      setTimeout(() => { URL.revokeObjectURL(url); }, 2000);
       // Laisse le navigateur traiter chaque téléchargement.
       await new Promise((r) => setTimeout(r, 300));
     }
@@ -298,6 +300,6 @@ export class DiagnosticPage {
     const prompt = await fetch('ai/diagnostic-prompt.md').then((r) => r.text());
     await navigator.clipboard.writeText(prompt);
     this.copied.set(true);
-    setTimeout(() => this.copied.set(false), 2500);
+    setTimeout(() => { this.copied.set(false); }, 2500);
   }
 }

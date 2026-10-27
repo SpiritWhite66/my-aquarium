@@ -9,6 +9,7 @@ import { CareStore } from './stores/care.store';
 import { PopulationStore } from './stores/population.store';
 import { SpeciesStore } from './stores/species.store';
 import { WaterStore } from './stores/water.store';
+import { must } from './assert';
 
 export interface TankView {
   tank: Tank;
@@ -83,7 +84,7 @@ export class AquariumStore {
     return this.activeTanks().map((tank) => {
       const members = (inhabitantsOf.get(tank.id) ?? [])
         .filter((i) => isAlive(i) && byId.has(i.speciesId))
-        .map((inhabitant) => ({ inhabitant, species: byId.get(inhabitant.speciesId)! }))
+        .map((inhabitant) => ({ inhabitant, species: must(byId.get(inhabitant.speciesId)) }))
         .sort((a, b) => a.species.scientificName.localeCompare(b.species.scientificName));
       const species = members.map((m) => m.species);
       const tankTests = testsOf.get(tank.id) ?? [];
@@ -96,7 +97,7 @@ export class AquariumStore {
       const lastObservation = observationsOf.get(tank.id)?.at(-1);
       const openFindings = (lastObservation?.findings ?? []).filter((f) => !f.resolved && f.severity !== 'info');
       const level = worst([...alerts.map((a) => a.level), ...openFindings.map((f) => (f.severity === 'danger' ? 'danger' : 'warn') as Level)]);
-      const first = alerts[0];
+      const first = alerts.at(0);
       const statusLabel = first
         ? `${PARAM_BY_KEY[first.key].short} ${first.direction === 'high' ? 'élevé' : 'bas'}`
         : openFindings.length
@@ -126,11 +127,11 @@ export class AquariumStore {
     const tanks = new Map(this.activeTanks().map((t) => [t.id, t]));
     return this.careStore.tasks()
       .filter((t) => t.active && t.nextDue <= today && tanks.has(t.tankId))
-      .map((task) => ({ task, tank: tanks.get(task.tankId)! }));
+      .map((task) => ({ task, tank: must(tanks.get(task.tankId)) }));
   });
 
   constructor() {
-    this.init();
+    void this.init();
   }
 
   private async init(): Promise<void> {

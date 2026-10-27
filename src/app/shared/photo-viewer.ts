@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, computed, effect, inject, input, linkedSignal, output, viewChild } from '@angular/core';
+import type { ElementRef} from '@angular/core';
+import { ChangeDetectionStrategy, Component, afterNextRender, computed, effect, inject, input, linkedSignal, output, viewChild } from '@angular/core';
 import type { Photo } from '../core/models';
 import { AquariumStore } from '../core/store';
 import { PopulationStore } from '../core/stores/population.store';
@@ -9,6 +10,8 @@ import { ModalFocus } from './modal-focus';
 import { Router } from '@angular/router';
 import { PhotoUrls } from './photo-urls';
 import { localDay } from '../core/dates';
+import { browserNav } from '../core/browser';
+import { nth } from '../core/data/util';
 import { PhotoRepo } from '../core/data/photo.repo';
 
 /** Visionneuse plein écran : navigation, légende, photo de couverture, téléchargement, suppression. */
@@ -75,13 +78,13 @@ export class PhotoViewer {
 
   readonly photos = input.required<Photo[]>();
   readonly startId = input.required<string>();
-  readonly closed = output<void>();
+  readonly closed = output();
 
   private preloaded?: { id: string; full: Blob };
   private readonly selectedId = linkedSignal(() => this.startId());
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
-  protected readonly current = computed(() => this.photos().find((p) => p.id === this.selectedId()) ?? this.photos()[0]);
+  protected readonly current = computed(() => this.photos().find((p) => p.id === this.selectedId()) ?? this.photos().at(0));
   protected readonly index = computed(() => Math.max(0, this.photos().findIndex((p) => p.id === this.current()?.id)));
 
   constructor() {
@@ -133,21 +136,21 @@ export class PhotoViewer {
       ? 'Avec le skill my-aquarium-json : bilan visuel (sanity) de cette photo.'
       : 'Avec le skill my-aquarium-json : inventaire (inventory) puis bilan visuel (sanity) de cette photo de mon bac.';
     try {
-      if (navigator.canShare?.({ files: [file] })) {
+      if (browserNav().canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], text });
       } else {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(full);
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        setTimeout(() => { URL.revokeObjectURL(a.href); }, 1000);
         a.download = file.name;
         a.click();
-        await navigator.clipboard?.writeText(text).catch(() => undefined);
+        await browserNav().clipboard?.writeText(text).catch(() => undefined);
       }
     } catch {
       return; // partage annulé
     }
     this.closed.emit();
-    this.router.navigate(['/import-ia'], { queryParams: { bac: p.tankId } });
+    void this.router.navigate(['/import-ia'], { queryParams: { bac: p.tankId } });
   }
 
   protected isCover(p: Photo): boolean {
@@ -155,14 +158,14 @@ export class PhotoViewer {
   }
 
   protected toggleCover(p: Photo): void {
-    this.photoRepo.setCover(p.tankId, this.isCover(p) ? undefined : p.id);
+    void this.photoRepo.setCover(p.tankId, this.isCover(p) ? undefined : p.id);
   }
 
   protected async remove(p: Photo): Promise<void> {
     if (!confirm('Supprimer cette photo ?')) return;
     // On se place sur la voisine avant de supprimer pour ne pas revenir à la première.
     const list = this.photos();
-    const neighbor = list[this.index() + 1] ?? list[this.index() - 1];
+    const neighbor = nth(list, this.index() + 1) ?? nth(list, this.index() - 1);
     if (neighbor) this.selectedId.set(neighbor.id);
     await this.photoRepo.deletePhoto(p);
   }

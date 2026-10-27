@@ -188,7 +188,7 @@ describe('LivestockRepo', () => {
   it('crée la fiche personnelle puis la remplace par la fiche intégrée à la suppression', async () => {
     const repo = inject(LivestockRepo);
     const t = await inject(TankRepo).saveTank(tankData('A'));
-    const sp = await repo.saveSpecies({ scientificName: 'Perso', kind: 'fish', commonNames: ['Perso'], overrides: 'neon' } as never);
+    const sp = await repo.saveSpecies({ scientificName: 'Perso', kind: 'fish', commonNames: ['Perso'], overrides: 'neon' });
     expect(sp.startsWith('custom-')).toBe(true);
     expect((await db.species.get(sp))?.source).toBe('custom');
     const id = await repo.addInhabitant(fish(t, 2, { speciesId: sp }));
@@ -379,7 +379,7 @@ describe('CareRepo', () => {
 
   it('bilans visuels : ajout, résolution d’un constat, suppression', async () => {
     const care = inject(CareRepo);
-    await care.addObservation({ id: 'o', tankId: 't', date: '2026-10-01T10:00:00Z', overall: 'watch', findings: [{ kind: 'algae', label: 'a' }, { kind: 'algae', label: 'b' }] } as never);
+    await care.addObservation({ id: 'o', tankId: 't', date: '2026-10-01T10:00:00Z', overall: 'watch', findings: [{ kind: 'algae', label: 'a' }, { kind: 'algae', label: 'b' }] });
     await care.setFindingResolved((await db.observations.get('o'))!, 0, true);
     expect((await db.observations.get('o'))!.findings.map((f) => !!(f as { resolved?: boolean }).resolved)).toEqual([true, false]);
     await care.deleteObservation('o');

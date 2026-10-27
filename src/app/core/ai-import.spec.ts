@@ -20,7 +20,7 @@ describe('validation du JSON IA', () => {
   });
 
   it('refuse un champ inconnu, une valeur hors liste et un champ manquant', () => {
-    const bad = structuredClone(inventory) as any;
+    const bad = structuredClone(inventory) as unknown as { data: { items: { tank?: string; unit?: string; confidence?: unknown }[] } };
     bad.data.items[0].tank = 'Bac salon';
     bad.data.items[1].unit = 'touffes';
     delete bad.data.items[1].confidence;

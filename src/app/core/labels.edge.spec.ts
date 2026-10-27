@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { agoLabel, dueLabel, elapsedLabel, fmt, fmtDate, fmtLongDate, fmtRange, fmtShortDate, fmtTime, frequencyLabel, parseNumber, speciesName, unitLabel } from './labels';
 import type { Species } from './models';
 
-const nbsp = /[   ]/g;
+const nbsp = /[\u00a0\u202f\u0020]/g;
 const plain = (s: string) => s.replace(nbsp, ' ');
 
 describe('nombres', () => {

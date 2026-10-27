@@ -4,6 +4,7 @@
 import type { Consumable, DailySchedule, DropChecker, Equipment, LightSpec, MaintenanceTask, ParamKey, Range, Tank, WaterTest } from './models';
 import { addDays, daysBetween, parseIsoDate, toIsoDate, localDay } from './dates';
 import { fmt } from './labels';
+import { must } from './assert';
 
 // ---------- Changement d'eau ----------
 
@@ -41,7 +42,7 @@ export function trendOf(tests: WaterTest[], key: ParamKey, range?: Range, window
   const from = now - windowDays * 86_400_000;
   const pts = tests
     .filter((t) => t.values[key] != null && new Date(t.date).getTime() >= from)
-    .map((t) => ({ x: new Date(t.date).getTime() / 86_400_000, y: t.values[key]! }));
+    .map((t) => ({ x: new Date(t.date).getTime() / 86_400_000, y: must(t.values[key]) }));
   if (pts.length < 3) return undefined;
   const n = pts.length;
   const mx = pts.reduce((s, p) => s + p.x, 0) / n;
@@ -49,7 +50,7 @@ export function trendOf(tests: WaterTest[], key: ParamKey, range?: Range, window
   const sxx = pts.reduce((s, p) => s + (p.x - mx) ** 2, 0);
   if (sxx === 0) return undefined;
   const slopePerDay = pts.reduce((s, p) => s + (p.x - mx) * (p.y - my), 0) / sxx;
-  const last = pts.at(-1)!.y;
+  const last = must(pts.at(-1)).y;
   const perWeek = slopePerDay * 7;
 
   // Tendance « nette » : sur 4 semaines, elle déplacerait la valeur d'au moins 20 % de la plage
@@ -136,7 +137,7 @@ export function tasksToIcs(tasks: MaintenanceTask[], tanks: Tank[], now = new Da
  */
 export function bpmFromTaps(taps: number[]): number | undefined {
   if (taps.length < 2) return undefined;
-  const span = taps.at(-1)! - taps[0];
+  const span = must(taps.at(-1)) - taps[0];
   if (span <= 0) return undefined;
   return Math.round(((taps.length - 1) * 60_000) / span);
 }
@@ -308,7 +309,7 @@ export function gearChecks(tank: Tank, gear: Equipment[]): GearCheck[] {
   const light = lights.find((l) => l.light?.schedule)?.light;
 
   if (light) {
-    const h = photoperiod(light)!;
+    const h = must(photoperiod(light));
     if (h > 9) out.push({ level: 'warn', title: `Éclairage long : ${fmt(h)} h par jour`, detail: 'Au-delà de 8 à 9 h, les algues profitent du surplus de lumière. Vise 7 à 8 h, surtout sur un bac récent.' });
     else if (h < 6) out.push({ level: 'info', title: `Éclairage court : ${fmt(h)} h par jour`, detail: 'Les plantes exigeantes peuvent manquer de lumière.' });
     else out.push({ level: 'ok', title: `Éclairage : ${fmt(h)} h par jour`, detail: 'Durée adaptée à un bac planté.' });
