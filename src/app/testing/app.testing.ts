@@ -122,6 +122,34 @@ export async function bootApp(seed: ((db: AquariumDb) => PromiseLike<unknown>) |
   };
 }
 
+/** Coquille complète de l'appli (menus, lien d'évitement) sur la même base de test. */
+export async function bootShell(seed: ((db: AquariumDb) => PromiseLike<unknown>) | false = seedAll) {
+  useFakeIndexedDb();
+  const db = new AquariumDb(`shell-${n++}`);
+  TestBed.configureTestingModule({
+    providers: [
+      { provide: AQUARIUM_DB, useValue: db },
+      { provide: LOCALE_ID, useValue: 'fr-FR' },
+      provideRouter(routes, withComponentInputBinding(), withRouterConfig({ paramsInheritanceStrategy: 'always' })),
+    ],
+  });
+  if (seed) await seed(db);
+  const { App: Shell } = await import('../app');
+  const { Router } = await import('@angular/router');
+  const fixture = TestBed.createComponent(Shell);
+  const router = TestBed.inject(Router);
+  fixture.detectChanges();
+  await router.navigateByUrl('/');
+  const settle = async () => {
+    for (let i = 0; i < 4; i++) {
+      fixture.detectChanges();
+      await new Promise((r) => setTimeout(r, 10));
+    }
+  };
+  await settle();
+  return { db, fixture, router, el: fixture.nativeElement as HTMLElement, settle };
+}
+
 export async function closeApp(app: App): Promise<void> {
   TestBed.resetTestingModule();
   await app.db.delete();

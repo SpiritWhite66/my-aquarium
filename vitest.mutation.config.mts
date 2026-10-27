@@ -6,7 +6,7 @@ export default defineConfig({
   esbuild: { target: 'es2022' },
   test: {
     environment: 'jsdom',
-    setupFiles: ['src/test-setup.mutation.ts'],
+    setupFiles: ['src/test-setup.mutation.testing.ts'],
     include: ['src/app/core/**/*.spec.ts'],
   },
 });

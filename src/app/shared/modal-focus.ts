@@ -1,5 +1,12 @@
 import { DestroyRef, Directive, ElementRef, inject } from '@angular/core';
 
+/** Visible : ni l'attribut hidden, ni display: none, ni visibility: hidden (indépendant de la mise en page). */
+function visible(el: HTMLElement): boolean {
+  if (el.closest('[hidden]')) return false;
+  const style = getComputedStyle(el);
+  return style.display !== 'none' && style.visibility !== 'hidden';
+}
+
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
@@ -17,7 +24,7 @@ export class ModalFocus {
 
   protected onKey(e: KeyboardEvent): void {
     if (e.key !== 'Tab') return;
-    const items = [...this.el.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((x) => x.offsetParent !== null);
+    const items = [...this.el.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(visible);
     if (!items.length) return e.preventDefault();
     const first = items[0];
     const last = items[items.length - 1];
