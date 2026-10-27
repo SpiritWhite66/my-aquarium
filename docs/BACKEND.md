@@ -2,7 +2,7 @@
 
 Statut : proposition, rien n'est encore implémenté.
 
-Les décisions sont détaillées dans les [ADR](adr/README.md).
+Les décisions sont détaillées dans les [ADR](adr/README.md). Plan de mise en place : [plan-backend.md](plan-backend.md).
 
 ## 1. Point de départ
 
