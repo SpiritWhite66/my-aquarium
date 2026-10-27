@@ -24,7 +24,7 @@ Les **plantes sont aussi importantes que la faune** (poissons, crevettes, escarg
 | PWA | `@angular/pwa` (service worker + manifeste) |
 | Données espèces | Catalogue JSON local, enrichi par GBIF et Wikidata (taxonomie, photos) |
 | CI/CD | GitHub Actions → GitHub Pages |
-| Environnement | Node 24 (voir `.nvmrc`) |
+| Environnement | Node 26, au moins 26.12.1 (voir `.nvmrc`) |
 
 ## Design
 

@@ -8,7 +8,7 @@ Application web (PWA) personnelle pour gérer plusieurs aquariums d'eau douce : 
 ## Développement
 
 ```bash
-nvm use            # Node 24
+nvm use            # Node 26 (≥ 26.12.1, corrige Node2Shell)
 npm install
 npm start          # http://localhost:4200
 npm test -- --watch=false               # tests unitaires et d'interface
