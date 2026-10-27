@@ -35,7 +35,7 @@ On découpe le code comme deux microservices (modules séparés, chacun son sch�
 └───────────────┬─────────────────────────────┘
                 │
         PostgreSQL (Neon, free)
-   Photos : stockage objet (Cloudflare R2) ou rester en local
+   Photos : Backblaze B2 (S3), envoi direct par URL signée
 ```
 
 ## 3. Hébergement et base de données
@@ -46,14 +46,14 @@ On découpe le code comme deux microservices (modules séparés, chacun son sch�
 |---|---|---|---|
 | API | **Render** Web Service free | Déploiement depuis GitHub ou Docker, sans carte | 512 Mo RAM, mise en veille après 15 min, 750 h/mois par compte |
 | Base | **Neon** Postgres free | Sans carte, ne périme pas, mise en veille automatique | ~0,5 Go de stockage, réveil en ~1 s |
-| Photos (optionnel) | **Cloudflare R2** | 10 Go gratuits | Demande une carte : à éviter, voir plus bas |
+| Photos | **Backblaze B2** | Compatible S3, sans carte | 10 Go de stockage, téléchargement gratuit plafonné par jour |
 
 À éviter :
 - **Postgres de Render** : la base gratuite est supprimée au bout de 30 jours.
 - **Supabase** : correct, mais le projet est mis en pause après une semaine sans activité.
 - **MongoDB Atlas M0** : gratuit et sans carte, mais nos données sont relationnelles (bac → habitants → espèce).
 
-Pour les **photos** : les garder **en local uniquement** au début, comme aujourd'hui. 0,5 Go de base ne suffit pas pour les stocker. Leur synchronisation est une étape ultérieure.
+Pour les **photos** : jamais dans Postgres (0,5 Go ne suffit pas). Elles vont dans Backblaze B2, voir la section 9. Autres stockages : Cloudflare R2 et AWS S3 demandent une carte, Supabase Storage (1 Go) se met en pause, Cloudinary/ImageKit ne sont pas compatibles S3. Comme B2 parle S3, passer à R2 ou S3 plus tard ne change que la configuration.
 
 Alternatives pour l'API si Render pose problème : Koyeb (1 service gratuit), Fly.io (carte demandée), Cloudflare Workers + D1 (gratuit, mais SQLite et un autre modèle de code).
 
@@ -89,7 +89,7 @@ Données privées, toujours filtrées par `user_id`.
 
 ```
 aqua.tank, aqua.inhabitant, aqua.water_test, aqua.task, aqua.equipment_item,
-aqua.custom_species, aqua.photo_meta
+aqua.custom_species, aqua.photo_meta (clé B2, légende, bac, couverture, taille)
 ```
 
 - Les tables reprennent les stores Dexie actuels (format de sauvegarde v1), ce qui réutilise l'import/export existant.
@@ -118,18 +118,42 @@ Modèle **local d'abord** : l'appli écrit toujours dans Dexie, puis synchronise
 - La CI existante s'étend au backend : npm audit, CodeQL, Dependabot, tests.
 - RGPD : export (déjà fait côté appli) et suppression complète du compte.
 
-## 9. Démarrage à froid
+## 9. Photos
+
+Les photos vont **directement de l'appli vers B2**, via une URL signée délivrée par l'API. C'est la pratique recommandée par les fournisseurs S3 : l'appli ne détient jamais d'identifiant, et l'API décide de tout.
+
+```
+Appli                         API                          B2
+  │ POST /photos/upload-url ──▶│ vérifie compte, bac,       │
+  │ {tankId, taille, type}     │ taille ≤ 2 Mo, image/webp  │
+  │◀── {url signée 5 min, key} │ key = users/<id>/photos/<uuid>.webp
+  │ PUT photo ─────────────────┼───────────────────────────▶│
+  │ POST /photos {key, légende}▶│ vérifie l'objet, enregistre aqua.photo_meta
+```
+
+- **Sur l'appareil** : redimensionnement (1600 px max) et compression WebP avant envoi, ~200-400 Ko par photo. La photo reste aussi dans IndexedDB pour l'affichage hors ligne.
+- **Bucket privé** : aucune lecture publique. Lecture par `GET /photos/:id/url`, qui renvoie une URL signée courte (mise en cache côté appli).
+- **Signature restrictive** : un seul objet, type et taille fixés, durée ~5 min. Le nom du fichier est choisi par l'API, jamais par l'appli.
+- **CORS du bucket** limité à l'URL GitHub Pages, méthodes `PUT` et `GET` uniquement.
+- **Nettoyage** : un objet envoyé mais jamais confirmé (pas de ligne `photo_meta` après 24 h) est supprimé ; la suppression d'une photo ou d'un compte supprime aussi l'objet.
+- **Clé B2** (droits limités à ce bucket) uniquement dans les variables d'environnement Render.
+- **Quota** : limite de stockage par utilisateur (ex. 500 Mo) pour protéger les 10 Go.
+- **Hors ligne** : une photo prise sans réseau entre dans l'outbox ; elle est envoyée à la synchro suivante.
+
+Écarté : faire transiter les photos par l'API. Sur Render gratuit (512 Mo de RAM, mise en veille, quota d'heures), c'est plus lent et plus fragile, sans gain de sécurité.
+
+## 10. Démarrage à froid
 
 Render endort le service gratuit après 15 min d'inactivité ; le premier appel prend alors 30 à 60 s. Avec le modèle local d'abord, **l'utilisateur ne le voit pas** : l'appli affiche ses données locales et la synchro se fait en arrière-plan. Ne pas ajouter de « ping » toutes les 14 min pour garder le service éveillé : cela consomme tout le quota d'heures.
 
-## 10. Étapes proposées
+## 11. Étapes proposées
 
 1. **Référentiel seul**, sans compte : API en lecture, l'appli remplace son catalogue embarqué par une copie synchronisée. Risque faible, et cela valide Render + Neon.
 2. **Comptes** : connexion, sauvegarde manuelle vers le serveur (envoi du JSON de sauvegarde existant).
 3. **Synchronisation automatique** (outbox, push/pull).
-4. **Photos** sur un stockage objet, si le besoin se confirme.
+4. **Photos** sur Backblaze B2 (URL signées).
 
-## 11. Questions ouvertes
+## 12. Questions ouvertes
 
 - Le référentiel est-il édité uniquement par toi, ou les utilisateurs peuvent-ils proposer des fiches ?
 - L'appli aura-t-elle d'autres utilisateurs, ou est-ce un usage personnel multi-appareils ?
