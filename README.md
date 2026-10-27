@@ -34,3 +34,12 @@ npm run build
   données et le store), pas sur les gabarits des pages. Rapport HTML : `reports/mutation/index.html`. Le score minimal (75 %) fait échouer la commande.
 
 Les données sont stockées dans le navigateur (IndexedDB). Pense à exporter une sauvegarde depuis Réglages.
+
+## Backend (en cours de mise en place)
+
+Conception : [docs/BACKEND.md](docs/BACKEND.md) · plan : [docs/plan-backend.md](docs/plan-backend.md). L'appli fonctionne seule ; le backend est optionnel.
+
+- `api/` : serveur Fastify + PostgreSQL ; `shared/` : types et schémas communs.
+- `npm run server:build`, `npm run server:test` (les tests d'intégration lisent `TEST_DATABASE_URL`, ex. un PostgreSQL lancé avec Docker), `npm run test:e2e -w api` (après le build), `npm run server:mutation`.
+- Base : `npm run migrate -w api` puis `npm run import:ref -w api` (catalogue de départ). Variables : `DATABASE_URL`, `CORS_ORIGIN`, `ADMIN_TOKEN` (32 caractères minimum, pour écrire dans le référentiel).
+- Dans l'appli, **Réglages › Catalogue en ligne (bêta)** est désactivé par défaut : l'appli utilise alors son catalogue intégré, comme avant.

@@ -101,3 +101,18 @@ test.describe('accessibilité (axe)', () => {
     });
   }
 });
+
+test('le catalogue en ligne est désactivé par défaut : l’appli utilise son catalogue intégré', async ({
+  app,
+  page,
+}) => {
+  await app.seed();
+  await page.goto('/reglages');
+  const toggle = page.getByRole('switch', { name: 'Utiliser le catalogue en ligne' });
+  await expect(toggle).not.toBeChecked();
+  await expect(page.getByText('Catalogue en ligne (bêta)')).toBeVisible();
+  // Aucun serveur n'est configuré : le réglage est indisponible, rien n'est demandé au réseau.
+  await expect(toggle).toBeDisabled();
+  await page.goto('/catalogue');
+  await expect(page.getByText('Danio margaritatus').first()).toBeVisible();
+});

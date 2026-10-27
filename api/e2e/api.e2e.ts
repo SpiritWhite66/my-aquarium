@@ -1,62 +1,19 @@
-import { type ChildProcess, spawn } from 'node:child_process';
-import { createServer } from 'node:net';
-import { fileURLToPath } from 'node:url';
 import { apiErrorSchema, healthResponseSchema } from '@aquarium/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { type RunningServer, startServer } from './server.js';
 
-// Teste le serveur compilé (`npm run build -w api`), lancé comme en production, par de vraies requêtes HTTP.
+// Teste le serveur compilé, lancé comme en production, par de vraies requêtes HTTP.
 const ORIGIN = 'https://exemple.github.io';
-const entry = fileURLToPath(new URL('../dist/server.js', import.meta.url));
-let child: ChildProcess;
+let server: RunningServer;
 let base = '';
 
-async function freePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const probe = createServer();
-    probe.once('error', reject);
-    probe.listen(0, '127.0.0.1', () => {
-      const address = probe.address();
-      probe.close(() => {
-        if (address !== null && typeof address === 'object') resolve(address.port);
-        else reject(new Error('port introuvable'));
-      });
-    });
-  });
-}
-
-async function waitReady(url: string): Promise<void> {
-  const deadline = Date.now() + 10_000;
-  while (Date.now() < deadline) {
-    try {
-      if ((await fetch(url)).ok) return;
-    } catch {
-      // Le serveur n'écoute pas encore : on réessaie.
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  throw new Error('Le serveur ne répond pas après 10 s');
-}
-
 beforeAll(async () => {
-  const port = await freePort();
-  base = `http://127.0.0.1:${String(port)}`;
-  child = spawn(process.execPath, [entry], {
-    env: {
-      PATH: process.env['PATH'] ?? '',
-      HOST: '127.0.0.1',
-      PORT: String(port),
-      CORS_ORIGIN: ORIGIN,
-      LOG_LEVEL: 'silent',
-      APP_VERSION: 'e2e',
-      RATE_LIMIT_MAX: '50',
-    },
-    stdio: 'ignore',
-  });
-  await waitReady(`${base}/health`);
+  server = await startServer({ CORS_ORIGIN: ORIGIN, APP_VERSION: 'e2e', RATE_LIMIT_MAX: '50' });
+  base = server.base;
 });
 
 afterAll(() => {
-  child.kill('SIGTERM');
+  server.stop();
 });
 
 describe('API compilée', () => {

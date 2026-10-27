@@ -14,6 +14,7 @@ import type { NotificationPrefs } from '../../core/reminders';
 import { BackupRepo } from '../../core/data/backup.repo';
 import { CareRepo } from '../../core/data/care.repo';
 import { PrefsRepo } from '../../core/data/prefs.repo';
+import { RefSyncService } from '../../core/ref-sync';
 
 @Component({
   selector: 'app-settings',
@@ -119,6 +120,28 @@ import { PrefsRepo } from '../../core/data/prefs.repo';
       </section>
 
       <section>
+        <h2 class="h2">Catalogue</h2>
+        <div class="card">
+          <div class="it" style="flex-wrap: wrap">
+            <span class="ic"><app-icon name="download" [size]="20" /></span>
+            <div class="grow" style="min-width: 160px">
+              <p style="font-weight: 600">Catalogue en ligne (bêta)</p>
+              <p class="sub" aria-live="polite">{{ catalogStatus() }}</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" role="switch" [checked]="refSync.enabled()" [disabled]="!refSync.available" (change)="refSync.setEnabled($any($event.target).checked)" />
+              <span class="sr-only">Utiliser le catalogue en ligne</span>
+            </label>
+          </div>
+          @if (refSync.enabled()) {
+            <div class="it">
+              <button class="linkbtn" type="button" [disabled]="refSync.status() === 'syncing'" (click)="refSync.sync()">Mettre à jour maintenant</button>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section>
         <h2 class="h2">Assistant IA</h2>
         <div class="card">
           <a class="it" routerLink="/import-ia">
@@ -175,6 +198,22 @@ import { PrefsRepo } from '../../core/data/prefs.repo';
   `,
 })
 export class SettingsPage {
+  protected readonly refSync = inject(RefSyncService);
+  protected readonly catalogStatus = computed(() => {
+    if (!this.refSync.available) return 'Service pas encore disponible.';
+    if (!this.refSync.enabled())
+      return 'Désactivé : l’appli utilise son catalogue intégré (réglage par défaut).';
+    switch (this.refSync.status()) {
+      case 'syncing':
+        return 'Mise à jour en cours…';
+      case 'ok':
+        return 'Catalogue à jour.';
+      case 'error':
+        return 'Serveur injoignable : le catalogue déjà enregistré sur l’appareil est utilisé.';
+      default:
+        return 'Activé : mise à jour à chaque ouverture de l’appli.';
+    }
+  });
   protected readonly notif = inject(NotificationService);
   protected readonly prefs = inject(PrefsStore).notificationPrefs;
   protected readonly notifStatus = computed(() => {

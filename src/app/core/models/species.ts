@@ -50,3 +50,12 @@ export interface Species extends Entity {
   flora?: FloraInfo;
   notes?: string;
 }
+
+/** État de la synchronisation du catalogue en ligne (une ligne par type de fiche). */
+export interface RefMeta {
+  id: string;
+  /** Date de modification la plus récente reçue du serveur : point de reprise de la prochaine mise à jour. */
+  since: string;
+  /** Date de la dernière synchronisation réussie. */
+  syncedAt: string;
+}

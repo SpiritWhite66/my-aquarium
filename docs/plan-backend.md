@@ -39,12 +39,15 @@ flowchart LR
 
 ## 2. Module référentiel (sans compte)
 
-- [ ] Tables `ref.species`, `ref.equipment`, `ref.consumable`, avec `status` et `created_by` dès le départ (propositions futures).
-- [ ] Script d'import depuis le catalogue embarqué actuel (saisie manuelle / CSV, pas d'IA).
-- [ ] `GET /ref/<type>?since=` et `GET /ref/<type>/:id`, avec `ETag` et `Cache-Control`.
-- [ ] Appli : copie locale dans Dexie, mise à jour au démarrage ; repli sur le catalogue embarqué si l'API ne répond pas.
-- [ ] Écriture réservée à l'admin (jeton simple en attendant l'étape 3).
-- [ ] Tests unitaires + E2E (API simulée et API réelle).
+- [x] Tables `ref.species`, `ref.equipment`, `ref.consumable`, avec `status` et `created_by` dès le départ (propositions futures), et `deleted_at` pour propager les retraits.
+- [x] Script d'import depuis le catalogue embarqué actuel : `npm run catalog:export` (une fois, vers `api/data/species.json`) puis `npm run import:ref -w api` (idempotent : une fiche inchangée n'est pas réécrite). Pas d'IA.
+- [x] `GET /ref/<type>?since=` et `GET /ref/<type>/:id`, avec `ETag` et `Cache-Control`.
+- [x] Appli : copie locale dans Dexie (table `species`, point de reprise dans `refMeta`), mise à jour au démarrage ; repli sur le catalogue embarqué si l'API ne répond pas.
+- [x] **Interrupteur dans Réglages › Catalogue en ligne (bêta), désactivé par défaut** : désactivé, l'appli fonctionne exactement comme avant. Réglage propre à l'appareil, indisponible tant que l'adresse de l'API n'est pas renseignée (`src/app/core/api-config.ts`).
+- [x] Écriture réservée à l'admin (jeton `ADMIN_TOKEN` en attendant l'étape 3 ; sans jeton configuré, l'écriture est fermée).
+- [x] Tests unitaires, intégration (PostgreSQL réel), E2E du serveur compilé, E2E Playwright de l'état par défaut.
+- [ ] À faire au déploiement : renseigner l'adresse de l'API, ajouter l'API à `ngsw-config.json` (cache du service worker), définir `ADMIN_TOKEN` sur Render, lancer la migration et l'import sur Neon, test Playwright avec l'API réelle.
+- Limites assumées : seules les espèces existent dans l'appli (pas encore de catalogue de matériel ni de consommables) ; les tables `equipment` et `consumable` et leurs routes sont prêtes mais vides, sans synchronisation côté appli.
 
 **Terminé quand** : une fiche ajoutée côté serveur apparaît dans l'appli, y compris après passage hors ligne.
 

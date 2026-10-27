@@ -14,6 +14,7 @@ import type {
   Observation,
   Photo,
   PhotoFile,
+  RefMeta,
   Species,
   Tank,
   WaterTest,
@@ -38,6 +39,8 @@ export class AquariumDb extends Dexie {
   settingChanges!: EntityTable<SettingChange, 'id'>;
   /** Préférences de l'appareil lisibles par le service worker (notifications). */
   prefs!: EntityTable<NotificationPrefs, 'id'>;
+  /** Point de reprise du catalogue en ligne (hors sauvegardes : propre à l'appareil). */
+  refMeta!: EntityTable<RefMeta, 'id'>;
 
   constructor(name = 'my-aquarium') {
     super(name);
@@ -92,6 +95,7 @@ export class AquariumDb extends Dexie {
           await tx.table('photos').bulkPut(metas);
         }
       });
+    this.version(9).stores({ refMeta: 'id' });
   }
 }
 

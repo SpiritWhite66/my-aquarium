@@ -12,21 +12,28 @@ describe('migrations', () => {
   it('ont un fichier SQL par entrée du journal', () => {
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- dossier de migrations fixe du dépôt
     const files = readdirSync(folder);
-    expect(files.filter((f) => f.endsWith('.sql'))).toContain('0000_schemas.sql');
+    expect(files.filter((f) => f.endsWith('.sql'))).toContain('0000_schemas_et_referentiel.sql');
   });
 
   // Exécuté en CI (service PostgreSQL) ; en local : TEST_DATABASE_URL=postgres://…
-  it.skipIf(url === undefined)('créent les schémas ref et aqua, et sont rejouables', async () => {
-    const { db, close } = createDb(url ?? '');
-    try {
-      await migrate(db, { migrationsFolder: folder });
-      await migrate(db, { migrationsFolder: folder });
-      const rows = await db.execute<{ schema_name: string }>(
-        sql`select schema_name from information_schema.schemata where schema_name in ('ref','aqua') order by 1`,
-      );
-      expect(rows.map((r) => r.schema_name)).toEqual(['aqua', 'ref']);
-    } finally {
-      await close();
-    }
-  });
+  it.skipIf(url === undefined)(
+    'créent les schémas et tables du référentiel, et sont rejouables',
+    async () => {
+      const { db, close } = createDb(url ?? '');
+      try {
+        await migrate(db, { migrationsFolder: folder });
+        await migrate(db, { migrationsFolder: folder });
+        const rows = await db.execute<{ schema_name: string }>(
+          sql`select schema_name from information_schema.schemata where schema_name in ('ref','aqua') order by 1`,
+        );
+        expect(rows.map((r) => r.schema_name)).toEqual(['aqua', 'ref']);
+        const tables = await db.execute<{ table_name: string }>(
+          sql`select table_name from information_schema.tables where table_schema = 'ref' order by 1`,
+        );
+        expect(tables.map((t) => t.table_name)).toEqual(['consumable', 'equipment', 'species']);
+      } finally {
+        await close();
+      }
+    },
+  );
 });

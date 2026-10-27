@@ -4,9 +4,10 @@
   "scripts": {
     "ng": "ng",
     "ai": "node scripts/build-ai.mjs",
-    "prestart": "npm run ai",
+    "catalog:export": "node scripts/export-catalog.mjs",
+    "prestart": "npm run shared:build && npm run ai",
     "start": "ng serve",
-    "prebuild": "npm run ai",
+    "prebuild": "npm run shared:build && npm run ai",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
@@ -18,7 +19,10 @@
     "knip": "knip",
     "e2e": "playwright test",
     "server:build": "tsc -b api/tsconfig.build.json",
-    "server:test": "npm run test -w shared -w api"
+    "server:test": "npm run test -w shared -w api",
+    "shared:build": "npm run build -w shared",
+    "pretest": "npm run shared:build",
+    "prelint": "npm run shared:build"
   },
   "private": true,
   "packageManager": "npm@11.19.1",

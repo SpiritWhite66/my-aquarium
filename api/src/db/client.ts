@@ -6,3 +6,5 @@ export function createDb(url: string) {
   const sql = postgres(url, { max: 5, idle_timeout: 20, connect_timeout: 15 });
   return { db: drizzle(sql), close: () => sql.end() };
 }
+
+export type Db = ReturnType<typeof createDb>['db'];

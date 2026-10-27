@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { BACKUP_REMINDER_DAYS, BackupService, fmtBytes } from '../../core/backup';
 import { AquariumStore } from '../../core/store';
 import { PrefsStore } from '../../core/stores/prefs.store';
+import { API_URL } from '../../core/api-config';
 import { ThemeService } from '../../core/theme';
 import { bootApp, closeApp, type App } from '../../testing/app.testing';
 
@@ -68,6 +69,69 @@ describe('réglages', () => {
     expect(TestBed.inject(ThemeService).choice()).toBe('dark');
     expect(app.find('.seg button.on')!.textContent).toBe('Sombre');
     expect(app.find('.seg button', 'Sombre')!.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  describe('catalogue en ligne', () => {
+    const catalogSwitch = () =>
+      app.el().querySelectorAll<HTMLInputElement>('input[role=switch]')[1];
+
+    it('est indisponible tant qu’aucune API n’est configurée', async () => {
+      app = await bootApp();
+      await app.go('/reglages', 'Catalogue en ligne');
+      expect(catalogSwitch().disabled).toBe(true);
+      expect(app.el().textContent).toContain('Service pas encore disponible.');
+    });
+
+    it('est désactivé par défaut et ne contacte pas le serveur', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      TestBed.overrideProvider(API_URL, { useValue: 'https://api.exemple.test' });
+      app = await bootApp();
+      await app.go('/reglages', 'Catalogue en ligne');
+      expect(catalogSwitch().disabled).toBe(false);
+      expect(catalogSwitch().checked).toBe(false);
+      expect(app.el().textContent).toContain('utilise son catalogue intégré');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('l’activer télécharge le catalogue puis affiche « à jour »', async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            items: [
+              {
+                id: 'espece-serveur',
+                kind: 'fish',
+                scientificName: 'Serveur specius',
+                commonNames: ['Poisson du serveur'],
+                updatedAt: '2027-01-01T10:00:00.000Z',
+                deletedAt: null,
+              },
+            ],
+          }),
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      TestBed.overrideProvider(API_URL, { useValue: 'https://api.exemple.test' });
+      app = await bootApp();
+      await app.go('/reglages', 'Catalogue en ligne');
+      catalogSwitch().checked = true;
+      catalogSwitch().dispatchEvent(new Event('change'));
+      await app.until(() => app.el().textContent.includes('Catalogue à jour.'));
+      expect(await app.db.species.get('espece-serveur')).toBeDefined();
+      expect(app.find('button', 'Mettre à jour maintenant')).not.toBeNull();
+    });
+
+    it('signale un serveur injoignable', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+      TestBed.overrideProvider(API_URL, { useValue: 'https://api.exemple.test' });
+      app = await bootApp();
+      await app.go('/reglages', 'Catalogue en ligne');
+      catalogSwitch().checked = true;
+      catalogSwitch().dispatchEvent(new Event('change'));
+      await app.until(() => app.el().textContent.includes('Serveur injoignable'));
+    });
   });
 
   describe('rappels', () => {

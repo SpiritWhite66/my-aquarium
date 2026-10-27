@@ -12,6 +12,8 @@ const envSchema = z.object({
   /** Origine autorisée par CORS : l'appli sur GitHub Pages (sans chemin). */
   CORS_ORIGIN: z.url().refine(isOrigin, 'origine seule, sans chemin ni « / » final'),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }).optional(),
+  /** Jeton de l'administrateur du référentiel (étape 2, avant les comptes). Absent : écriture désactivée. */
+  ADMIN_TOKEN: z.string().min(32, 'au moins 32 caractères').optional(),
   APP_VERSION: z.string().min(1).default('dev'),
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(100),
 });
