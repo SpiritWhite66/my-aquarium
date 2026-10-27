@@ -15,7 +15,7 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] Logo et icônes de l'app aux couleurs du design (`public/logo.svg`).
 
 ## Étape 2 — Modèle de données et stockage
-- [x] Interfaces TypeScript (`src/app/core/models.ts`).
+- [x] Interfaces TypeScript (`src/app/core/models/`, un fichier par domaine).
 - [x] UUID et `updatedAt` sur chaque enregistrement.
 - [x] Base Dexie avec index et versionnement.
 - [x] Service unique `AquariumStore` exposant des signals (seule classe à remplacer pour le futur backend).

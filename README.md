@@ -19,6 +19,8 @@ npm run build
 
 ### Qualité des tests
 
+- **Architecture** : `core/` (règles et calculs purs, sans Angular ni écran), `core/stores/` (lecture par domaine), `core/data/` (écriture), `pages/` et
+  `shared/` (écrans, qui appellent seulement le reste). Les calculs d'un écran (courbes, CO2, dossier de diagnostic, chronologie) vivent dans `core/` pour être testés et mutés.
 - **Tests** : les règles métier, la couche de données, le store et chaque page sont testés sur une base IndexedDB simulée
   (`src/app/testing/app.testing.ts` démarre le routeur complet avec des données réalistes).
 - **Couverture** : calculée sur tout le code de `src/app`, seuil de 80 % imposé (instructions, branches, fonctions, lignes).
