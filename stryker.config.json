@@ -1,16 +1,33 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "testRunner": "vitest",
-  "vitest": { "configFile": "vitest.mutation.config.mts" },
+  "vitest": {
+    "configFile": "vitest.mutation.config.mts"
+  },
   "coverageAnalysis": "perTest",
   "mutate": [
-    "src/app/core/{rules,insights,reminders,follow-up,dates,settings-history,labels,ai-import,diagnostic,backup-format,archive}.ts"
+    "src/app/core/{rules,insights,reminders,follow-up,dates,settings-history,labels,ai-import,diagnostic,backup-format,archive,store,notifications,photos}.ts",
+    "src/app/core/data/{care,gear,livestock,photo,tank,backup,prefs}.repo.ts"
   ],
-  "reporters": ["clear-text", "progress", "html", "json"],
-  "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
-  "htmlReporter": { "fileName": "reports/mutation/index.html" },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "html",
+    "json"
+  ],
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation.json"
+  },
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
   "tempDirName": ".stryker-tmp",
   "cleanTempDir": true,
   "ignoreStatic": true,
-  "thresholds": { "high": 80, "low": 60, "break": null }
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": null
+  },
+  "timeoutMS": 20000
 }
