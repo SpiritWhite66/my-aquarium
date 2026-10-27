@@ -29,7 +29,7 @@ flowchart LR
 - [ ] Route `GET /health` (sans base).
 - [ ] Drizzle + Neon : connexion à la première requête, migrations versionnées, schémas `ref` et `aqua`.
 - [ ] Dockerfile multi-étapes `node:26-slim`, JS compilé, dépendances de production seulement.
-- [ ] CI : lint, tests (Vitest + base Postgres de test), npm audit, CodeQL étendu à `api/`, règle d'imports entre modules (ADR-0001).
+- [ ] CI conforme aux [attendus qualité](qualite-backend.md) : lint 0 avertissement, couverture 80 %, mutation, tests d'intégration et E2E de l'API, audits de sécurité.
 - [ ] Déploiement Render depuis `main`, après la CI.
 - [ ] CORS limité à l'URL GitHub Pages, en-têtes de sécurité, limite de débit.
 
