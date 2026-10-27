@@ -33,3 +33,7 @@ yarn-error.log*
 # Tests de mutation
 /.stryker-tmp/
 /reports/
+
+# Playwright
+/test-results/
+/playwright-report/
