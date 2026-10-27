@@ -91,7 +91,7 @@ Une vulnérabilité sans correctif disponible peut être acceptée temporairemen
 ## 7. Performance et robustesse
 
 - Démarrage de l'API (hors réveil Render) : **< 1 s**, mesuré en CI.
-- Taille de l'image Docker : **< 200 Mo compressés** (taille de téléchargement). Mesuré à la première construction : 401 Mo décompressés, dont 144 Mo pour le binaire Node ; les couches de l'appli ne font que 44 Mo.
+- Taille de l'image Docker : **< 200 Mo compressés** (taille de téléchargement). Mesuré : 90 Mo compressés (401 Mo décompressés, dont 144 Mo pour le binaire Node). npm est retiré de l'image finale : il n'y sert à rien et portait 4 failles HIGH relevées par Trivy.
 - Réponse p95 sur les routes de lecture, base réveillée : **< 300 ms** (mesure de fumée).
 - Mémoire en charge normale : **< 256 Mo** (moitié de l'offre Render).
 - Export et photos en flux : jamais de fichier entier en mémoire.
@@ -106,8 +106,8 @@ Une vulnérabilité sans correctif disponible peut être acceptée temporairemen
 
 ## 9. Mise en place
 
-- [ ] Étape 1 du plan backend : ESLint strict, Prettier, knip, tsc strict, Vitest + seuils, Stryker, Postgres + MinIO en CI, gitleaks, Trivy, tests de fumée.
-- [ ] Étape 1 : squelette des tests E2E de l'API et génération OpenAPI.
+- [x] Étape 1 du plan backend (sauf tests de fumée, après déploiement) : ESLint strict, Prettier, knip, tsc strict, Vitest + seuils, Stryker, Postgres + MinIO en CI, gitleaks, Trivy, tests de fumée.
+- [x] Étape 1 : squelette des tests E2E de l'API (`api/e2e`). Reste la génération OpenAPI, avec les premières routes métier.
 - [ ] Chaque étape suivante : ses tests E2E de l'API et d'isolation avant d'être déclarée terminée.
 - [x] Appli Angular : ESLint (`angular-eslint` + typescript-eslint strict avec types + sécurité), 0 avertissement, Prettier et knip vérifiés en CI (fait avant le backend).
   - Désactivations assumées, à reprendre dans l'API : `security/detect-object-injection` (faux positifs en masse ; couvert par le typage et CodeQL), règles `no-unsafe-*` et `require-await` dans les tests seulement (simulacres et `JSON.parse`).

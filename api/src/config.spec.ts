@@ -51,4 +51,11 @@ describe('loadConfig', () => {
       /CORS_ORIGIN[\s\S]*PORT|PORT[\s\S]*CORS_ORIGIN/,
     );
   });
+
+  it('formate chaque erreur « variable : message »', () => {
+    expect(() => loadConfig({ ...base, NODE_ENV: 'production' })).toThrow(
+      'Configuration invalide :\nDATABASE_URL : requise en production',
+    );
+    expect(() => loadConfig({ ...base, PORT: '0' })).toThrow(/^Configuration invalide :\nPORT : /);
+  });
 });

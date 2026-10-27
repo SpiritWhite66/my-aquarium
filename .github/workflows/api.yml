@@ -1,6 +1,8 @@
 name: API
 
 on:
+  schedule:
+    - cron: '43 3 * * 1'
   push:
     branches: [main]
     paths: ['api/**', 'shared/**', 'package.json', 'package-lock.json', 'tsconfig.node.json', '.github/workflows/api.yml']
@@ -43,11 +45,46 @@ jobs:
       - run: npm run knip
       # Tests unitaires + intégration (PostgreSQL réel), seuils de couverture de 80 % bloquants.
       - run: npm run server:test
+      # E2E : le serveur compilé est lancé comme en production et interrogé en HTTP.
+      - run: npm run test:e2e -w api
       # L'image doit se construire et répondre sur /health.
-      - run: docker build -f api/Dockerfile -t aqua-api .
+      - run: docker build -f api/Dockerfile -t aqua-api:ci .
       - run: |
           docker run -d --name api -p 3000:3000 -e CORS_ORIGIN=https://example.github.io \
-            -e DATABASE_URL="$TEST_DATABASE_URL" --network host aqua-api
+            -e DATABASE_URL="$TEST_DATABASE_URL" --network host aqua-api:ci
           for i in $(seq 1 20); do curl -fs localhost:3000/health && exit 0; sleep 1; done
           docker logs api
           exit 1
+      # Sécurité de l'image : failles connues (HIGH/CRITICAL corrigeables) et mauvaises pratiques du Dockerfile.
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: aqua-api:ci
+          scanners: vuln,misconfig,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+      # Taille de téléchargement de l'image : < 200 Mo (attendus qualité).
+      - run: |
+          size=$(docker save aqua-api:ci | gzip -6 | wc -c)
+          echo "Image compressée : $((size / 1000000)) Mo"
+          test "$size" -lt 200000000
+
+  # Mutation de l'API : sur chaque PR, et chaque semaine sur tout le code.
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w shared
+      - run: npm run mutation -w api -- --concurrency "$(nproc)"
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rapport-mutation-api
+          path: api/reports/mutation/
+          retention-days: 7

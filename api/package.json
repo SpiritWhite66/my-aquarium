@@ -9,7 +9,9 @@
     "start": "node dist/server.js",
     "migrate": "node dist/db/migrate.js",
     "db:generate": "drizzle-kit generate",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "test:e2e": "vitest run --config e2e/vitest.config.ts",
+    "mutation": "stryker run"
   },
   "dependencies": {
     "@aquarium/shared": "*",

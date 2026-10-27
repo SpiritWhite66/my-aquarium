@@ -19,6 +19,8 @@ export default tseslint.config(
       'ai/**',
       'api/dist/**',
       'api/coverage/**',
+      'api/reports/**',
+      'api/.stryker-tmp/**',
       'shared/coverage/**',
       'api/drizzle/**',
       'shared/dist/**',

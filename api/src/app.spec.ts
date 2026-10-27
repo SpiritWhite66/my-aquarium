@@ -1,7 +1,7 @@
 import { apiErrorSchema, healthResponseSchema } from '@aquarium/shared';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
-import { buildApp } from './app.js';
+import { buildApp, loggerOptions } from './app.js';
 import { loadConfig } from './config.js';
 
 const ORIGIN = 'https://exemple.github.io';
@@ -89,5 +89,122 @@ describe('erreurs', () => {
     });
     expect(res.statusCode).toBe(400);
     expect(apiErrorSchema.parse(res.json()).error.code).toBe('bad_request');
+  });
+});
+
+describe('messages et statuts', () => {
+  it('donne un message lisible pour chaque erreur', async () => {
+    const instance = await start({ RATE_LIMIT_MAX: '1' });
+    instance.get('/boum', () => {
+      throw new Error('x');
+    });
+    instance.post('/echo', () => 'ok');
+    const notFound = await instance.inject('/nexiste-pas');
+    expect(apiErrorSchema.parse(notFound.json()).error.message).toBe('Ressource introuvable.');
+    await instance.inject('/health');
+    const limited = await instance.inject('/health');
+    expect(limited.statusCode).toBe(429);
+    expect(apiErrorSchema.parse(limited.json()).error.message).toBe(
+      'Trop de requêtes, réessaie un peu plus tard.',
+    );
+  });
+
+  it('message de la 400 et de la 500', async () => {
+    const instance = await start();
+    instance.get('/boum', () => {
+      throw new Error('x');
+    });
+    instance.post('/echo', () => 'ok');
+    const internal = await instance.inject('/boum');
+    expect(apiErrorSchema.parse(internal.json()).error.message).toBe('Erreur interne du serveur.');
+    const bad = await instance.inject({
+      method: 'POST',
+      url: '/echo',
+      headers: { 'content-type': 'application/json' },
+      payload: '{',
+    });
+    expect(apiErrorSchema.parse(bad.json()).error.message).toBe('Requête invalide.');
+  });
+
+  it('garde le statut 4xx de l’erreur (415 : type de contenu non géré)', async () => {
+    const instance = await start();
+    instance.post('/echo', () => 'ok');
+    const res = await instance.inject({
+      method: 'POST',
+      url: '/echo',
+      headers: { 'content-type': 'application/x-inconnu' },
+      payload: 'a',
+    });
+    expect(res.statusCode).toBe(415);
+    expect(apiErrorSchema.parse(res.json()).error.code).toBe('bad_request');
+  });
+
+  it('une erreur sans statut devient une 500', async () => {
+    const instance = await start();
+    instance.get('/boum', () => {
+      throw new Error('sans statut');
+    });
+    expect((await instance.inject('/boum')).statusCode).toBe(500);
+  });
+
+  it('une erreur en dessous de 400 devient une 500', async () => {
+    const instance = await start();
+    instance.get('/bizarre', () => {
+      throw Object.assign(new Error('x'), { statusCode: 302 });
+    });
+    expect((await instance.inject('/bizarre')).statusCode).toBe(500);
+  });
+});
+
+describe('CORS : méthodes', () => {
+  it('autorise seulement GET, POST, PUT et DELETE', async () => {
+    const res = await (
+      await start()
+    ).inject({
+      method: 'OPTIONS',
+      url: '/health',
+      headers: { origin: ORIGIN, 'access-control-request-method': 'GET' },
+    });
+    expect(res.headers['access-control-allow-methods']).toBe('GET, POST, PUT, DELETE');
+  });
+});
+
+describe('limite de débit derrière le proxy Render', () => {
+  const headers = (ip: string) => ({ 'x-forwarded-for': ip });
+
+  it('en production, compte chaque visiteur (X-Forwarded-For) séparément', async () => {
+    const instance = await start({
+      NODE_ENV: 'production',
+      DATABASE_URL: 'postgres://u:p@h/db',
+      RATE_LIMIT_MAX: '1',
+    });
+    expect(
+      (await instance.inject({ url: '/health', headers: headers('1.1.1.1') })).statusCode,
+    ).toBe(200);
+    expect(
+      (await instance.inject({ url: '/health', headers: headers('2.2.2.2') })).statusCode,
+    ).toBe(200);
+    expect(
+      (await instance.inject({ url: '/health', headers: headers('1.1.1.1') })).statusCode,
+    ).toBe(429);
+  });
+
+  it('hors production, ignore X-Forwarded-For (non fiable)', async () => {
+    const instance = await start({ RATE_LIMIT_MAX: '1' });
+    expect(
+      (await instance.inject({ url: '/health', headers: headers('1.1.1.1') })).statusCode,
+    ).toBe(200);
+    expect(
+      (await instance.inject({ url: '/health', headers: headers('2.2.2.2') })).statusCode,
+    ).toBe(429);
+  });
+});
+
+describe('loggerOptions', () => {
+  it('masque les secrets et reprend le niveau demandé', () => {
+    expect(loggerOptions({ LOG_LEVEL: 'warn' })).toEqual({
+      level: 'warn',
+      redact: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
+    });
   });
 });

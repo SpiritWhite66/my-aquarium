@@ -29,9 +29,9 @@ flowchart LR
 - [x] Route `GET /health` (sans base).
 - [x] Drizzle + PostgreSQL : connexion à la première requête, migrations versionnées, schémas `ref` et `aqua` (testé sur PostgreSQL 17 local ; reste à essayer sur Neon).
 - [x] Dockerfile multi-étapes `node:26-slim`, JS compilé, dépendances de production seulement.
-- [~] CI conforme aux [attendus qualité](qualite-backend.md) : lint 0 avertissement, couverture 80 %, mutation, tests d'intégration et E2E de l'API, audits de sécurité.
-  - Fait : audit, build, lint, format, knip, tests unitaires + intégration (PostgreSQL réel) avec couverture 80 %, construction et démarrage de l’image.
-  - Reste : mutation (Stryker), tests E2E de l’API et OpenAPI, CodeQL, gitleaks, Trivy, tests de fumée en production.
+- [x] CI conforme aux [attendus qualité](qualite-backend.md) : lint 0 avertissement, couverture 80 %, mutation, tests d'intégration et E2E de l'API, audits de sécurité.
+  - Fait : audit, build, lint, format, knip, tests unitaires + intégration (PostgreSQL réel) à 80 %, mutation Stryker (93 %), tests E2E sur le serveur compilé, CodeQL, gitleaks (historique complet), Trivy sur l'image, taille d'image (90 Mo compressés).
+  - Reste : génération OpenAPI, tests de fumée en production (attend le déploiement).
 - [ ] Déploiement Render (attend les comptes) depuis `main`, après la CI.
 - [x] CORS limité à l'URL GitHub Pages, en-têtes de sécurité, limite de débit.
 

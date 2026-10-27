@@ -9,14 +9,18 @@ function errorBody(code: string, message: string): ApiError {
   return { error: { code, message } };
 }
 
+/** Journaux structurés, sans secret ni donnée personnelle (ADR-0014). */
+export function loggerOptions(config: Pick<Config, 'LOG_LEVEL'>) {
+  return {
+    level: config.LOG_LEVEL,
+    redact: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
+  };
+}
+
 /** Construit l'application sans l'écouter : les tests l'appellent via `inject`. */
 export async function buildApp(config: Config): Promise<FastifyInstance> {
   const app = Fastify({
-    logger: {
-      level: config.LOG_LEVEL,
-      // Aucune donnée personnelle dans les journaux (ADR-0014).
-      redact: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
-    },
+    logger: loggerOptions(config),
     trustProxy: config.NODE_ENV === 'production',
   });
 

@@ -43,3 +43,6 @@ yarn-error.log*
 /shared/dist/
 /api/coverage/
 /shared/coverage/
+
+/api/reports/
+/api/.stryker-tmp/

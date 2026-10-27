@@ -19,6 +19,8 @@ RUN npm ci --workspace shared --workspace api --omit=dev --ignore-scripts
 FROM node:26-slim
 ENV NODE_ENV=production
 WORKDIR /repo
+# npm et npx ne servent pas à l'exécution : moins de surface d'attaque, moins de failles à suivre.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 COPY --from=prod-deps /repo/node_modules node_modules
 COPY --from=build /repo/shared/package.json shared/package.json
 COPY --from=build /repo/shared/dist shared/dist

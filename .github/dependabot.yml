@@ -27,3 +27,7 @@ updates:
     groups:
       actions:
         patterns: ['*']
+  - package-ecosystem: docker
+    directory: /api
+    schedule:
+      interval: weekly
