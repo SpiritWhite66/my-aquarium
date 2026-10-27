@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { GearStore } from '../../core/stores/gear.store';
 import { PARAM_BY_KEY } from '../../core/rules';
 import { TANK_TYPES, dueLabel, fmt, fmtLongDate, fmtRange } from '../../core/labels';
 import { parseIsoDate } from '../../core/dates';
@@ -23,6 +24,7 @@ import { CareRepo } from '../../core/data/care.repo';
 })
 export class HomePage {
   protected readonly store = inject(AquariumStore);
+  protected readonly gearStore = inject(GearStore);
   protected readonly careRepo = inject(CareRepo);
   protected readonly backup = inject(BackupService);
   protected readonly dueLabel = dueLabel;
@@ -85,7 +87,7 @@ export class HomePage {
   }
 
   protected readonly stock = computed(() =>
-    stockAlerts(this.store.consumables(), this.store.equipment(), this.store.today()).filter((a) => a.level !== 'info'),
+    stockAlerts(this.gearStore.consumables(), this.gearStore.equipment(), this.store.today()).filter((a) => a.level !== 'info'),
   );
 
   protected readonly lateCount = computed(

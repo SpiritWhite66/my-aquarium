@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
+import { WaterStore } from '../../core/stores/water.store';
 import { ALGAE_LEVELS, ALGAE_TYPES } from '../../core/labels';
 import type {
   AlgaeLevel, ParamKey } from '../../core/models';
@@ -109,6 +110,7 @@ import { CareRepo } from '../../core/data/care.repo';
 })
 export class ReadingPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly waterStore = inject(WaterStore);
   protected readonly careRepo = inject(CareRepo);
   protected readonly location = inject(Location);
 
@@ -119,7 +121,7 @@ export class ReadingPage {
 
   protected readonly nowLocal = toLocalInput(new Date().toISOString());
   protected readonly when = signal(this.nowLocal);
-  protected readonly editing = computed(() => this.store.waterTests().find((t) => t.id === this.edit()));
+  protected readonly editing = computed(() => this.waterStore.waterTests().find((t) => t.id === this.edit()));
   private loadedEdit = false;
 
   protected readonly tankId = signal('');

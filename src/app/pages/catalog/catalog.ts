@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { SpeciesStore } from '../../core/stores/species.store';
 import type { SpeciesKind } from '../../core/models';
 import { KINDS } from '../../core/labels';
 import { issuesIfAdded } from '../../core/rules';
@@ -44,7 +45,7 @@ const norm = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').to
       <header class="top">
         <div>
           <h1 class="h1">Catalogue</h1>
-          <p class="sub"><span class="num">{{ store.catalog().length }}</span> espèces · <span class="num">{{ plantCount() }}</span> plantes</p>
+          <p class="sub"><span class="num">{{ speciesStore.catalog().length }}</span> espèces · <span class="num">{{ plantCount() }}</span> plantes</p>
         </div>
         <a class="btn ton" routerLink="/catalogue/nouvelle"><app-icon name="plus" [size]="20" />Nouvelle espèce</a>
       </header>
@@ -93,6 +94,7 @@ const norm = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').to
 })
 export class CatalogPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly speciesStore = inject(SpeciesStore);
   /** `?bac=` : ajout d'un habitant dans ce bac. */
   readonly bac = input<string>();
 
@@ -106,14 +108,14 @@ export class CatalogPage {
   protected readonly noCo2 = signal(false);
 
   protected readonly targetTank = computed(() => this.store.tanks().find((t) => t.id === this.bac()));
-  protected readonly plantCount = computed(() => this.store.catalog().filter((s) => s.kind === 'plant').length);
+  protected readonly plantCount = computed(() => this.speciesStore.catalog().filter((s) => s.kind === 'plant').length);
 
   protected readonly results = computed(() => {
     const q = norm(this.query().trim());
     const kind = this.kind();
     const view = this.store.tankViews().find((v) => v.tank.id === this.compatWith());
     const members = view?.members.map((m) => ({ species: m.species, quantity: m.inhabitant.quantity })) ?? [];
-    return this.store
+    return this.speciesStore
       .catalog()
       .filter((s) => kind === 'all' || s.kind === kind)
       .filter((s) => !q || norm([s.scientificName, ...s.commonNames].join(' ')).includes(q))

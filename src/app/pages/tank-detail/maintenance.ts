@@ -1,6 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { GearStore } from '../../core/stores/gear.store';
+import { PhotoStore } from '../../core/stores/photo.store';
+import { CareStore } from '../../core/stores/care.store';
+import { SpeciesStore } from '../../core/stores/species.store';
+import { PopulationStore } from '../../core/stores/population.store';
 import { dueLabel, fmtShortDate, frequencyLabel, speciesName } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { isPlantTask, taskIcon } from '../../shared/visuals';
@@ -174,6 +179,11 @@ const EVENT_LABELS: Record<string, string> = {
 })
 export class MaintenanceTab {
   protected readonly store = inject(AquariumStore);
+  protected readonly gearStore = inject(GearStore);
+  protected readonly photoStore = inject(PhotoStore);
+  protected readonly careStore = inject(CareStore);
+  protected readonly speciesStore = inject(SpeciesStore);
+  protected readonly populationStore = inject(PopulationStore);
   protected readonly careRepo = inject(CareRepo);
   protected readonly gearRepo = inject(GearRepo);
   readonly id = input.required<string>();
@@ -193,19 +203,19 @@ export class MaintenanceTab {
   protected readonly gearSummary = equipmentSummary;
   protected readonly gearTypes = EQUIPMENT_TYPES;
 
-  protected readonly gear = computed(() => this.store.equipment().filter((e) => e.tankId === this.id()));
+  protected readonly gear = computed(() => this.gearStore.equipment().filter((e) => e.tankId === this.id()));
   /** Points d'attention sur le matériel du bac (éclairage long, brassage faible…). */
   protected readonly checks = computed(() => {
     const t = this.view()?.tank;
     return t ? gearChecks(t, this.gear()).filter((c) => c.level === 'warn') : [];
   });
 
-  protected readonly tankPhotos = computed(() => this.store.photos().filter((p) => p.tankId === this.id() && !p.inhabitantId));
+  protected readonly tankPhotos = computed(() => this.photoStore.photos().filter((p) => p.tankId === this.id() && !p.inhabitantId));
 
   /** Changements de réglages du bac, regroupés par enregistrement, du plus récent au plus ancien. */
   protected readonly settings = computed(() => {
     const groups = new Map<string, SettingChange[]>();
-    for (const c of this.store.settingChanges().filter((c) => c.tankId === this.id())) {
+    for (const c of this.gearStore.settingChanges().filter((c) => c.tankId === this.id())) {
       const key = c.equipmentId + c.date;
       groups.set(key, [...(groups.get(key) ?? []), c]);
     }
@@ -214,7 +224,7 @@ export class MaintenanceTab {
     return list
       .map((g) => {
         const next = list.find((o) => o.equipmentId === g.equipmentId && o.date > g.date && o.changes.some((c) => g.changes.some((d) => d.field === c.field)));
-        const effect = changeEffect(g.changes[0], this.store.observations(), this.store.photos(), now, next?.date);
+        const effect = changeEffect(g.changes[0], this.careStore.observations(), this.photoStore.photos(), now, next?.date);
         return { ...g, effect, verdict: effectVerdict(effect) };
       })
       .sort((a, b) => b.date.localeCompare(a.date));
@@ -237,12 +247,12 @@ export class MaintenanceTab {
   /** Opérations d'entretien et événements des habitants (taille, bouture…) dans une seule chronologie. */
   protected readonly history = computed(() => {
     const id = this.id();
-    const byId = this.store.speciesById();
-    const inhabitants = new Map(this.store.inhabitants().map((i) => [i.id, i]));
-    const logs = this.store.logs()
+    const byId = this.speciesStore.speciesById();
+    const inhabitants = new Map(this.populationStore.inhabitants().map((i) => [i.id, i]));
+    const logs = this.careStore.logs()
       .filter((l) => l.tankId === id)
       .map((l) => ({ id: l.id, date: l.date, title: l.label, note: l.note, plant: isPlantTask(l.type) }));
-    const events = this.store.inhabitantEvents()
+    const events = this.populationStore.inhabitantEvents()
       .filter((e) => e.tankId === id)
       .map((e) => {
         const sp = byId.get(inhabitants.get(e.inhabitantId)?.speciesId ?? '');

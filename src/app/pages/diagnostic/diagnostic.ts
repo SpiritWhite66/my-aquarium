@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { PhotoStore } from '../../core/stores/photo.store';
+import { CareStore } from '../../core/stores/care.store';
+import { WaterStore } from '../../core/stores/water.store';
+import { GearStore } from '../../core/stores/gear.store';
+import { SpeciesStore } from '../../core/stores/species.store';
+import { PopulationStore } from '../../core/stores/population.store';
 import { buildDossier, diagnosticRequest, photoFileName } from '../../core/diagnostic';
 import { fmtShortDate } from '../../core/labels';
 import { measureStatus } from '../../core/follow-up';
@@ -146,6 +152,12 @@ const MAX_PHOTOS = 6;
 })
 export class DiagnosticPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly photoStore = inject(PhotoStore);
+  protected readonly careStore = inject(CareStore);
+  protected readonly waterStore = inject(WaterStore);
+  protected readonly gearStore = inject(GearStore);
+  protected readonly speciesStore = inject(SpeciesStore);
+  protected readonly populationStore = inject(PopulationStore);
   protected readonly photoRepo = inject(PhotoRepo);
   protected readonly urls = inject(PhotoUrls);
   protected readonly date = fmtShortDate;
@@ -160,21 +172,21 @@ export class DiagnosticPage {
   protected readonly message = signal('');
 
   private readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.tankId()));
-  protected readonly photos = computed(() => this.store.photos().filter((p) => p.tankId === this.tankId()));
+  protected readonly photos = computed(() => this.photoStore.photos().filter((p) => p.tankId === this.tankId()));
   /** Dernier diagnostic du bac. */
-  protected readonly previous = computed(() => this.store.diagnoses().filter((d) => d.tankId === this.tankId()).at(-1));
+  protected readonly previous = computed(() => this.careStore.diagnoses().filter((d) => d.tankId === this.tankId()).at(-1));
   /** Suivi coché par défaut si le dernier diagnostic date de moins de 90 jours. */
   protected readonly followUp = linkedSignal(() => {
     const p = this.previous();
     return !!p && daysBetween(localDay(p.date), this.store.today()) <= 90;
   });
   private readonly followUpData = computed(() => ({
-    tests: this.store.waterTests(),
-    co2Readings: this.store.co2Readings(),
-    photos: this.store.photos(),
-    logs: this.store.logs(),
-    settingChanges: this.store.settingChanges(),
-    observations: this.store.observations(),
+    tests: this.waterStore.waterTests(),
+    co2Readings: this.waterStore.co2Readings(),
+    photos: this.photoStore.photos(),
+    logs: this.careStore.logs(),
+    settingChanges: this.gearStore.settingChanges(),
+    observations: this.careStore.observations(),
   }));
   protected readonly measures = computed(() => {
     const p = this.previous();
@@ -210,18 +222,18 @@ export class DiagnosticPage {
     if (!v) return undefined;
     return buildDossier({
       tank: v.tank,
-      species: this.store.species(),
-      inhabitants: this.store.inhabitants(),
-      events: this.store.inhabitantEvents(),
-      tests: this.store.waterTests(),
-      tasks: this.store.tasks(),
-      logs: this.store.logs(),
-      equipment: this.store.equipment(),
-      co2Readings: this.store.co2Readings(),
-      observations: this.store.observations(),
-      diagnoses: this.store.diagnoses(),
-      settingChanges: this.store.settingChanges(),
-      consumables: this.store.consumables(),
+      species: this.speciesStore.species(),
+      inhabitants: this.populationStore.inhabitants(),
+      events: this.populationStore.inhabitantEvents(),
+      tests: this.waterStore.waterTests(),
+      tasks: this.careStore.tasks(),
+      logs: this.careStore.logs(),
+      equipment: this.gearStore.equipment(),
+      co2Readings: this.waterStore.co2Readings(),
+      observations: this.careStore.observations(),
+      diagnoses: this.careStore.diagnoses(),
+      settingChanges: this.gearStore.settingChanges(),
+      consumables: this.gearStore.consumables(),
       photos: this.chosenPhotos(),
       question: this.question(),
       today: this.store.today(),

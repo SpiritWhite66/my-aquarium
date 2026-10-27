@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { AquariumStore } from '../../core/store';
+import { PhotoStore } from '../../core/stores/photo.store';
+import { PopulationStore } from '../../core/stores/population.store';
+import { SpeciesStore } from '../../core/stores/species.store';
 import type { Photo } from '../../core/models';
 import { fmtShortDate, speciesName } from '../../core/labels';
 import { Icon } from '../../shared/icon';
@@ -59,6 +62,9 @@ import { PhotoViewer } from '../../shared/photo-viewer';
 })
 export class PhotosTab {
   protected readonly store = inject(AquariumStore);
+  protected readonly photoStore = inject(PhotoStore);
+  protected readonly populationStore = inject(PopulationStore);
+  protected readonly speciesStore = inject(SpeciesStore);
   protected readonly urls = inject(PhotoUrls);
   protected readonly date = fmtShortDate;
 
@@ -67,14 +73,14 @@ export class PhotosTab {
   protected readonly comparing = signal(false);
 
   protected readonly tank = computed(() => this.store.tanks().find((t) => t.id === this.id()));
-  protected readonly list = computed(() => this.store.photos().filter((p) => p.tankId === this.id()));
+  protected readonly list = computed(() => this.photoStore.photos().filter((p) => p.tankId === this.id()));
 
   /** Photos du bac lui-même (pas celles des habitants), seules comparables entre elles. */
   protected readonly tankPhotos = computed(() => this.list().filter((p) => !p.inhabitantId));
 
   protected label(p: Photo): string {
-    const inh = p.inhabitantId && this.store.inhabitants().find((i) => i.id === p.inhabitantId);
-    const what = inh ? speciesName(this.store.speciesById().get(inh.speciesId)) : 'Bac';
+    const inh = p.inhabitantId && this.populationStore.inhabitants().find((i) => i.id === p.inhabitantId);
+    const what = inh ? speciesName(this.speciesStore.speciesById().get(inh.speciesId)) : 'Bac';
     return `${what}, ${fmtShortDate(p.date)}${p.caption ? ' : ' + p.caption : ''}`;
   }
 }

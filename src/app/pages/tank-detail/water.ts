@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { CareStore } from '../../core/stores/care.store';
+import { GearStore } from '../../core/stores/gear.store';
+import { WaterStore } from '../../core/stores/water.store';
 import { MAIN_PARAMS, PARAM_BY_KEY, idealRange, levelOf, measuredParams } from '../../core/rules';
 import { agoLabel, fmt, fmtRange, fmtShortDate, speciesName } from '../../core/labels';
 import { Icon } from '../../shared/icon';
@@ -225,7 +228,7 @@ export class WaterTab {
   protected readonly algaeLabels = ALGAE_LEVELS;
   /** Niveau d'algues des 16 dernières notes (rapides ou bilans visuels). */
   protected readonly algaeNotes = computed(() =>
-    this.store.observations()
+    this.careStore.observations()
       .filter((o) => o.tankId === this.id())
       .slice(-16)
       .map((o) => ({ date: o.date, level: algaeScore(o) as 0 | 1 | 2 | 3, types: o.algaeTypes?.join(', ') })),
@@ -233,17 +236,20 @@ export class WaterTab {
   protected readonly nutrient = new Set<string>(['no3', 'po4', 'k', 'fe', 'mg']);
   /** Doses d'engrais du bac, repérées sur les courbes des nutriments. */
   protected readonly doses = computed(() =>
-    this.store.logs()
+    this.careStore.logs()
       .filter((l) => l.tankId === this.id() && l.type === 'fertilize')
       .map((l) => ({ date: l.date, label: l.label })),
   );
   /** Changements de réglages du matériel, repérés sur les courbes. */
   protected readonly marks = computed(() =>
-    this.store.settingChanges()
+    this.gearStore.settingChanges()
       .filter((c) => c.tankId === this.id())
       .map((c) => ({ date: c.date, label: `${c.equipmentName} · ${describeChange(c)}` })),
   );
   protected readonly store = inject(AquariumStore);
+  protected readonly careStore = inject(CareStore);
+  protected readonly gearStore = inject(GearStore);
+  protected readonly waterStore = inject(WaterStore);
   protected readonly careRepo = inject(CareRepo);
   protected readonly tankRepo = inject(TankRepo);
   readonly id = input.required<string>();
@@ -299,7 +305,7 @@ export class WaterTab {
   protected readonly fmtN = fmt;
   protected readonly dropInfo = DROP_CHECKER;
   protected readonly counting = signal(false);
-  private readonly co2List = computed(() => this.store.co2Readings().filter((r) => r.tankId === this.id()));
+  private readonly co2List = computed(() => this.waterStore.co2Readings().filter((r) => r.tankId === this.id()));
   protected readonly co2Last = computed(() => this.co2List().filter((r) => r.bubblesPerMinute != null || r.dropChecker).at(-1));
   protected readonly phSheet = signal(false);
   /** Dernière mesure de pH sur la journée (moins de 14 jours), avec conseil de débit. */

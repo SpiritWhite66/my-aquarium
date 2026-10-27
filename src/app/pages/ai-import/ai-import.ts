@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { SpeciesStore } from '../../core/stores/species.store';
+import { PopulationStore } from '../../core/stores/population.store';
 import type { ParamKey, QuantityUnit, Species, SpeciesKind } from '../../core/models';
 import {
   CONFIDENCE_LABELS,
@@ -67,6 +69,8 @@ interface Preview {
 })
 export class AiImportPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly speciesStore = inject(SpeciesStore);
+  protected readonly populationStore = inject(PopulationStore);
   protected readonly careRepo = inject(CareRepo);
   protected readonly livestockRepo = inject(LivestockRepo);
   private readonly router = inject(Router);
@@ -127,7 +131,7 @@ export class AiImportPage {
     // Texte reçu par partage : analyse directe une fois le catalogue chargé.
     effect(() => {
       const shared = this.text();
-      if (shared && !this.raw() && this.store.ready() && this.store.species().length) {
+      if (shared && !this.raw() && this.store.ready() && this.speciesStore.species().length) {
         this.raw.set(shared);
         this.analyze();
       }
@@ -173,8 +177,8 @@ export class AiImportPage {
   /** Construit l'aperçu ; relancé si on change de bac (quantités déjà présentes). */
   private rebuild(payloads: AiPayload[]): void {
     this.lastPayloads = payloads;
-    const species = this.store.catalog();
-    const inTank = this.store.inhabitants().filter((i) => i.tankId === this.tankId() && isAlive(i));
+    const species = this.speciesStore.catalog();
+    const inTank = this.populationStore.inhabitants().filter((i) => i.tankId === this.tankId() && isAlive(i));
     const preview: Preview = { inventory: [], readings: [], warnings: [] };
 
     for (const p of payloads) {
@@ -256,7 +260,7 @@ export class AiImportPage {
             source: 'custom',
             notes: 'Fiche créée depuis un inventaire IA, à compléter.',
           }));
-        const existing = this.store.inhabitants().find((i) => i.tankId === tankId && i.speciesId === speciesId && isAlive(i));
+        const existing = this.populationStore.inhabitants().find((i) => i.tankId === tankId && i.speciesId === speciesId && isAlive(i));
         if (existing && row.replace) {
           await this.livestockRepo.updateInhabitant(existing.id, { quantity, approximate: row.estimate });
           await this.livestockRepo.recordEvent(existing, 'note', 0, `Inventaire IA : ${existing.quantity} → ${quantity}`);
@@ -292,7 +296,7 @@ export class AiImportPage {
       }
 
       if (p.sanity) {
-        const species = this.store.catalog();
+        const species = this.speciesStore.catalog();
         await this.careRepo.addObservation({
           tankId,
           date: p.sanity.date ?? new Date().toISOString(),

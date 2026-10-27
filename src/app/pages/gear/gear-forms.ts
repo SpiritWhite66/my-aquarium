@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
+import { GearStore } from '../../core/stores/gear.store';
 import type { Co2Spec, ConsumableCategory, EquipmentType, FilterSpec, HeaterSpec, LightSpec, StockLevel } from '../../core/models';
 import { photoperiod } from '../../core/insights';
 import { fmt } from '../../core/labels';
@@ -193,6 +194,7 @@ export class EquipmentFormPage {
   }
 
   protected readonly store = inject(AquariumStore);
+  protected readonly gearStore = inject(GearStore);
 
   protected readonly gearRepo = inject(GearRepo);
   protected readonly location = inject(Location);
@@ -213,7 +215,7 @@ export class EquipmentFormPage {
   protected readonly price = signal('');
   protected readonly notes = signal('');
 
-  protected readonly existing = computed(() => this.store.equipment().find((e) => e.id === this.id()));
+  protected readonly existing = computed(() => this.gearStore.equipment().find((e) => e.id === this.id()));
   private loaded = false;
 
   constructor() {
@@ -320,6 +322,7 @@ export class EquipmentFormPage {
 })
 export class ConsumableFormPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly gearStore = inject(GearStore);
   protected readonly gearRepo = inject(GearRepo);
   protected readonly location = inject(Location);
   protected readonly v = v;
@@ -336,7 +339,7 @@ export class ConsumableFormPage {
   protected readonly price = signal('');
   protected readonly notes = signal('');
 
-  protected readonly existing = computed(() => this.store.consumables().find((c) => c.id === this.id()));
+  protected readonly existing = computed(() => this.gearStore.consumables().find((c) => c.id === this.id()));
   private loaded = false;
 
   constructor() {

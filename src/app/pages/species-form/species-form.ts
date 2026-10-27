@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { SpeciesStore } from '../../core/stores/species.store';
+import { PopulationStore } from '../../core/stores/population.store';
 import type { FaunaInfo, FloraInfo, Range, Species, SpeciesKind } from '../../core/models';
 import { DIETS, DIFFICULTIES, GROWTHS, KINDS, LIGHTS, PLACEMENTS, TEMPERAMENTS, ZONES, parseNumber } from '../../core/labels';
 import { Icon } from '../../shared/icon';
@@ -159,6 +161,8 @@ const str = (n?: number) => (n == null ? '' : String(n).replace('.', ','));
 })
 export class SpeciesFormPage {
   private readonly store = inject(AquariumStore);
+  private readonly speciesStore = inject(SpeciesStore);
+  private readonly populationStore = inject(PopulationStore);
   protected readonly livestockRepo = inject(LivestockRepo);
   private readonly router = inject(Router);
   protected readonly location = inject(Location);
@@ -187,7 +191,7 @@ export class SpeciesFormPage {
   protected readonly fauna = signal<FaunaInfo>({ adultSizeCm: 0, temperament: 'peaceful', zone: 'middle', diet: 'omnivore' });
   protected readonly error = signal('');
 
-  protected readonly source = computed(() => (this.id() ? this.store.speciesById().get(this.id()!) : undefined));
+  protected readonly source = computed(() => (this.id() ? this.speciesStore.speciesById().get(this.id()!) : undefined));
   protected readonly title = computed(() => (!this.id() ? 'Nouvelle espèce' : this.source()?.source === 'builtin' ? 'Personnaliser la fiche' : 'Modifier la fiche'));
 
   private loaded = false;
@@ -279,7 +283,7 @@ export class SpeciesFormPage {
   protected async remove(): Promise<void> {
     const s = this.source();
     if (!s) return;
-    const used = this.store.inhabitants().filter((i) => i.speciesId === s.id).length;
+    const used = this.populationStore.inhabitants().filter((i) => i.speciesId === s.id).length;
     if (used) {
       this.error.set(`Cette fiche est utilisée par ${used} habitant${used > 1 ? 's' : ''} : retire-les d’abord de tes bacs.`);
       return;

@@ -1,5 +1,7 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AquariumStore } from './store';
+import { PrefsStore } from './stores/prefs.store';
+import { CareStore } from './stores/care.store';
 import { DIGEST_DAYS, digestsAhead, shouldNotify, type Digest } from './reminders';
 import { addDays } from './dates';
 import { PrefsRepo } from './data/prefs.repo';
@@ -16,6 +18,8 @@ const SYNC_TAG = 'aquarium-reminders';
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
   private readonly store = inject(AquariumStore);
+  private readonly prefsStore = inject(PrefsStore);
+  private readonly careStore = inject(CareStore);
   private readonly prefsRepo = inject(PrefsRepo);
 
   readonly supported = typeof window !== 'undefined' && 'Notification' in window;
@@ -23,11 +27,11 @@ export class NotificationService {
   /** Synchronisation périodique accordée : rappels même appli fermée. */
   readonly background = signal(false);
 
-  private readonly prefs = this.store.notificationPrefs;
+  private readonly prefs = this.prefsStore.notificationPrefs;
   private readonly digests = computed(() => {
     const p = this.prefs();
     if (!p.enabled) return {};
-    return digestsAhead(this.store.today(), { tasks: this.store.tasks(), diagnoses: this.store.diagnoses(), tanks: this.store.tanks() }, p);
+    return digestsAhead(this.store.today(), { tasks: this.careStore.tasks(), diagnoses: this.careStore.diagnoses(), tanks: this.store.tanks() }, p);
   });
 
   constructor() {

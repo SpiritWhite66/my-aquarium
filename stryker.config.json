@@ -9,7 +9,6 @@
     "src/app/core/*.ts",
     "!src/app/core/*.spec.ts",
     "!src/app/core/*.testing.ts",
-    "!src/app/core/models.ts",
     "!src/app/core/catalog.ts",
     "!src/app/core/db.ts",
     "!src/app/core/theme.ts",

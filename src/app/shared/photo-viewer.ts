@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, computed, effect, inject, input, linkedSignal, output, viewChild } from '@angular/core';
 import type { Photo } from '../core/models';
 import { AquariumStore } from '../core/store';
+import { PopulationStore } from '../core/stores/population.store';
+import { SpeciesStore } from '../core/stores/species.store';
 import { fmtShortDate, speciesName } from '../core/labels';
 import { Icon } from './icon';
 import { ModalFocus } from './modal-focus';
@@ -64,6 +66,8 @@ import { PhotoRepo } from '../core/data/photo.repo';
 })
 export class PhotoViewer {
   protected readonly store = inject(AquariumStore);
+  protected readonly populationStore = inject(PopulationStore);
+  protected readonly speciesStore = inject(SpeciesStore);
   protected readonly photoRepo = inject(PhotoRepo);
   protected readonly urls = inject(PhotoUrls);
   protected readonly date = fmtShortDate;
@@ -109,8 +113,8 @@ export class PhotoViewer {
 
   protected subject(p: Photo): string {
     if (!p.inhabitantId) return this.store.tanks().find((t) => t.id === p.tankId)?.name ?? 'Bac';
-    const inh = this.store.inhabitants().find((i) => i.id === p.inhabitantId);
-    return speciesName(inh && this.store.speciesById().get(inh.speciesId));
+    const inh = this.populationStore.inhabitants().find((i) => i.id === p.inhabitantId);
+    return speciesName(inh && this.speciesStore.speciesById().get(inh.speciesId));
   }
 
   protected filename(p: Photo): string {

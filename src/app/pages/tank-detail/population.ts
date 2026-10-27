@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { PhotoStore } from '../../core/stores/photo.store';
+import { CareStore } from '../../core/stores/care.store';
 import { STATUSES, unitLabel } from '../../core/labels';
 import { Icon } from '../../shared/icon';
 import { SpeciesChips } from '../../shared/species-chips';
@@ -57,7 +59,7 @@ import { PhotoUrls } from '../../shared/photo-urls';
               @for (m of g.items; track m.inhabitant.id) {
                 <a class="li" [routerLink]="['/bacs', v.tank.id, 'habitants', m.inhabitant.id]">
                   <div class="ph" [class.pl]="m.species.kind === 'plant'" [class.fa]="m.species.kind !== 'plant'" style="width: 52px; height: 52px">
-                    @if (urls.url(store.inhabitantCovers().get(m.inhabitant.id)); as photo) {
+                    @if (urls.url(photoStore.inhabitantCovers().get(m.inhabitant.id)); as photo) {
                       <img class="img-abs" [src]="photo" alt="" />
                     } @else {
                       <app-icon [name]="icon(m.species)" [size]="24" [stroke]="1.6" />
@@ -91,6 +93,8 @@ import { PhotoUrls } from '../../shared/photo-urls';
 })
 export class PopulationTab {
   protected readonly store = inject(AquariumStore);
+  protected readonly photoStore = inject(PhotoStore);
+  protected readonly careStore = inject(CareStore);
   protected readonly urls = inject(PhotoUrls);
   readonly id = input.required<string>();
 
@@ -98,7 +102,7 @@ export class PopulationTab {
   protected readonly icon = speciesIcon;
   protected readonly unit = unitLabel;
 
-  protected readonly lastDiagnosis = computed(() => this.store.diagnoses().filter((d) => d.tankId === this.id()).at(-1));
+  protected readonly lastDiagnosis = computed(() => this.careStore.diagnoses().filter((d) => d.tankId === this.id()).at(-1));
   protected readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.id()));
   // La flore passe en premier : les plantes comptent autant que les animaux.
   protected readonly groups = computed(() => {

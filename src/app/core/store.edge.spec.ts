@@ -6,6 +6,13 @@ import { AQUARIUM_DB, AquariumDb } from './db';
 import { BUILTIN_SPECIES } from './catalog';
 import { PrefsRepo } from './data/prefs.repo';
 import { AquariumStore } from './store';
+import { SpeciesStore } from './stores/species.store';
+import { PhotoStore } from './stores/photo.store';
+import { PopulationStore } from './stores/population.store';
+import { WaterStore } from './stores/water.store';
+import { CareStore } from './stores/care.store';
+import { GearStore } from './stores/gear.store';
+import { PrefsStore } from './stores/prefs.store';
 import type { Inhabitant, Observation, Tank } from './models';
 
 let db: AquariumDb;
@@ -34,13 +41,13 @@ describe('chargement', () => {
   it('est prêt une fois le catalogue intégré chargé', async () => {
     expect(store.ready()).toBe(false);
     await ready();
-    await waitFor(() => store.species().length === BUILTIN_SPECIES.length);
-    expect(store.speciesById().get('danio-margaritatus')?.scientificName).toBe('Danio margaritatus');
+    await waitFor(() => TestBed.inject(SpeciesStore).species().length === BUILTIN_SPECIES.length);
+    expect(TestBed.inject(SpeciesStore).speciesById().get('danio-margaritatus')?.scientificName).toBe('Danio margaritatus');
   });
 
   it('commence vide et se met à jour dès qu’une donnée est ajoutée', async () => {
     expect(store.tanks()).toEqual([]);
-    expect(store.photos()).toEqual([]);
+    expect(TestBed.inject(PhotoStore).photos()).toEqual([]);
     await db.tanks.put(tank('a', 'Salon'));
     await waitFor(() => store.tanks().length === 1);
     expect(store.tanks()[0].name).toBe('Salon');
@@ -75,18 +82,18 @@ describe('ordre des listes', () => {
     await db.co2Readings.bulkPut(['r2', 'r3', 'r1'].map((id) => ({ id, updatedAt: U, tankId: 'a', date: `2026-10-0${id[1]}` })));
     await db.diagnoses.bulkPut(['g2', 'g3', 'g1'].map((id) => ({ id, updatedAt: U, tankId: 'a', date: `2026-10-0${id[1]}`, summary: '', hypotheses: [], actions: [] })));
     await db.settingChanges.bulkPut(['s2', 's3', 's1'].map((id) => ({ id, updatedAt: U, tankId: 'a', equipmentId: 'e', equipmentName: 'E', date: `2026-10-0${id[1]}`, field: 'light.intensityPct' as const })));
-    await waitFor(() => [store.inhabitantEvents(), store.waterTests(), store.tasks(), store.logs(), store.observations(), store.photos(), store.co2Readings(), store.diagnoses(), store.settingChanges()].every((l) => l.length === 3));
+    await waitFor(() => [TestBed.inject(PopulationStore).inhabitantEvents(), TestBed.inject(WaterStore).waterTests(), TestBed.inject(CareStore).tasks(), TestBed.inject(CareStore).logs(), TestBed.inject(CareStore).observations(), TestBed.inject(PhotoStore).photos(), TestBed.inject(WaterStore).co2Readings(), TestBed.inject(CareStore).diagnoses(), TestBed.inject(GearStore).settingChanges()].every((l) => l.length === 3));
 
     const ids = (l: { id: string }[]) => l.map((x) => x.id);
-    expect(ids(store.inhabitantEvents())).toEqual(['e3', 'e2', 'e1']);
-    expect(ids(store.waterTests())).toEqual(['w1', 'w2', 'w3']);
-    expect(ids(store.tasks())).toEqual(['t1', 't2', 't3']);
-    expect(ids(store.logs())).toEqual(['l3', 'l2', 'l1']);
-    expect(ids(store.observations())).toEqual(['o1', 'o2', 'o3']);
-    expect(ids(store.photos())).toEqual(['p3', 'p2', 'p1']);
-    expect(ids(store.co2Readings())).toEqual(['r1', 'r2', 'r3']);
-    expect(ids(store.diagnoses())).toEqual(['g1', 'g2', 'g3']);
-    expect(ids(store.settingChanges())).toEqual(['s1', 's2', 's3']);
+    expect(ids(TestBed.inject(PopulationStore).inhabitantEvents())).toEqual(['e3', 'e2', 'e1']);
+    expect(ids(TestBed.inject(WaterStore).waterTests())).toEqual(['w1', 'w2', 'w3']);
+    expect(ids(TestBed.inject(CareStore).tasks())).toEqual(['t1', 't2', 't3']);
+    expect(ids(TestBed.inject(CareStore).logs())).toEqual(['l3', 'l2', 'l1']);
+    expect(ids(TestBed.inject(CareStore).observations())).toEqual(['o1', 'o2', 'o3']);
+    expect(ids(TestBed.inject(PhotoStore).photos())).toEqual(['p3', 'p2', 'p1']);
+    expect(ids(TestBed.inject(WaterStore).co2Readings())).toEqual(['r1', 'r2', 'r3']);
+    expect(ids(TestBed.inject(CareStore).diagnoses())).toEqual(['g1', 'g2', 'g3']);
+    expect(ids(TestBed.inject(GearStore).settingChanges())).toEqual(['s1', 's2', 's3']);
   });
 
   it('lit aussi les listes sans tri particulier', async () => {
@@ -94,9 +101,9 @@ describe('ordre des listes', () => {
     await db.inhabitants.put(inh('i', 'a', 'danio-margaritatus'));
     await db.equipment.put({ id: 'e', updatedAt: U, type: 'filter', name: 'F' });
     await db.consumables.put({ id: 'c', updatedAt: U, name: 'N', category: 'food', level: 'full' });
-    await waitFor(() => store.inhabitants().length === 1 && store.equipment().length === 1 && store.consumables().length === 1);
-    expect(store.equipment()[0].name).toBe('F');
-    expect(store.consumables()[0].name).toBe('N');
+    await waitFor(() => TestBed.inject(PopulationStore).inhabitants().length === 1 && TestBed.inject(GearStore).equipment().length === 1 && TestBed.inject(GearStore).consumables().length === 1);
+    expect(TestBed.inject(GearStore).equipment()[0].name).toBe('F');
+    expect(TestBed.inject(GearStore).consumables()[0].name).toBe('N');
   });
 });
 
@@ -105,18 +112,18 @@ describe('photos d’habitants', () => {
     await ready();
     const photo = (id: string, date: string, inhabitantId?: string) => ({ id, updatedAt: U, tankId: 'a', inhabitantId, date, width: 1, height: 1 });
     await db.photos.bulkPut([photo('old', '2026-10-01', 'i1'), photo('new', '2026-10-05', 'i1'), photo('other', '2026-10-03', 'i2'), photo('tank', '2026-10-09')]);
-    await waitFor(() => store.photos().length === 4);
-    expect([...store.inhabitantCovers()]).toEqual([['i1', 'new'], ['i2', 'other']]);
+    await waitFor(() => TestBed.inject(PhotoStore).photos().length === 4);
+    expect([...TestBed.inject(PhotoStore).inhabitantCovers()]).toEqual([['i1', 'new'], ['i2', 'other']]);
   });
 });
 
 describe('catalogue', () => {
   it('masque la fiche intégrée remplacée par une fiche personnalisée', async () => {
     await ready();
-    await waitFor(() => store.species().length === BUILTIN_SPECIES.length);
+    await waitFor(() => TestBed.inject(SpeciesStore).species().length === BUILTIN_SPECIES.length);
     await db.species.put({ id: 'custom-1', source: 'custom', overrides: 'danio-margaritatus', scientificName: 'Danio margaritatus', commonNames: ['Perso'], kind: 'fish', updatedAt: U } as never);
-    await waitFor(() => store.species().length === BUILTIN_SPECIES.length + 1);
-    const ids = store.catalog().map((s) => s.id);
+    await waitFor(() => TestBed.inject(SpeciesStore).species().length === BUILTIN_SPECIES.length + 1);
+    const ids = TestBed.inject(SpeciesStore).catalog().map((s) => s.id);
     expect(ids).toContain('custom-1');
     expect(ids).not.toContain('danio-margaritatus');
     expect(ids).toHaveLength(BUILTIN_SPECIES.length);
@@ -137,7 +144,7 @@ describe('vue d’un bac', () => {
 
   async function load() {
     await ready();
-    await waitFor(() => store.species().length === BUILTIN_SPECIES.length);
+    await waitFor(() => TestBed.inject(SpeciesStore).species().length === BUILTIN_SPECIES.length);
   }
 
   it('range les habitants vivants par nom scientifique, plantes et animaux séparés', async () => {
@@ -152,7 +159,7 @@ describe('vue d’un bac', () => {
       inh('7', 'b', 'danio-margaritatus'),
     ]);
     await load();
-    await waitFor(() => store.inhabitants().length === 7 && store.tankViews().length === 1);
+    await waitFor(() => TestBed.inject(PopulationStore).inhabitants().length === 7 && store.tankViews().length === 1);
     const v = view('a');
     expect(v.members.map((m) => m.inhabitant.id)).toEqual(['3', '2', '1']);
     expect(v.plants.map((m) => m.inhabitant.id)).toEqual(['1']);
@@ -178,7 +185,7 @@ describe('vue d’un bac', () => {
       { id: 'wb', updatedAt: U, tankId: 'b', date: '2026-10-05', values: { no3: 10 } },
     ]);
     await load();
-    await waitFor(() => store.waterTests().length === 3 && store.tankViews().length === 2);
+    await waitFor(() => TestBed.inject(WaterStore).waterTests().length === 3 && store.tankViews().length === 2);
     const a = view('a');
     expect(a.tests.map((t) => t.id)).toEqual(['w1', 'w2']);
     expect(a.lastTest?.id).toBe('w2');
@@ -259,7 +266,7 @@ describe('vue d’un bac', () => {
     const t = (id: string, o = {}) => ({ id, updatedAt: U, tankId: 'a', type: 'custom' as const, label: id, everyDays: 7, nextDue: '2026-10-01', active: true, ...o });
     await db.tasks.bulkPut([t('on'), t('off', { active: false }), t('autre', { tankId: 'b' })]);
     await load();
-    await waitFor(() => store.tasks().length === 3 && store.tankViews().length === 1);
+    await waitFor(() => TestBed.inject(CareStore).tasks().length === 3 && store.tankViews().length === 1);
     expect(view('a').tasks.map((x) => x.id)).toEqual(['on']);
   });
 
@@ -286,7 +293,7 @@ describe('tâches dues', () => {
       task('archive', '2000-01-01', { tankId: 'z' }),
       task('inconnu', '2000-01-01', { tankId: 'x' }),
     ]);
-    await waitFor(() => store.tasks().length === 6 && store.tanks().length === 2);
+    await waitFor(() => TestBed.inject(CareStore).tasks().length === 6 && store.tanks().length === 2);
     expect(store.dueTasks().map((d) => d.task.id)).toEqual(['retard', 'aujourdhui']);
     expect(store.dueTasks()[0].tank.name).toBe('Salon');
   });
@@ -294,9 +301,9 @@ describe('tâches dues', () => {
 
 describe('préférences de rappel', () => {
   it('part des valeurs par défaut puis suit ce qui est enregistré', async () => {
-    expect(store.notificationPrefs()).toMatchObject({ enabled: false, time: '09:00', tasks: true, followUps: true });
+    expect(TestBed.inject(PrefsStore).notificationPrefs()).toMatchObject({ enabled: false, time: '09:00', tasks: true, followUps: true });
     await TestBed.inject(PrefsRepo).saveNotificationPrefs({ enabled: true, time: '07:30' });
-    await waitFor(() => store.notificationPrefs().enabled);
-    expect(store.notificationPrefs()).toMatchObject({ enabled: true, time: '07:30', tasks: true });
+    await waitFor(() => TestBed.inject(PrefsStore).notificationPrefs().enabled);
+    expect(TestBed.inject(PrefsStore).notificationPrefs()).toMatchObject({ enabled: true, time: '07:30', tasks: true });
   });
 });

@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { PhotoStore } from '../../core/stores/photo.store';
+import { CareStore } from '../../core/stores/care.store';
+import { PrefsStore } from '../../core/stores/prefs.store';
 import { ThemeService, type ThemeChoice } from '../../core/theme';
 import { TANK_TYPES, fmtShortDate } from '../../core/labels';
 import { Icon } from '../../shared/icon';
@@ -143,7 +146,7 @@ import { PrefsRepo } from '../../core/data/prefs.repo';
         <h2 class="h2">Données</h2>
         <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 12px">
           <p class="sub" style="margin: 0">
-            Tout est stocké sur cet appareil{{ store.photos().length ? ', photos comprises (' + store.photos().length + ')' : '' }}. Pense à exporter régulièrement : la sauvegarde contient aussi les photos.
+            Tout est stocké sur cet appareil{{ photoStore.photos().length ? ', photos comprises (' + photoStore.photos().length + ')' : '' }}. Pense à exporter régulièrement : la sauvegarde contient aussi les photos.
             Dernière sauvegarde : <b style="color: var(--ink)">{{ backup.lastBackup() ? date(backup.lastBackup()!) : 'jamais' }}</b>
           </p>
           <p class="sub" style="margin: 0">
@@ -173,7 +176,7 @@ import { PrefsRepo } from '../../core/data/prefs.repo';
 })
 export class SettingsPage {
   protected readonly notif = inject(NotificationService);
-  protected readonly prefs = inject(AquariumStore).notificationPrefs;
+  protected readonly prefs = inject(PrefsStore).notificationPrefs;
   protected readonly notifStatus = computed(() => {
     if (!this.notif.supported) return 'Ce navigateur ne gère pas les notifications.';
     if (this.notif.permission() === 'denied') return 'Bloquées dans les réglages du navigateur pour ce site.';
@@ -191,6 +194,9 @@ export class SettingsPage {
   }
 
   protected readonly store = inject(AquariumStore);
+  protected readonly photoStore = inject(PhotoStore);
+  protected readonly careStore = inject(CareStore);
+  protected readonly prefsStore = inject(PrefsStore);
 
   protected readonly backupRepo = inject(BackupRepo);
 
@@ -216,7 +222,7 @@ export class SettingsPage {
   }
 
   protected exportIcs(): void {
-    const ics = tasksToIcs(this.store.tasks(), this.store.activeTanks());
+    const ics = tasksToIcs(this.careStore.tasks(), this.store.activeTanks());
     const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
     const a = document.createElement('a');
     a.href = url;

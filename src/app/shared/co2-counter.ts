@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import type { DropChecker, Tank } from '../core/models';
 import { AquariumStore } from '../core/store';
+import { WaterStore } from '../core/stores/water.store';
 import { DROP_CHECKER, bpmFromTaps, co2Advice, co2FromKhPh, co2Status, latestKhPh } from '../core/insights';
 import { fmt } from '../core/labels';
 import { parseNumber } from '../core/labels';
@@ -96,6 +97,7 @@ import { TankRepo } from '../core/data/tank.repo';
 })
 export class Co2Counter {
   private readonly store = inject(AquariumStore);
+  private readonly waterStore = inject(WaterStore);
   protected readonly gearRepo = inject(GearRepo);
   protected readonly tankRepo = inject(TankRepo);
   readonly tank = input.required<Tank>();
@@ -130,11 +132,11 @@ export class Co2Counter {
   });
   protected readonly fmtN = fmt;
   protected readonly advice = computed(() => {
-    const tests = this.store.waterTests().filter((t) => t.tankId === this.tank().id);
+    const tests = this.waterStore.waterTests().filter((t) => t.tankId === this.tank().id);
     const kp = latestKhPh(tests);
     const mg = kp && co2FromKhPh(kp.kh, kp.ph);
     if (mg == null) return undefined;
-    const last = this.store.co2Readings().filter((r) => r.tankId === this.tank().id).at(-1)?.bubblesPerMinute;
+    const last = this.waterStore.co2Readings().filter((r) => r.tankId === this.tank().id).at(-1)?.bubblesPerMinute;
     return co2Advice(mg, last);
   });
   protected readonly canSave = computed(() => this.value() != null || !!this.drop());

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { AquariumStore } from '../../core/store';
+import { CareStore } from '../../core/stores/care.store';
 import type { TaskType } from '../../core/models';
 import { TASK_TYPES, parseNumber } from '../../core/labels';
 import { addDays } from '../../core/dates';
@@ -55,6 +56,7 @@ import { CareRepo } from '../../core/data/care.repo';
 })
 export class TaskFormPage {
   private readonly store = inject(AquariumStore);
+  private readonly careStore = inject(CareStore);
   protected readonly careRepo = inject(CareRepo);
   protected readonly location = inject(Location);
 
@@ -68,7 +70,7 @@ export class TaskFormPage {
   protected readonly nextDue = signal(addDays(this.store.today(), 7));
 
   protected readonly tankName = computed(() => this.store.tanks().find((t) => t.id === this.id())?.name ?? '');
-  private readonly existing = computed(() => this.store.tasks().find((t) => t.id === this.taskId()));
+  private readonly existing = computed(() => this.careStore.tasks().find((t) => t.id === this.taskId()));
   protected readonly valid = computed(() => this.label().trim() && (parseNumber(this.every()) ?? 0) >= 1 && this.nextDue());
 
   private loaded = false;

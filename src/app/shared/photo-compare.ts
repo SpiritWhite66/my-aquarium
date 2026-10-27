@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, computed, inject, input, linkedSignal, output, signal, viewChild } from '@angular/core';
 import type { Photo } from '../core/models';
 import { AquariumStore } from '../core/store';
+import { PopulationStore } from '../core/stores/population.store';
+import { SpeciesStore } from '../core/stores/species.store';
 import { daysBetween, localDay } from '../core/dates';
 import { elapsedLabel, fmtDate, speciesName, unitLabel } from '../core/labels';
 import { Icon } from './icon';
@@ -102,6 +104,8 @@ import { PhotoUrls } from './photo-urls';
 })
 export class PhotoCompare {
   private readonly store = inject(AquariumStore);
+  private readonly speciesStore = inject(SpeciesStore);
+  private readonly populationStore = inject(PopulationStore);
   protected readonly urls = inject(PhotoUrls);
   protected readonly date = fmtDate;
 
@@ -152,10 +156,10 @@ export class PhotoCompare {
     if (!p) return [];
     const from = localDay(p[0].date);
     const to = localDay(p[1].date);
-    return this.store
+    return this.populationStore
       .inhabitants()
       .filter((i) => i.tankId === this.tankId() && i.addedDate > from && i.addedDate <= to)
-      .map((i) => `${speciesName(this.store.speciesById().get(i.speciesId))} (${i.quantity} ${unitLabel(i.unit, i.quantity)})`);
+      .map((i) => `${speciesName(this.speciesStore.speciesById().get(i.speciesId))} (${i.quantity} ${unitLabel(i.unit, i.quantity)})`);
   });
 
   constructor() {

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { GearStore } from '../../core/stores/gear.store';
 import type { Consumable, EquipmentType, StockLevel } from '../../core/models';
 import { CONSUMABLE_CATEGORIES, EQUIPMENT_TYPES, STOCK_LEVELS, fmtDate } from '../../core/labels';
 import { gearChecks, photoperiod, stockAlerts, warrantyEnd } from '../../core/insights';
@@ -139,6 +140,7 @@ export function equipmentSummary(e: Equipment): string {
 })
 export class GearPage {
   private readonly store = inject(AquariumStore);
+  private readonly gearStore = inject(GearStore);
   protected readonly gearRepo = inject(GearRepo);
   /** `?vue=consommables`. */
   readonly vue = input<string>();
@@ -153,7 +155,7 @@ export class GearPage {
 
   protected readonly groups = computed(() => {
     const tanks = this.store.activeTanks();
-    const all = [...this.store.equipment()].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    const all = [...this.gearStore.equipment()].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
     const groups = tanks.map((t) => {
       const items = all.filter((e) => e.tankId === t.id);
       return { title: t.name, items, checks: gearChecks(t, items) };
@@ -165,10 +167,10 @@ export class GearPage {
 
   protected readonly consumables = computed(() => {
     const order: Record<StockLevel, number> = { empty: 0, low: 1, half: 2, full: 3 };
-    return [...this.store.consumables()].sort((a, b) => order[a.level] - order[b.level] || a.name.localeCompare(b.name, 'fr'));
+    return [...this.gearStore.consumables()].sort((a, b) => order[a.level] - order[b.level] || a.name.localeCompare(b.name, 'fr'));
   });
 
-  protected readonly alerts = computed(() => stockAlerts(this.store.consumables(), this.store.equipment(), this.store.today()));
+  protected readonly alerts = computed(() => stockAlerts(this.gearStore.consumables(), this.gearStore.equipment(), this.store.today()));
 
   protected warranty(e: { purchaseDate?: string; warrantyMonths?: number }): { label: string; soon: boolean; over: boolean } | undefined {
     const end = warrantyEnd(e);

@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, computed, inject, input, linkedSignal, output, viewChild } from '@angular/core';
 import type { DoseUnit, MaintenanceTask } from '../core/models';
 import { AquariumStore } from '../core/store';
+import { GearStore } from '../core/stores/gear.store';
+import { CareStore } from '../core/stores/care.store';
 import { DOSE_UNITS, parseNumber } from '../core/labels';
 import { Icon } from './icon';
 import { ModalFocus } from './modal-focus';
@@ -70,6 +72,8 @@ interface Row {
 })
 export class DoseSheet {
   private readonly store = inject(AquariumStore);
+  private readonly gearStore = inject(GearStore);
+  private readonly careStore = inject(CareStore);
   protected readonly careRepo = inject(CareRepo);
   readonly tankId = input.required<string>();
   /** Tâche de fertilisation à valider (facultatif). */
@@ -81,8 +85,8 @@ export class DoseSheet {
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
   protected readonly tankName = computed(() => this.store.tanks().find((t) => t.id === this.tankId())?.name ?? '');
-  private readonly fertilizers = computed(() => this.store.consumables().filter((c) => c.category === 'fertilizer'));
-  private readonly doseLogs = computed(() => this.store.logs().filter((l) => l.tankId === this.tankId() && l.type === 'fertilize' && l.details?.product));
+  private readonly fertilizers = computed(() => this.gearStore.consumables().filter((c) => c.category === 'fertilizer'));
+  private readonly doseLogs = computed(() => this.careStore.logs().filter((l) => l.tankId === this.tankId() && l.type === 'fertilize' && l.details?.product));
 
   /** Produits proposés : engrais du stock, puis produits déjà dosés. */
   protected readonly products = computed(() => [...new Set([...this.fertilizers().map((c) => c.name), ...this.doseLogs().map((l) => l.details!.product!)])]);

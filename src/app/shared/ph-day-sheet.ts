@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import type { Tank } from '../core/models';
 import { AquariumStore } from '../core/store';
+import { GearStore } from '../core/stores/gear.store';
+import { WaterStore } from '../core/stores/water.store';
 import { CO2_TARGET, co2Advice, co2FromPhDrop } from '../core/insights';
 import { fmt, parseNumber } from '../core/labels';
 import { Icon } from './icon';
@@ -68,6 +70,8 @@ import { GearRepo } from '../core/data/gear.repo';
 })
 export class PhDaySheet {
   private readonly store = inject(AquariumStore);
+  private readonly gearStore = inject(GearStore);
+  private readonly waterStore = inject(WaterStore);
   protected readonly gearRepo = inject(GearRepo);
   readonly tank = input.required<Tank>();
   readonly closed = output<void>();
@@ -77,7 +81,7 @@ export class PhDaySheet {
   protected readonly val = (e: Event) => (e.target as HTMLInputElement).value;
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
-  private readonly gear = computed(() => this.store.equipment().filter((e) => e.tankId === this.tank().id));
+  private readonly gear = computed(() => this.gearStore.equipment().filter((e) => e.tankId === this.tank().id));
   protected readonly co2On = computed(() => this.gear().find((e) => e.co2?.schedule)?.co2?.schedule?.on ?? '');
   protected readonly lightOff = computed(() => this.gear().find((e) => e.light?.schedule)?.light?.schedule?.off ?? '');
 
@@ -91,7 +95,7 @@ export class PhDaySheet {
     const a = parseNumber(this.after());
     const r = b != null && a != null ? co2FromPhDrop(b, a) : undefined;
     if (!r) return undefined;
-    const bpm = this.store.co2Readings().filter((x) => x.tankId === this.tank().id && x.bubblesPerMinute != null).at(-1)?.bubblesPerMinute;
+    const bpm = this.waterStore.co2Readings().filter((x) => x.tankId === this.tank().id && x.bubblesPerMinute != null).at(-1)?.bubblesPerMinute;
     return { ...co2Advice(r.mgL, bpm), drop: r.drop };
   });
 

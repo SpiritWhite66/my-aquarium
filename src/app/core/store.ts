@@ -1,11 +1,14 @@
-import { DestroyRef, Injectable, computed, inject, signal, type Signal } from '@angular/core';
-import { liveQuery } from 'dexie';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { AQUARIUM_DB } from './db';
 import { BUILTIN_SPECIES } from './catalog';
 import { Clock } from './clock';
 import type { Inhabitant, MaintenanceTask, Observation, Species, Tank, WaterTest } from './models';
 import { PARAM_BY_KEY, compatibilityIssues, isAlive, testAlerts, worst, type Issue, type Level, type ParamAlert } from './rules';
-import { DEFAULT_PREFS } from './reminders';
+import { liveSignal } from './stores/live';
+import { CareStore } from './stores/care.store';
+import { PopulationStore } from './stores/population.store';
+import { SpeciesStore } from './stores/species.store';
+import { WaterStore } from './stores/water.store';
 
 export interface TankView {
   tank: Tank;
@@ -41,54 +44,24 @@ export interface DueTask {
 }
 
 /**
- * Lecture des données : chaque table en signal, tenu à jour par Dexie, et les vues calculées
- * (état de chaque bac, tâches dues). Les écritures passent par les repositories de `core/data/`.
+ * Vues calculées sur plusieurs domaines (état de chaque bac, tâches dues). Chaque table est lue par
+ * le store de son domaine (`core/stores/`), tenu à jour par Dexie. Les écritures passent par les repositories de `core/data/`.
  * Pour le futur backend, ce sont ces deux couches qui changeront, pas les écrans.
  */
 @Injectable({ providedIn: 'root' })
 export class AquariumStore {
   private readonly db = inject(AQUARIUM_DB);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly speciesStore = inject(SpeciesStore);
+  private readonly populationStore = inject(PopulationStore);
+  private readonly waterStore = inject(WaterStore);
+  private readonly careStore = inject(CareStore);
 
   readonly ready = signal(false);
   /** Jour local courant (YYYY-MM-DD). */
   readonly today = inject(Clock).today.asReadonly();
 
-  readonly tanks = this.live(() => this.db.tanks.toArray(), []);
-  readonly species = this.live(() => this.db.species.toArray(), []);
-  readonly inhabitants = this.live(() => this.db.inhabitants.toArray(), []);
-  readonly inhabitantEvents = this.live(() => this.db.inhabitantEvents.orderBy('date').reverse().toArray(), []);
-  readonly waterTests = this.live(() => this.db.waterTests.orderBy('date').toArray(), []);
-  readonly tasks = this.live(() => this.db.tasks.orderBy('nextDue').toArray(), []);
-  readonly logs = this.live(() => this.db.logs.orderBy('date').reverse().toArray(), []);
-  readonly observations = this.live(() => this.db.observations.orderBy('date').toArray(), []);
-  /** Photos, de la plus récente à la plus ancienne. */
-  readonly photos = this.live(() => this.db.photos.orderBy('date').reverse().toArray(), []);
-  readonly equipment = this.live(() => this.db.equipment.toArray(), []);
-  readonly consumables = this.live(() => this.db.consumables.toArray(), []);
-  /** Mesures CO2, de la plus ancienne à la plus récente. */
-  readonly co2Readings = this.live(() => this.db.co2Readings.orderBy('date').toArray(), []);
-  /** Diagnostics IA, du plus ancien au plus récent. */
-  readonly diagnoses = this.live(() => this.db.diagnoses.orderBy('date').toArray(), []);
-  /** Préférences de notification de cet appareil (non incluses dans les sauvegardes). */
-  readonly notificationPrefs = this.live(async () => (await this.db.prefs.get('notifications')) ?? DEFAULT_PREFS, DEFAULT_PREFS);
-  /** Changements de réglages du matériel, du plus ancien au plus récent. */
-  readonly settingChanges = this.live(() => this.db.settingChanges.orderBy('date').toArray(), []);
-
-  /** Dernière photo de chaque habitant (id habitant → id photo). */
-  readonly inhabitantCovers = computed(() => {
-    const m = new Map<string, string>();
-    for (const p of this.photos()) if (p.inhabitantId && !m.has(p.inhabitantId)) m.set(p.inhabitantId, p.id);
-    return m;
-  });
-
-  readonly speciesById = computed(() => new Map(this.species().map((s) => [s.id, s])));
-
-  /** Catalogue affiché : les fiches intégrées personnalisées sont remplacées par leur copie. */
-  readonly catalog = computed(() => {
-    const overridden = new Set(this.species().map((s) => s.overrides).filter(Boolean));
-    return this.species().filter((s) => !overridden.has(s.id));
-  });
+  readonly tanks = liveSignal(this.destroyRef, () => this.db.tanks.toArray(), []);
 
   readonly activeTanks = computed(() =>
     this.tanks()
@@ -97,11 +70,11 @@ export class AquariumStore {
   );
 
   readonly tankViews = computed<TankView[]>(() => {
-    const byId = this.speciesById();
-    const inhabitants = this.inhabitants();
-    const tests = this.waterTests();
-    const tasks = this.tasks();
-    const observations = this.observations();
+    const byId = this.speciesStore.speciesById();
+    const inhabitants = this.populationStore.inhabitants();
+    const tests = this.waterStore.waterTests();
+    const tasks = this.careStore.tasks();
+    const observations = this.careStore.observations();
     // Un seul passage par liste, au lieu d'un filtre complet par bac.
     const inhabitantsOf = groupByTank(inhabitants);
     const testsOf = groupByTank(tests);
@@ -151,7 +124,7 @@ export class AquariumStore {
   readonly dueTasks = computed<DueTask[]>(() => {
     const today = this.today();
     const tanks = new Map(this.activeTanks().map((t) => [t.id, t]));
-    return this.tasks()
+    return this.careStore.tasks()
       .filter((t) => t.active && t.nextDue <= today && tanks.has(t.tankId))
       .map((task) => ({ task, tank: tanks.get(task.tankId)! }));
   });
@@ -164,12 +137,5 @@ export class AquariumStore {
     // Met à jour les fiches du catalogue intégré sans toucher aux fiches personnelles.
     await this.db.species.bulkPut(BUILTIN_SPECIES);
     this.ready.set(true);
-  }
-
-  private live<T>(query: () => Promise<T>, initial: T): Signal<T> {
-    const s = signal<T>(initial);
-    const sub = liveQuery(query).subscribe({ next: (v) => s.set(v), error: (e) => console.error(e) });
-    this.destroyRef.onDestroy(() => sub.unsubscribe());
-    return s.asReadonly();
   }
 }

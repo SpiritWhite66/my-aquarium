@@ -1,5 +1,6 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AquariumStore } from '../core/store';
+import { PhotoStore } from '../core/stores/photo.store';
 import { PhotoRepo } from '../core/data/photo.repo';
 
 type Variant = 'thumb' | 'full';
@@ -13,8 +14,9 @@ type Variant = 'thumb' | 'full';
 @Injectable({ providedIn: 'root' })
 export class PhotoUrls {
   private readonly store = inject(AquariumStore);
+  private readonly photoStore = inject(PhotoStore);
   private readonly photoRepo = inject(PhotoRepo);
-  private readonly ids = computed(() => new Set(this.store.photos().map((p) => p.id)));
+  private readonly ids = computed(() => new Set(this.photoStore.photos().map((p) => p.id)));
   private readonly ready = signal(new Map<string, string>());
   private readonly pending = new Set<string>();
 

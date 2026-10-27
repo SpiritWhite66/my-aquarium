@@ -7,6 +7,7 @@ import { TankRepo } from './data/tank.repo';
 import { CareRepo } from './data/care.repo';
 import { NotificationService } from './notifications';
 import { AquariumStore } from './store';
+import { PrefsStore } from './stores/prefs.store';
 
 let db: AquariumDb;
 let n = 0;
@@ -42,7 +43,7 @@ describe('NotificationService', () => {
     await TestBed.inject(PrefsRepo).saveNotificationPrefs({ enabled: true, time: '00:00' });
     const store = TestBed.inject(AquariumStore);
     const service = TestBed.inject(NotificationService);
-    await waitFor(() => store.ready() && store.dueTasks().length === 1 && store.notificationPrefs().enabled && Object.keys(store.notificationPrefs().digests ?? {}).length > 0);
+    await waitFor(() => store.ready() && store.dueTasks().length === 1 && TestBed.inject(PrefsStore).notificationPrefs().enabled && Object.keys(TestBed.inject(PrefsStore).notificationPrefs().digests ?? {}).length > 0);
 
     await Promise.all([service.check(), service.check(), service.check()]);
     await service.check();

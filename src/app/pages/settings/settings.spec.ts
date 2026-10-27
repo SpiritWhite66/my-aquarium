@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BACKUP_REMINDER_DAYS, BackupService, fmtBytes } from '../../core/backup';
 import { AquariumStore } from '../../core/store';
+import { PrefsStore } from '../../core/stores/prefs.store';
 import { ThemeService } from '../../core/theme';
 import { bootApp, closeApp, type App } from '../../testing/app.testing';
 
@@ -98,10 +99,10 @@ describe('réglages', () => {
       const tasks = app.find('label.check', 'Tâches dues')!.querySelector('input') as HTMLInputElement;
       tasks.checked = false;
       tasks.dispatchEvent(new Event('change'));
-      await vi.waitFor(() => expect(TestBed.inject(AquariumStore).notificationPrefs()).toMatchObject({ enabled: true, time: '07:30', tasks: false }));
+      await vi.waitFor(() => expect(TestBed.inject(PrefsStore).notificationPrefs()).toMatchObject({ enabled: true, time: '07:30', tasks: false }));
       sw.checked = false;
       sw.dispatchEvent(new Event('change'));
-      await vi.waitFor(() => expect(TestBed.inject(AquariumStore).notificationPrefs().enabled).toBe(false));
+      await vi.waitFor(() => expect(TestBed.inject(PrefsStore).notificationPrefs().enabled).toBe(false));
     });
 
     it('une heure vidée revient à 9 h', async () => {
@@ -113,7 +114,7 @@ describe('réglages', () => {
       sw.dispatchEvent(new Event('change'));
       await app.until(() => !!app.find('input[type=time]'));
       app.type(app.find('input[type=time]'), '');
-      await vi.waitFor(() => expect(TestBed.inject(AquariumStore).notificationPrefs().time).toBe('09:00'));
+      await vi.waitFor(() => expect(TestBed.inject(PrefsStore).notificationPrefs().time).toBe('09:00'));
     });
   });
 

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { Location } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { SpeciesStore } from '../../core/stores/species.store';
 import type { QuantityUnit, Range } from '../../core/models';
 import {
   DIETS, DIFFICULTIES, GROWTHS, KINDS, LIGHTS, PLACEMENTS, TEMPERAMENTS, UNITS, ZONES, fmt, fmtRange,
@@ -129,6 +130,7 @@ const SCALES = {
 })
 export class SpeciesPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly speciesStore = inject(SpeciesStore);
   protected readonly livestockRepo = inject(LivestockRepo);
   protected readonly location = inject(Location);
   private readonly router = inject(Router);
@@ -143,7 +145,7 @@ export class SpeciesPage {
   protected readonly quantity = signal('1');
   protected readonly unit = signal<QuantityUnit>('individual');
 
-  protected readonly species = computed(() => this.store.speciesById().get(this.id()));
+  protected readonly species = computed(() => this.speciesStore.speciesById().get(this.id()));
   private readonly view = computed(() => this.store.tankViews().find((v) => v.tank.id === this.tankId()));
   protected readonly tank = computed(() => this.view()?.tank);
 

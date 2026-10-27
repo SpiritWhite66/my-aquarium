@@ -7,6 +7,7 @@ import { TankRepo } from './data/tank.repo';
 import { CareRepo } from './data/care.repo';
 import { NotificationService } from './notifications';
 import { AquariumStore } from './store';
+import { PrefsStore } from './stores/prefs.store';
 
 let db: AquariumDb;
 let n = 0;
@@ -52,7 +53,7 @@ async function seedDue(prefs: Record<string, unknown> = { enabled: true, time: '
   const service = TestBed.inject(NotificationService);
   return { store, service };
 }
-const prepared = (store: AquariumStore) => waitFor(() => store.ready() && store.dueTasks().length === 1 && store.notificationPrefs().enabled && Object.keys(store.notificationPrefs().digests ?? {}).length > 0);
+const prepared = (store: AquariumStore) => waitFor(() => store.ready() && store.dueTasks().length === 1 && TestBed.inject(PrefsStore).notificationPrefs().enabled && Object.keys(TestBed.inject(PrefsStore).notificationPrefs().digests ?? {}).length > 0);
 
 describe('prise en charge', () => {
   it('est désactivé sans Notification dans le navigateur', () => {
@@ -202,7 +203,7 @@ describe('affichage', () => {
     const { store, service } = await seedDue();
     await prepared(store);
     await service.check();
-    await waitFor(() => store.notificationPrefs().lastShown === store.today());
+    await waitFor(() => TestBed.inject(PrefsStore).notificationPrefs().lastShown === store.today());
   });
 
   it('ne dit rien sans autorisation', async () => {
@@ -232,7 +233,7 @@ describe('affichage', () => {
     await TestBed.inject(PrefsRepo).saveNotificationPrefs({ enabled: true, time: '00:00' });
     const store = TestBed.inject(AquariumStore);
     const service = TestBed.inject(NotificationService);
-    await waitFor(() => store.ready() && store.notificationPrefs().enabled && store.notificationPrefs().digestsUntil !== undefined);
+    await waitFor(() => store.ready() && TestBed.inject(PrefsStore).notificationPrefs().enabled && TestBed.inject(PrefsStore).notificationPrefs().digestsUntil !== undefined);
     await service.check();
     expect(shown).toEqual([]);
   });
@@ -283,7 +284,7 @@ describe('préparation des jours à venir', () => {
     fakeNotification('granted');
     const { store } = await seedDue();
     await prepared(store);
-    const prefs = store.notificationPrefs();
+    const prefs = TestBed.inject(PrefsStore).notificationPrefs();
     expect(Object.keys(prefs.digests!)).toHaveLength(30);
     const last = new Date(store.today() + 'T12:00:00');
     last.setDate(last.getDate() + 29);
@@ -296,7 +297,7 @@ describe('préparation des jours à venir', () => {
     const { store } = await seedDue({ enabled: false, time: '00:00' });
     await waitFor(() => store.ready() && store.dueTasks().length === 1);
     await new Promise((r) => setTimeout(r, 50));
-    expect(store.notificationPrefs().digests).toBeUndefined();
-    expect(store.notificationPrefs().digestsUntil).toBeUndefined();
+    expect(TestBed.inject(PrefsStore).notificationPrefs().digests).toBeUndefined();
+    expect(TestBed.inject(PrefsStore).notificationPrefs().digestsUntil).toBeUndefined();
   });
 });

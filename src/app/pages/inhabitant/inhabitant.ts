@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSign
 import { Location } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
+import { PhotoStore } from '../../core/stores/photo.store';
+import { PopulationStore } from '../../core/stores/population.store';
+import { SpeciesStore } from '../../core/stores/species.store';
 import type { HealthStatus, Inhabitant, InhabitantEventType } from '../../core/models';
 import { STATUSES, fmtShortDate, unitLabel } from '../../core/labels';
 import { Icon } from '../../shared/icon';
@@ -168,6 +171,9 @@ const EVENT_LABELS: Record<InhabitantEventType, string> = {
 })
 export class InhabitantPage {
   protected readonly store = inject(AquariumStore);
+  protected readonly photoStore = inject(PhotoStore);
+  protected readonly populationStore = inject(PopulationStore);
+  protected readonly speciesStore = inject(SpeciesStore);
   protected readonly livestockRepo = inject(LivestockRepo);
   protected readonly location = inject(Location);
   private readonly router = inject(Router);
@@ -184,13 +190,13 @@ export class InhabitantPage {
   protected readonly urls = inject(PhotoUrls);
   protected readonly viewing = signal<string | null>(null);
   protected readonly comparing = signal(false);
-  protected readonly photos = computed(() => this.store.photos().filter((p) => p.inhabitantId === this.hid()));
+  protected readonly photos = computed(() => this.photoStore.photos().filter((p) => p.inhabitantId === this.hid()));
 
   protected readonly data = computed(() => {
-    const inhabitant = this.store.inhabitants().find((i) => i.id === this.hid());
-    const species = inhabitant && this.store.speciesById().get(inhabitant.speciesId);
+    const inhabitant = this.populationStore.inhabitants().find((i) => i.id === this.hid());
+    const species = inhabitant && this.speciesStore.speciesById().get(inhabitant.speciesId);
     if (!inhabitant || !species) return undefined;
-    const events = this.store.inhabitantEvents().filter((e) => e.inhabitantId === inhabitant.id);
+    const events = this.populationStore.inhabitantEvents().filter((e) => e.inhabitantId === inhabitant.id);
     return { inhabitant, species, events };
   });
   protected readonly isPlant = computed(() => this.data()?.species.kind === 'plant');

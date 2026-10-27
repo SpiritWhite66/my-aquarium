@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { useFakeIndexedDb, waitFor } from './fake-db.testing';
 import { AQUARIUM_DB, AquariumDb } from './db';
 import { AquariumStore, groupByTank } from './store';
+import { WaterStore } from './stores/water.store';
 import { BackupRepo } from './data/backup.repo';
 import { CareRepo } from './data/care.repo';
 import { LivestockRepo } from './data/livestock.repo';
@@ -200,7 +201,7 @@ describe('vues des bacs', () => {
       { id: 'w2', updatedAt: '', tankId: b, date: '2026-10-02', values: { no3: 99 } },
       { id: 'w3', updatedAt: '', tankId: a, date: '2026-10-03', values: { no3: 20 } },
     ]);
-    await waitFor(() => store.waterTests().length === 3);
+    await waitFor(() => TestBed.inject(WaterStore).waterTests().length === 3);
     const views = new Map(store.tankViews().map((v) => [v.tank.id, v]));
     expect(views.get(a)!.tests.map((t) => t.id)).toEqual(['w1', 'w3']);
     expect(views.get(a)!.lastTest?.values.no3).toBe(20);
