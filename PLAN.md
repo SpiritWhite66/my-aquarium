@@ -19,7 +19,7 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [x] UUID et `updatedAt` sur chaque enregistrement.
 - [x] Base Dexie avec index et versionnement.
 - [x] Service unique `AquariumStore` exposant des signals (seule classe à remplacer pour le futur backend).
-- [ ] Tests des opérations de stockage.
+- [x] Tests des opérations de stockage (dépôts de données, store, sauvegarde).
 
 ## Étape 3 — Bacs
 - [x] Liste des bacs (cartes) et formulaire de création/modification.
@@ -94,11 +94,12 @@ Voir [APP.md](APP.md) pour l'objectif et le périmètre.
 - [ ] Tester le skill de diagnostic sur un vrai cas d'algues et affiner les consignes.
 
 ## Étape 9 — Finitions V1
-- [x] Tests unitaires des règles métier.
+- [x] Tests unitaires des règles métier, de la couche de données et de chaque page (couverture > 80 %, validés par tests de mutation).
 - [ ] Activer GitHub Pages (Settings › Pages › Source : GitHub Actions) et vérifier le déploiement.
 - [ ] Tests de bout en bout sur les parcours principaux.
 - [ ] Vérification hors ligne et installation PWA (Android, ordinateur).
-- [ ] Revue d'accessibilité.
+- [x] Revue d'accessibilité (RGAA) : lien d'évitement, focus des fenêtres modales et après navigation, cibles de 24 px, état des bacs en texte ; axe-core sans violation.
+- [ ] Revue d'accessibilité manuelle avec un lecteur d'écran (NVDA/VoiceOver) et alternative textuelle des graphiques.
 
 ## Après la V1
 1. **Backend et synchronisation** : remplacer les repositories de `core/data/` et les lectures d'`AquariumStore` par une implémentation API (avec cache local) ; les écrans ne changent pas.
