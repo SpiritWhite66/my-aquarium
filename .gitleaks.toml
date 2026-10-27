@@ -1,0 +1,9 @@
+# Configuration de gitleaks : règles par défaut + les faux jetons des tests.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Faux jetons administrateur des tests (jamais utilisés ailleurs)"
+regexes = ['''jeton-(de-test|e2e)-[0-9a-z-]+''']
+paths = ['''api/e2e/ref\.e2e\.ts''', '''api/src/ref/routes\.spec\.ts''']
+condition = "AND"
