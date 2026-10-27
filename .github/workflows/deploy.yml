@@ -25,7 +25,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx ng test --watch=false
+      - run: npm test -- --watch=false --coverage
       # L'app est servie sous https://<utilisateur>.github.io/<dépôt>/
       - run: npm run build -- --base-href "/${{ github.event.repository.name }}/"
       # GitHub Pages n'a pas de redirection pour les applications monopage : 404.html = index.html.
