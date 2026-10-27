@@ -23,19 +23,28 @@ Je déconseille deux microservices pour l'instant.
 
 On découpe le code comme deux microservices (modules séparés, chacun son schéma SQL, aucune jointure entre les deux, communication par une interface interne). Si un jour il faut les séparer, on extrait un module sans réécrire.
 
-```
-┌──────────── PWA (GitHub Pages) ────────────┐
-│ Dexie (source locale) ── file de synchro    │
-└───────────────┬─────────────────────────────┘
-                │ HTTPS / JSON
-┌───────────────▼──────────── Render (free) ─┐
-│  API unique                                  │
-│  ├─ module referentiel  → schéma "ref"       │
-│  └─ module aquarium     → schéma "aqua"      │
-└───────────────┬─────────────────────────────┘
-                │
-        PostgreSQL (Neon, free)
-   Photos : Backblaze B2 (S3), envoi direct par URL signée
+```mermaid
+flowchart TB
+  subgraph PWA["PWA (GitHub Pages)"]
+    UI[Écrans Angular] --> DX[(Dexie / IndexedDB)]
+    DX --> OB[Outbox de synchro]
+  end
+  subgraph API["API unique (Render free)"]
+    REF[Module référentiel]
+    AQ[Module aquarium]
+    AU[Authentification]
+  end
+  subgraph PG["PostgreSQL (Neon free)"]
+    SR[(schéma ref)]
+    SA[(schéma aqua)]
+  end
+  B2[(Backblaze B2<br/>photos)]
+  OB -- HTTPS / JSON --> AQ
+  DX -- copie du référentiel --> REF
+  REF --> SR
+  AQ --> SA
+  AQ -. URL signées .-> B2
+  PWA -- envoi direct par URL signée --> B2
 ```
 
 ## 3. Hébergement et base de données
@@ -92,6 +101,20 @@ aqua.tank, aqua.inhabitant, aqua.water_test, aqua.task, aqua.equipment_item,
 aqua.custom_species, aqua.photo_meta (clé B2, légende, bac, couverture, taille)
 ```
 
+```mermaid
+erDiagram
+  USER ||--o{ TANK : possède
+  TANK ||--o{ INHABITANT : contient
+  TANK ||--o{ WATER_TEST : "relevés"
+  TANK ||--o{ TASK : "tâches"
+  TANK ||--o{ EQUIPMENT_ITEM : équipe
+  TANK ||--o{ PHOTO_META : photos
+  USER ||--o{ CUSTOM_SPECIES : crée
+  INHABITANT }o--o| CUSTOM_SPECIES : "espèce perso"
+  INHABITANT }o..o| REF_SPECIES : "species_id (sans FK)"
+  EQUIPMENT_ITEM }o..o| REF_EQUIPMENT : "equipment_id (sans FK)"
+```
+
 - Les tables reprennent les stores Dexie actuels (format de sauvegarde v1), ce qui réutilise l'import/export existant.
 - Chaque ligne porte `id` (UUID généré **sur l'appareil**), `user_id`, `updated_at`, `deleted_at` (suppression logique pour la synchro).
 - Les références au référentiel sont des identifiants simples (`species_id`), sans clé étrangère entre schémas.
@@ -106,6 +129,23 @@ Modèle **local d'abord** : l'appli écrit toujours dans Dexie, puis synchronise
 4. La synchro se déclenche au démarrage, au retour du réseau et après chaque modification (avec un délai).
 
 « La dernière modification gagne » suffit pour une personne avec 2 ou 3 appareils. Pas besoin de CRDT.
+
+```mermaid
+sequenceDiagram
+  participant U as Écran
+  participant D as Dexie
+  participant O as Outbox
+  participant P as API
+  U->>D: Écrit (toujours local, même hors ligne)
+  D->>O: Ajoute le changement
+  Note over O,P: Au démarrage, au retour du réseau, ou après une modification
+  O->>P: POST /sync/push [changements]
+  P->>P: La dernière modification gagne (updated_at)
+  P-->>O: OK, vide l'outbox
+  D->>P: GET /sync/pull?since=curseur
+  P-->>D: Changements des autres appareils + suppressions
+  D-->>U: Mise à jour de l'affichage
+```
 
 ## 8. Comptes et sécurité
 
@@ -122,13 +162,21 @@ Modèle **local d'abord** : l'appli écrit toujours dans Dexie, puis synchronise
 
 Les photos vont **directement de l'appli vers B2**, via une URL signée délivrée par l'API. C'est la pratique recommandée par les fournisseurs S3 : l'appli ne détient jamais d'identifiant, et l'API décide de tout.
 
-```
-Appli                         API                          B2
-  │ POST /photos/upload-url ──▶│ vérifie compte, bac,       │
-  │ {tankId, taille, type}     │ taille ≤ 2 Mo, image/webp  │
-  │◀── {url signée 5 min, key} │ key = users/<id>/photos/<uuid>.webp
-  │ PUT photo ─────────────────┼───────────────────────────▶│
-  │ POST /photos {key, légende}▶│ vérifie l'objet, enregistre aqua.photo_meta
+```mermaid
+sequenceDiagram
+  participant A as Appli
+  participant P as API
+  participant B as B2
+  A->>A: Redimensionne, compresse en WebP
+  A->>P: POST /photos/upload-url {tankId, taille, type}
+  P->>P: Vérifie compte, bac, taille ≤ 2 Mo, type
+  P-->>A: URL signée (5 min) + key choisie par l'API
+  A->>B: PUT photo sur l'URL signée
+  B-->>A: 200
+  A->>P: POST /photos {key, légende}
+  P->>B: Vérifie que l'objet existe
+  P->>P: Enregistre aqua.photo_meta
+  P-->>A: 201
 ```
 
 - **Sur l'appareil** : redimensionnement (1600 px max) et compression WebP avant envoi, ~200-400 Ko par photo. La photo reste aussi dans IndexedDB pour l'affichage hors ligne.
