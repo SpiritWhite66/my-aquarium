@@ -133,8 +133,8 @@ describe('photos', () => {
     expect(r.warnings).toEqual([]);
     expect(await r.files.get('p')!.full.text()).toBe('ABC');
     expect(await r.files.get('p')!.thumb.text()).toBe('AB');
-    expect(Object.keys(r.data.photos[0])).not.toContain('full');
-    expect(Object.keys(r.data.photos[0])).not.toContain('thumb');
+    expect(Object.keys(r.data.photos![0])).not.toContain('full');
+    expect(Object.keys(r.data.photos![0])).not.toContain('thumb');
   });
 
   it('écarte une photo dont l’image est illisible ou absente', () => {

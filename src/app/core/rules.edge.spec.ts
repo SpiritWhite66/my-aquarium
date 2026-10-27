@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { Inhabitant, Species, Tank } from './models';
 import { PARAMS, PARAM_BY_KEY, compatibilityIssues, idealRange, isAlive, issuesIfAdded, levelOf, measuredParams, testAlerts, worst } from './rules';
 
-const sp = (id: string, o: Partial<Species> = {}): Species =>
-  ({ id, scientificName: `Sci ${id}`, commonNames: [id.toUpperCase()], kind: 'fish', source: 'builtin', ...o }) as Species;
+const sp = (id: string, o: Record<string, unknown> = {}): Species =>
+  ({ id, scientificName: `Sci ${id}`, commonNames: [id.toUpperCase()], kind: 'fish', source: 'builtin', ...o }) as unknown as Species;
 const tank = (o: Partial<Tank> = {}): Tank => ({ id: 't', updatedAt: '', name: 'Bac', type: 'planted', volumeGross: 60, startDate: '2026-01-01', co2: false, archived: false, ...o });
 const m = (species: Species, quantity = 5) => ({ species, quantity });
 
@@ -285,12 +285,12 @@ describe('compatibilité : cas par cas', () => {
   });
 
   it('une plante qui exige du CO2 le signale quand le bac n’en a pas', () => {
-    const needy = sp('n', { kind: 'plant', flora: { co2: 'required' } } as Partial<Species>);
+    const needy = sp('n', { kind: 'plant', flora: { co2: 'required' } });
     expect(compatibilityIssues(tank({ co2: false }), [m(needy)])).toEqual([
       { level: 'warn', title: 'N a besoin de CO2', detail: 'Le bac n’a pas d’injection de CO2.', speciesIds: ['n'] },
     ]);
     expect(compatibilityIssues(tank({ co2: true }), [m(needy)])).toEqual([]);
-    expect(compatibilityIssues(tank(), [m(sp('o', { kind: 'plant', flora: { co2: 'optional' } } as Partial<Species>))])).toEqual([]);
+    expect(compatibilityIssues(tank(), [m(sp('o', { kind: 'plant', flora: { co2: 'optional' } }))])).toEqual([]);
   });
 
   it('des animaux dans un bac en cyclage sont un danger', () => {

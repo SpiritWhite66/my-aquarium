@@ -9,9 +9,9 @@ afterEach(() => vi.useRealTimers());
 
 const U = '';
 const tank: Tank = { id: 'a', updatedAt: U, name: 'Salon', type: 'planted', volumeGross: 60, volumeNet: 50, startDate: '2026-09-01', co2: true, co2Target: 2, archived: false, substrate: 'Sable', notes: 'Bac de test' };
-const sp = (id: string, o: Partial<Species> = {}): Species => ({ id, scientificName: `Sci ${id}`, commonNames: [id.toUpperCase()], kind: 'fish', source: 'builtin', ...o }) as Species;
+const sp = (id: string, o: Record<string, unknown> = {}): Species => ({ id, scientificName: `Sci ${id}`, commonNames: [id.toUpperCase()], kind: 'fish', source: 'builtin', ...o }) as unknown as Species;
 const danio = sp('danio', { temp: { min: 22, max: 26 }, ph: { min: 6.5, max: 7.5 }, fauna: { minGroup: 6 } });
-const rotala = sp('rotala', { kind: 'plant', flora: { co2: 'required' } } as Partial<Species>);
+const rotala = sp('rotala', { kind: 'plant', flora: { co2: 'required' } });
 const inh = (id: string, speciesId: string, o: Partial<Inhabitant> = {}): Inhabitant => ({ id, updatedAt: U, tankId: 'a', speciesId, quantity: 12, unit: 'individual', addedDate: '2026-09-02', status: 'healthy', ...o });
 const test = (id: string, date: string, values: WaterTest['values'], o: Partial<WaterTest> = {}): WaterTest => ({ id, updatedAt: U, tankId: 'a', date, values, ...o });
 const log = (id: string, date: string, o: Partial<MaintenanceLog> = {}): MaintenanceLog => ({ id, updatedAt: U, tankId: 'a', type: 'water_change', label: 'Eau', date, ...o });

@@ -99,8 +99,8 @@ describe('archive ZIP', () => {
     const zip = await writeZip([entry('a.txt', 'Bonjour le monde')]);
     const bytes = new Uint8Array(await zip.arrayBuffer());
     bytes.fill(0xff, 30, 40);
-    const result = await readZip(new Blob([bytes])).then((m) => ({ ok: true, m }), (e: unknown) => ({ ok: false, e }));
-    if (result.ok) expect(await (result as { m: Map<string, Blob> }).m.get('a.txt')?.text()).not.toBe('Bonjour le monde');
+    const result = await readZip(new Blob([bytes])).then((m) => ({ m }), (e: unknown) => ({ e }));
+    if ('m' in result) expect(await result.m.get('a.txt')?.text()).not.toBe('Bonjour le monde');
     else expect(result.e).toBeDefined();
   });
 });
