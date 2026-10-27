@@ -18,7 +18,7 @@ flowchart LR
 ## 0. Prérequis (côté toi)
 
 - [x] Valider les ADR (statut « Acceptée ») et répondre aux questions ouvertes de BACKEND.md.
-- [ ] Créer les comptes gratuits : Render, Neon, Backblaze B2 (sans carte).
+- [ ] Créer les comptes gratuits : Render, Neon, Backblaze B2 (sans carte), **en région Europe** (non modifiable ensuite).
 - [ ] Vérifier les quotas gratuits du moment.
 - [ ] Activer sur GitHub : Dependency graph, Secret scanning, Push protection.
 
@@ -53,7 +53,10 @@ flowchart LR
 - [ ] Tester le cookie sur Safari / iOS ; sinon, sous-domaine commun ou repli sur jeton (ADR-0007).
 - [ ] Écran de connexion dans l'appli ; l'appli reste utilisable sans compte.
 - [ ] Rôle admin pour le référentiel.
-- [ ] Suppression complète du compte (RGPD).
+- [ ] Suppression complète du compte (RGPD), photos B2 comprises.
+- [ ] Politique de confidentialité, mentions légales, consentement à l'inscription.
+- [ ] Liste des appareils connectés, déconnexion à distance.
+- [ ] Quotas et limite de débit par compte.
 
 **Terminé quand** : connexion et déconnexion fonctionnent sur ordinateur et mobile, Safari compris.
 

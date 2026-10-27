@@ -161,7 +161,14 @@ sequenceDiagram
 - Limite de débit sur les routes de connexion.
 - Secrets (URL Neon, clé JWT) dans les variables d'environnement Render, jamais dans le dépôt.
 - La CI existante s'étend au backend : npm audit, CodeQL, Dependabot, tests.
-- RGPD : export (déjà fait côté appli) et suppression complète du compte.
+- RGPD : export (déjà fait côté appli) et suppression complète du compte (base + photos B2).
+
+**Plusieurs utilisateurs** : l'appli est ouverte à d'autres personnes, chacune sur plusieurs appareils. En plus de ce qui précède :
+- Données hébergées dans l'UE : région Europe chez Neon et chez B2 (à choisir à la création, non modifiable ensuite).
+- Politique de confidentialité et mentions légales accessibles dans l'appli ; consentement explicite à la création du compte.
+- Quotas par utilisateur (photos, nombre de lignes) et limite de débit par compte, pour protéger les offres gratuites.
+- Tests d'isolation systématiques sur chaque route du module aquarium.
+- Liste des appareils connectés et déconnexion à distance (révocation des jetons de renouvellement).
 
 ## 9. Photos
 
@@ -229,9 +236,9 @@ Si le réveil devenait un vrai problème : changer d'hébergeur, pas de langage.
 
 ## 12. Questions ouvertes
 
-- L'appli aura-t-elle d'autres utilisateurs, ou est-ce un usage personnel multi-appareils ?
 - Propositions de fiches par les utilisateurs : circuit à cadrer (qui valide, modération, attribution, fiche perso promue en fiche commune ?).
 
 Réglé :
-- Langage serveur : TypeScript (ADR-0005).
+- Langage serveur : TypeScript (ADR-0005), confirmé.
+- Usage : **plusieurs utilisateurs**, chacun sur plusieurs appareils (section 8).
 - Référentiel : édité par l'admin au départ, propositions des utilisateurs prévues plus tard (section 5).
