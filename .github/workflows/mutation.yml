@@ -38,9 +38,12 @@ jobs:
             stryker-main-
       - name: Fichiers à muter
         id: files
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+          if [ "$EVENT" = "pull_request" ]; then
+            changed=$(git diff --name-only "origin/$BASE_REF...HEAD" \
               | grep -E '^src/app/core/(data/[^/]+\.repo|[^/]+)\.ts$' \
               | grep -vE '\.(spec|testing)\.ts$|/(models|catalog|db|theme|clock|backup)\.ts$' || true)
             if [ -z "$changed" ]; then
@@ -56,4 +59,6 @@ jobs:
           fi
           echo "skip=false" >> "$GITHUB_OUTPUT"
       - if: steps.files.outputs.skip != 'true'
-        run: npm run mutation -- --incremental --concurrency "$(nproc)" ${{ steps.files.outputs.args }}
+        env:
+          ARGS: ${{ steps.files.outputs.args }}
+        run: npm run mutation -- --incremental --concurrency "$(nproc)" $ARGS
