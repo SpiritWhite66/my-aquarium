@@ -92,6 +92,7 @@ API :
 - `GET /ref/species?since=<date>` : renvoie seulement ce qui a changé depuis cette date. L'appli garde une copie dans Dexie et l'utilise hors ligne.
 - `GET /ref/species/:id`, idem pour equipment et consumable.
 - Écriture réservée au rôle admin. Saisie manuelle ou import CSV ; pas de remplissage automatique par IA.
+- **Propositions des utilisateurs (plus tard, non cadré)** : les utilisateurs pourront proposer des fiches. Pour ne pas bloquer cette évolution, chaque fiche porte dès le départ `status` (`publiee` seulement au début) et `created_by` (nul pour les fiches de l'admin). Le circuit de proposition et de validation sera défini dans un ADR dédié.
 - Réponses avec `ETag` / `Cache-Control` : le service worker les met en cache.
 
 Les **fiches personnalisées** (espèce créée par l'utilisateur) restent dans le module aquarium. Elles ne polluent pas le référentiel commun.
@@ -228,6 +229,9 @@ Si le réveil devenait un vrai problème : changer d'hébergeur, pas de langage.
 
 ## 12. Questions ouvertes
 
-- Le référentiel est-il édité uniquement par toi, ou les utilisateurs peuvent-ils proposer des fiches ?
 - L'appli aura-t-elle d'autres utilisateurs, ou est-ce un usage personnel multi-appareils ?
-- Préférence de langage côté serveur : TypeScript (recommandé, partage des types) ou Java/Spring ?
+- Propositions de fiches par les utilisateurs : circuit à cadrer (qui valide, modération, attribution, fiche perso promue en fiche commune ?).
+
+Réglé :
+- Langage serveur : TypeScript (ADR-0005).
+- Référentiel : édité par l'admin au départ, propositions des utilisateurs prévues plus tard (section 5).

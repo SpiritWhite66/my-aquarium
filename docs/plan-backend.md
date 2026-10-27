@@ -37,7 +37,7 @@ flowchart LR
 
 ## 2. Module référentiel (sans compte)
 
-- [ ] Tables `ref.species`, `ref.equipment`, `ref.consumable`.
+- [ ] Tables `ref.species`, `ref.equipment`, `ref.consumable`, avec `status` et `created_by` dès le départ (propositions futures).
 - [ ] Script d'import depuis le catalogue embarqué actuel (saisie manuelle / CSV, pas d'IA).
 - [ ] `GET /ref/<type>?since=` et `GET /ref/<type>/:id`, avec `ETag` et `Cache-Control`.
 - [ ] Appli : copie locale dans Dexie, mise à jour au démarrage ; repli sur le catalogue embarqué si l'API ne répond pas.
@@ -91,6 +91,10 @@ flowchart LR
 - [ ] Sauvegarde régulière de la base (dump vers B2).
 - [ ] Alerte simple si `/health` échoue (service de surveillance gratuit).
 - [ ] Documentation : variables d'environnement, déploiement, restauration.
+
+## Plus tard (non cadré)
+
+- [ ] Propositions de fiches par les utilisateurs : cadrer le besoin, puis ADR (validation, modération, attribution).
 
 ## Risques suivis
 
