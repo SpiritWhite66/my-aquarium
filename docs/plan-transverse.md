@@ -51,9 +51,9 @@ flowchart LR
 - [ ] Test : après suppression, plus aucune ligne ni objet B2 pour l'utilisateur.
 - [ ] Retrait des métadonnées EXIF (GPS compris) avant envoi des photos (étape 6).
 - [ ] Tâches planifiées de purge :
-  - [ ] lignes `deleted_at` après 90 jours ;
+  - [x] lignes supprimées après 90 jours (`aqua.records`) ;
   - [ ] objets B2 non confirmés après 24 h ;
-  - [ ] **comptes inactifs : avertissement après 12 mois, suppression 30 jours plus tard** ;
+  - [x] **comptes inactifs : avertissement après 12 mois, suppression 30 jours plus tard** ;
   - [ ] sauvegardes de la base au-delà de 30 jours.
 
 ## 5. Avant l'ouverture au public

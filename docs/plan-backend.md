@@ -118,7 +118,7 @@ Décisions prises en route : cookie nommé `__Host-refresh` (refusé par le navi
 - [x] Premier passage d'un compte sur un appareil : tout ce que l'appareil contient part au serveur (fusion avec les autres appareils). Un autre compte sur le même appareil repart d'un envoi complet.
 - [x] Tests : deux appareils simulés, conflits, suppression, hors ligne, modification pendant l'envoi, horloge en avance (API), isolation, E2E sur le serveur compilé.
 - [x] Corrigé en route : une déconnexion pendant un renouvellement de session reconnectait l'appareil.
-- Limites : les photos ne voyagent pas encore (étape 6) ; les fiches d'espèces intégrées ou du catalogue en ligne non plus (seules celles créées par l'utilisateur) ; les suppressions restent en base (purge à 90 jours à faire, voir plan-transverse).
+- Limites : les photos ne voyagent pas encore (étape 6) ; les fiches d'espèces intégrées ou du catalogue en ligne non plus (seules celles créées par l'utilisateur) ; les suppressions sont effacées de la base au bout de 90 jours (purge quotidienne et hebdomadaire, avec celle des comptes inactifs) ; un appareil resté hors ligne plus longtemps garde la ligne localement.
 - Politique de confidentialité passée en version 2 (données synchronisées) : nouvelle acceptation à la prochaine connexion par lien.
 
 **Terminé quand** : une modification faite hors ligne sur le téléphone apparaît sur l'ordinateur après retour du réseau. ✔ (testé avec deux appareils simulés ; à vérifier sur tes vrais appareils)

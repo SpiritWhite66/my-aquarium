@@ -586,7 +586,7 @@ describe.skipIf(testDatabaseUrl === undefined)('comptes (PostgreSQL réel)', () 
       expect((await purge(bearer(user.accessToken))).statusCode).toBe(403);
       const ok = await purge(bearer(admin.accessToken));
       expect(ok.statusCode).toBe(200);
-      expect(ok.json()).toEqual({ warned: 0, deleted: 0 });
+      expect(ok.json()).toEqual({ warned: 0, deleted: 0, tombstones: 0 });
       expect(ok.headers['cache-control']).toBe('no-store');
     });
 
@@ -597,7 +597,7 @@ describe.skipIf(testDatabaseUrl === undefined)('comptes (PostgreSQL réel)', () 
       mailer.sent.length = 0;
       await db.execute(sql`update auth.users set last_seen_at = now() - interval '13 months'`);
       const res = await purge(bearer(token));
-      expect(res.json()).toEqual({ warned: 1, deleted: 0 });
+      expect(res.json()).toEqual({ warned: 1, deleted: 0, tombstones: 0 });
       expect(mailer.sent.map((m) => m.to)).toEqual(['vieux@exemple.fr']);
     });
 

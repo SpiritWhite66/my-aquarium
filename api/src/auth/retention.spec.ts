@@ -22,11 +22,12 @@ describe('planification', () => {
 
   it('lance la purge après le délai initial puis à intervalle régulier, jusqu’à l’arrêt', async () => {
     vi.useFakeTimers();
-    const execute = vi.fn();
-    // Une base minimale : la purge sans service d'e-mails ne lit rien.
+    // Base minimale : sans service d'e-mails, seule la purge des suppressions passe.
+    const returning = vi.fn(() => Promise.resolve([]));
+    const execute = { delete: () => ({ where: () => ({ returning }) }) };
     const log = vi.fn();
     const stop = startRetention({
-      db: { execute } as never,
+      db: execute as never,
       mailer: undefined,
       log,
       onError: vi.fn(),
@@ -37,7 +38,7 @@ describe('planification', () => {
     expect(log).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
     expect(log).toHaveBeenCalledTimes(1);
-    expect(log).toHaveBeenCalledWith({ warned: 0, deleted: 0 });
+    expect(log).toHaveBeenCalledWith({ warned: 0, deleted: 0, tombstones: 0 });
     await vi.advanceTimersByTimeAsync(5000);
     expect(log).toHaveBeenCalledTimes(2);
     stop();
@@ -49,7 +50,7 @@ describe('planification', () => {
     vi.useFakeTimers();
     const onError = vi.fn();
     const failing = {
-      select: () => {
+      delete: () => {
         throw new Error('base absente');
       },
     };
@@ -106,11 +107,19 @@ describe.skipIf(testDatabaseUrl === undefined)('conservation des comptes (Postgr
     await addUser('recent@exemple.fr', await daysAgo(30));
     await addUser('limite@exemple.fr', await daysAgo(360));
 
-    expect(await purgeInactiveAccounts(db, mailer)).toEqual({ warned: 1, deleted: 0 });
+    expect(await purgeInactiveAccounts(db, mailer)).toEqual({
+      warned: 1,
+      deleted: 0,
+      tombstones: 0,
+    });
     expect(mailer.sent.map((m) => m.to)).toEqual(['inactif@exemple.fr']);
     expect(await emails()).toHaveLength(3);
 
-    expect(await purgeInactiveAccounts(db, mailer)).toEqual({ warned: 0, deleted: 0 });
+    expect(await purgeInactiveAccounts(db, mailer)).toEqual({
+      warned: 0,
+      deleted: 0,
+      tombstones: 0,
+    });
     expect(mailer.sent).toHaveLength(1);
   });
 
@@ -124,7 +133,11 @@ describe.skipIf(testDatabaseUrl === undefined)('conservation des comptes (Postgr
     await addUser('vieux@exemple.fr', await daysAgo(500), await daysAgo(31));
     await addUser('attente@exemple.fr', await daysAgo(500), await daysAgo(29));
 
-    expect(await purgeInactiveAccounts(db, mailer)).toEqual({ warned: 0, deleted: 1 });
+    expect(await purgeInactiveAccounts(db, mailer)).toEqual({
+      warned: 0,
+      deleted: 1,
+      tombstones: 0,
+    });
     expect(await emails()).toEqual(['attente@exemple.fr']);
   });
 
@@ -150,24 +163,60 @@ describe.skipIf(testDatabaseUrl === undefined)('conservation des comptes (Postgr
 
   it('ne supprime jamais sans service d’e-mails ni sans avertissement préalable', async () => {
     await addUser('vieux@exemple.fr', await daysAgo(900));
-    expect(await purgeInactiveAccounts(db, undefined)).toEqual({ warned: 0, deleted: 0 });
+    expect(await purgeInactiveAccounts(db, undefined)).toEqual({
+      warned: 0,
+      deleted: 0,
+      tombstones: 0,
+    });
     // Même très inactif, un compte non averti reste : l'avertissement passe toujours en premier.
-    expect(await purgeInactiveAccounts(db, mailer)).toEqual({ warned: 1, deleted: 0 });
+    expect(await purgeInactiveAccounts(db, mailer)).toEqual({
+      warned: 1,
+      deleted: 0,
+      tombstones: 0,
+    });
     expect(await emails()).toEqual(['vieux@exemple.fr']);
   });
 
   it('ne marque pas le compte quand l’envoi échoue, et réessaie ensuite', async () => {
     await addUser('inactif@exemple.fr', await daysAgo(400));
     const failing = { send: () => Promise.reject(new Error('panne')) };
-    expect(await purgeInactiveAccounts(db, failing)).toEqual({ warned: 0, deleted: 0 });
-    expect(await purgeInactiveAccounts(db, mailer)).toEqual({ warned: 1, deleted: 0 });
+    expect(await purgeInactiveAccounts(db, failing)).toEqual({
+      warned: 0,
+      deleted: 0,
+      tombstones: 0,
+    });
+    expect(await purgeInactiveAccounts(db, mailer)).toEqual({
+      warned: 1,
+      deleted: 0,
+      tombstones: 0,
+    });
   });
 
   it('un compte qui se reconnecte après l’avertissement n’est plus concerné', async () => {
     await addUser('revenu@exemple.fr', await daysAgo(5), null);
     // Un avertissement ancien mais une activité récente : remis à zéro à la connexion, jamais supprimé.
     await db.execute(sql`update auth.users set inactivity_warned_at = null`);
-    expect(await purgeInactiveAccounts(db, mailer)).toEqual({ warned: 0, deleted: 0 });
+    expect(await purgeInactiveAccounts(db, mailer)).toEqual({
+      warned: 0,
+      deleted: 0,
+      tombstones: 0,
+    });
     expect(await emails()).toEqual(['revenu@exemple.fr']);
+  });
+
+  it('efface les suppressions de plus de 90 jours, pas les autres lignes', async () => {
+    await addUser('a@exemple.fr', await daysAgo(1));
+    await db.execute(sql`
+      insert into aqua.records (user_id, tbl, id, data, deleted, updated_at)
+      select id, 'tanks', 'vieille-suppr', null::jsonb, true, now() - interval '91 days' from auth.users
+      union all select id, 'tanks', 'suppr-recente', null::jsonb, true, now() - interval '89 days' from auth.users
+      union all select id, 'tanks', 'vieille-ligne', '{}'::jsonb, false, now() - interval '400 days' from auth.users`);
+    expect(await purgeInactiveAccounts(db, undefined)).toEqual({
+      warned: 0,
+      deleted: 0,
+      tombstones: 1,
+    });
+    const left = await db.execute<{ id: string }>(sql`select id from aqua.records order by id`);
+    expect(left.map((r) => r.id)).toEqual(['suppr-recente', 'vieille-ligne']);
   });
 });

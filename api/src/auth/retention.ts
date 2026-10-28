@@ -1,6 +1,6 @@
-import { and, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { users } from '../db/schema.js';
+import { records, users } from '../db/schema.js';
 import type { Mailer } from './mailer.js';
 import { deleteAccount } from './repository.js';
 
@@ -10,6 +10,8 @@ const BATCH = 100;
 export interface PurgeReport {
   warned: number;
   deleted: number;
+  /** Suppressions de plus de 90 jours effacées de la synchronisation. */
+  tombstones: number;
 }
 
 export function inactivityMail(to: string) {
@@ -37,7 +39,8 @@ export async function purgeInactiveAccounts(
   db: Db,
   mailer: Mailer | undefined,
 ): Promise<PurgeReport> {
-  const report: PurgeReport = { warned: 0, deleted: 0 };
+  const report: PurgeReport = { warned: 0, deleted: 0, tombstones: 0 };
+  report.tombstones = await purgeTombstones(db);
   if (mailer === undefined) return report;
 
   const expired = await db
@@ -84,6 +87,19 @@ export async function purgeInactiveAccounts(
   }
   report.warned = warnedIds.length;
   return report;
+}
+
+/**
+ * Une suppression reste 90 jours en base pour que les autres appareils l'apprennent ; ensuite on
+ * l'efface. Un appareil resté hors ligne plus longtemps ne saura pas que la ligne a été supprimée :
+ * il la garde localement (sans la renvoyer, sauf s'il la modifie).
+ */
+async function purgeTombstones(db: Db): Promise<number> {
+  const rows = await db
+    .delete(records)
+    .where(and(eq(records.deleted, true), lt(records.updatedAt, sql`now() - interval '90 days'`)))
+    .returning({ id: records.id });
+  return rows.length;
 }
 
 export interface RetentionOptions {
