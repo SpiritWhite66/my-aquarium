@@ -29,7 +29,7 @@ export function loggerOptions(config: Pick<Config, 'LOG_LEVEL'>) {
     serializers: {
       req: (req: { method: string; url: string }) => ({
         method: req.method,
-        url: req.url.split('?')[0],
+        url: req.url.split('?')[0] ?? req.url,
       }),
       res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
     },
