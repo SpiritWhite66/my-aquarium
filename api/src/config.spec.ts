@@ -59,6 +59,12 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ ...base, PORT: '0' })).toThrow(/^Configuration invalide :\nPORT : /);
   });
 
+  it('ne migre pas au démarrage par défaut', () => {
+    expect(loadConfig(base).RUN_MIGRATIONS).toBe(false);
+    expect(loadConfig({ ...base, RUN_MIGRATIONS: 'true' }).RUN_MIGRATIONS).toBe(true);
+    expect(() => loadConfig({ ...base, RUN_MIGRATIONS: 'oui' })).toThrow(/RUN_MIGRATIONS/);
+  });
+
   describe('comptes', () => {
     it('sont désactivés par défaut', () => {
       expect(loadConfig(base)).toMatchObject({

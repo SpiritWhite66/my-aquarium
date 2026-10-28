@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { createDb } from '../src/db/client.js';
+import { applyMigrations } from '../src/db/apply-migrations.js';
 import { migrationsFolder } from '../src/db/folder.js';
 
 const url = process.env['TEST_DATABASE_URL'];
@@ -22,7 +23,7 @@ describe('migrations', () => {
       const { db, close } = createDb(url ?? '');
       try {
         await migrate(db, { migrationsFolder: folder });
-        await migrate(db, { migrationsFolder: folder });
+        await applyMigrations(url ?? '');
         const rows = await db.execute<{ schema_name: string }>(
           sql`select schema_name from information_schema.schemata where schema_name in ('ref','aqua','auth') order by 1`,
         );

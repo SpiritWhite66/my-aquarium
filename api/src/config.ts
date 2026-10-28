@@ -32,6 +32,11 @@ const envSchema = z.object({
   MAIL_TRANSPORT: z.enum(['none', 'console']).default('none'),
   /** Requêtes par minute et par compte connecté. */
   USER_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(300),
+  /** Applique les migrations au démarrage (déploiement en une seule instance). */
+  RUN_MIGRATIONS: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
   APP_VERSION: z.string().min(1).default('dev'),
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(100),
 });

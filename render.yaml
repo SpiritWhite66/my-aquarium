@@ -1,0 +1,24 @@
+# Plan Render (Blueprint) : service web Docker de l'API, région Francfort (UE), offre gratuite.
+# Les secrets ne figurent pas ici : ils se saisissent dans le tableau de bord (sync: false).
+services:
+  - type: web
+    name: mes-aquariums-api
+    runtime: docker
+    region: frankfurt
+    plan: free
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    # Déploie seulement quand la CI GitHub est verte.
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://spiritwhite66.github.io
+      - key: RUN_MIGRATIONS
+        value: 'true'
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_TOKEN
+        sync: false
