@@ -11,4 +11,4 @@ condition = "AND"
 [[allowlists]]
 description = "Fausses clés et faux secrets des tests de l'API (valeurs inventées, jamais utilisées ailleurs)"
 targetRules = ['generic-api-key']
-paths = ['''api/src/.*\.spec\.ts''', '''api/e2e/.*\.e2e\.ts''']
+paths = ['''api/src/.*\.spec\.ts''', '''api/e2e/.*\.e2e\.ts''', '''api/test/.*\.ts''']
