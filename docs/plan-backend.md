@@ -135,7 +135,7 @@ Décisions prises en route : cookie nommé `__Host-refresh` (refusé par le navi
 
 ## 7. Exploitation
 
-- [ ] Journaux structurés sans données personnelles.
+- [x] Journaux structurés sans données personnelles : méthode, chemin sans paramètres et code de réponse seulement (ni IP, ni en-têtes, ni identifiant de compte).
 - [ ] Sauvegarde régulière de la base (dump vers B2).
 - [ ] Alerte simple si `/health` échoue (service de surveillance gratuit).
 - [ ] Documentation : variables d'environnement, déploiement, restauration.

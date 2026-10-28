@@ -1,3 +1,4 @@
+import Fastify from 'fastify';
 import { apiErrorSchema, healthResponseSchema } from '@aquarium/shared';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -201,10 +202,43 @@ describe('limite de débit derrière le proxy Render', () => {
 });
 
 describe('loggerOptions', () => {
-  it('masque les secrets et reprend le niveau demandé', () => {
-    expect(loggerOptions({ LOG_LEVEL: 'warn' })).toEqual({
-      level: 'warn',
-      redact: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
+  it('reprend le niveau demandé', () => {
+    expect(loggerOptions({ LOG_LEVEL: 'warn' }).level).toBe('warn');
+  });
+
+  it('ne garde de la requête que la méthode et le chemin, sans IP ni en-têtes ni paramètres', () => {
+    const { serializers, redact } = loggerOptions({ LOG_LEVEL: 'info' });
+    const req = {
+      method: 'GET',
+      url: '/sync/pull?after=12',
+      ip: '203.0.113.7',
+      remoteAddress: '203.0.113.7',
+      headers: { authorization: 'Bearer secret', cookie: 'x=1' },
+    };
+    expect(serializers.req(req)).toEqual({ method: 'GET', url: '/sync/pull' });
+    expect(serializers.res({ statusCode: 200, headers: { 'set-cookie': 'x' } } as never)).toEqual({
+      statusCode: 200,
     });
+    expect(redact).toEqual(['req.headers', 'req.remoteAddress', 'req.ip', 'res.headers']);
+  });
+
+  it('n’écrit aucune adresse IP dans les journaux d’une vraie requête', async () => {
+    const lines: string[] = [];
+    const logged = Fastify({
+      logger: {
+        ...loggerOptions({ LOG_LEVEL: 'info' }),
+        stream: { write: (l: string) => lines.push(l) },
+      },
+    });
+    logged.get('/x', () => ({ ok: true }));
+    await logged.inject({
+      url: '/x?token=abc',
+      remoteAddress: '203.0.113.7',
+      headers: { cookie: 'c=1' },
+    });
+    await logged.close();
+    const all = lines.join('');
+    expect(all).toContain('"url":"/x"');
+    expect(all).not.toMatch(/203\.0\.113\.7|remoteAddress|token=abc|c=1/);
   });
 });

@@ -18,11 +18,23 @@ function errorBody(code: string, message: string): ApiError {
   return { error: { code, message } };
 }
 
-/** Journaux structurés, sans secret ni donnée personnelle (ADR-0014). */
+/**
+ * Journaux structurés, sans secret ni donnée personnelle (ADR-0014) : pour chaque requête, seulement
+ * la méthode, le chemin (sans paramètres) et le code de réponse. Ni adresse IP, ni en-têtes, ni
+ * identifiant de compte. L'IP sert encore, en mémoire seulement, à la limite de débit.
+ */
 export function loggerOptions(config: Pick<Config, 'LOG_LEVEL'>) {
   return {
     level: config.LOG_LEVEL,
-    redact: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
+    serializers: {
+      req: (req: { method: string; url: string }) => ({
+        method: req.method,
+        url: req.url.split('?')[0],
+      }),
+      res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
+    },
+    // Filet de sécurité si un objet de requête est journalisé autrement (erreur, par exemple).
+    redact: ['req.headers', 'req.remoteAddress', 'req.ip', 'res.headers'],
   };
 }
 

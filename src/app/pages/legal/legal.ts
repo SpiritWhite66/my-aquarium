@@ -64,7 +64,7 @@ const TITLES: Record<LegalDoc, string> = {
               <li><b>Tes appareils connectés</b> : nom du navigateur, dates de création et de dernière utilisation, pour que tu puisses les voir et les déconnecter.</li>
               <li><b>Les données de tes aquariums</b>, tant que tu es connecté (voir ci-dessous).</li>
               <li><b>Tes acceptations</b> des conditions et de cette politique (version et date).</li>
-              <li><b>Des journaux techniques</b> limités (sans e-mail ni contenu), pour la sécurité et le dépannage ; l’adresse IP est traitée par les hébergeurs pour assurer le service et se protéger des abus.</li>
+              <li><b>Des journaux techniques</b> limités (type de requête, chemin, code de réponse : ni e-mail, ni adresse IP, ni contenu), pour le dépannage. L’adresse IP est utilisée sur le moment pour limiter les abus, sans être enregistrée par l’appli ; les hébergeurs la traitent pour assurer le service.</li>
             </ul>
             <p>Une fois connecté, <b>les données de tes aquariums</b> (bacs, habitants, relevés, entretien, matériel, diagnostics, fiches d’espèces créées) sont copiées sur le serveur pour être retrouvées sur tes autres appareils. Les photos restent pour l’instant sur l’appareil. Sans compte, rien ne quitte l’appareil.</p>
             <h2>Pourquoi, et sur quelle base légale</h2>
