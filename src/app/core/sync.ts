@@ -8,6 +8,7 @@ import {
 } from '@aquarium/shared/sync-tables';
 import { AuthService } from './auth';
 import { AQUARIUM_DB, type AquariumDb } from './db';
+import { withLock } from './locks';
 import { markRemote, type OutboxEntry } from './sync-outbox';
 
 /** Requête vers l'API au nom du compte connecté (`null` : pas connecté ou réseau absent). */
@@ -219,11 +220,10 @@ export class SyncService {
     const user = this.auth.user();
     if (user === null) return;
     this.status.set('syncing');
-    const locks = (navigator as { locks?: LockManager }).locks;
     const run = () => this.engine.run(user.id);
     try {
       // Deux onglets ne synchronisent pas en même temps.
-      await (locks ? locks.request('aquarium-sync', run) : run());
+      await withLock('aquarium-sync', 20_000, run);
       this.status.set('ok');
       this.lastSync.set(new Date().toISOString());
     } catch (err) {

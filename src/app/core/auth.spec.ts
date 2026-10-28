@@ -126,12 +126,16 @@ describe('AuthService', () => {
     });
 
     it('prend un verrou du navigateur quand il existe, pour les autres onglets', async () => {
-      const request = vi.fn((_name: string, cb: () => Promise<boolean>) => cb());
+      const request = vi.fn((_name: string, _opts: unknown, cb: () => Promise<boolean>) => cb());
       vi.stubGlobal('navigator', { ...navigator, locks: { request } });
       const auth = service({ signedIn: true });
       reply(200, session());
       await auth.restore();
-      expect(request).toHaveBeenCalledWith('aquarium-auth-refresh', expect.any(Function));
+      expect(request).toHaveBeenCalledWith(
+        'aquarium-auth-refresh',
+        expect.anything(),
+        expect.any(Function),
+      );
       expect(auth.user()).not.toBeNull();
     });
   });

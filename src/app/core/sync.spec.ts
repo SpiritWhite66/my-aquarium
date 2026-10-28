@@ -433,13 +433,17 @@ describe('SyncService', () => {
   });
 
   it('prend le verrou du navigateur quand il existe', async () => {
-    const request = vi.fn((_n: string, cb: () => Promise<void>) => cb());
+    const request = vi.fn((_n: string, _o: unknown, cb: () => Promise<void>) => cb());
     vi.stubGlobal('navigator', { ...navigator, locks: { request } });
     try {
       const sync = service();
       user.set({ id: 'u1' });
       await sync.sync();
-      expect(request).toHaveBeenCalledWith('aquarium-sync', expect.any(Function));
+      expect(request).toHaveBeenCalledWith(
+        'aquarium-sync',
+        expect.anything(),
+        expect.any(Function),
+      );
     } finally {
       vi.unstubAllGlobals();
     }

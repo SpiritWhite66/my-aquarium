@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ACCOUNTS_ENABLED, API_URL } from './api-config';
 import { readPref, writePref } from './local-prefs';
+import { withLock } from './locks';
 
 export interface AccountUser {
   id: string;
@@ -161,10 +162,7 @@ export class AuthService {
   private lockedRefresh(): Promise<boolean> {
     // Deux onglets qui renouvellent en même temps présenteraient le même cookie : le serveur y verrait
     // un vol et fermerait la session. Le verrou les fait passer l'un après l'autre.
-    const locks = (navigator as { locks?: LockManager }).locks;
-    return locks
-      ? locks.request('aquarium-auth-refresh', () => this.doRefresh())
-      : this.doRefresh();
+    return withLock('aquarium-auth-refresh', 10_000, () => this.doRefresh());
   }
 
   private async doRefresh(): Promise<boolean> {
