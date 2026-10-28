@@ -358,6 +358,8 @@ describe('historique', () => {
       ]);
     });
     await app.go('/bacs/a/entretien', 'Changement d’eau');
+    // Le catalogue se charge à part : attendre le nom de l'espèce, pas seulement le journal.
+    await app.until(() => app.el().textContent.includes('Rasbora galaxy (-2)'));
     const events = [...app.el().querySelectorAll('.ev')].map((e) =>
       e.textContent.replace(/\s+/g, ' ').trim(),
     );
