@@ -11,6 +11,7 @@ import { HttpError } from './http-error.js';
 import { createGuards } from './auth/guard.js';
 import { createBrevoMailer, createConsoleMailer, type Mailer } from './auth/mailer.js';
 import { registerAuthRoutes } from './auth/routes.js';
+import { registerSyncRoutes } from './sync/routes.js';
 import { registerRefRoutes } from './ref/routes.js';
 
 function errorBody(code: string, message: string): ApiError {
@@ -75,6 +76,7 @@ export async function buildApp(
   });
   const mailer = deps.mailer ?? mailerFor(config);
   registerAuthRoutes(app, { db, config, mailer, guards });
+  registerSyncRoutes(app, { db, guards });
   registerRefRoutes(app, { db, authorizeWrite: guards.authorizeAdmin });
 
   app.setNotFoundHandler((_req, reply) => {

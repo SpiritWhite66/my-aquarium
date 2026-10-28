@@ -1,6 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import Dexie, { type EntityTable } from 'dexie';
 import type { NotificationPrefs } from './reminders';
+import { installOutbox, type OutboxEntry } from './sync-outbox';
 import type {
   SettingChange,
   Diagnosis,
@@ -19,6 +20,14 @@ import type {
   Tank,
   WaterTest,
 } from './models';
+
+export interface SyncMeta {
+  id: 'sync';
+  /** Compte dont cet appareil a les données : un autre compte repart d'un envoi complet. */
+  userId: string;
+  /** Curseur du serveur : tout ce qui est avant a déjà été reçu. */
+  cursor: number;
+}
 
 /** Base IndexedDB locale. Toute modification de schéma passe par une nouvelle `version()`. */
 export class AquariumDb extends Dexie {
@@ -41,6 +50,12 @@ export class AquariumDb extends Dexie {
   prefs!: EntityTable<NotificationPrefs, 'id'>;
   /** Point de reprise du catalogue en ligne (hors sauvegardes : propre à l'appareil). */
   refMeta!: EntityTable<RefMeta, 'id'>;
+  /** Modifications locales à envoyer au serveur (synchronisation, propre à l'appareil). */
+  outbox!: EntityTable<OutboxEntry, 'key'>;
+  /** Compte synchronisé et curseur de reprise. */
+  syncMeta!: EntityTable<SyncMeta, 'id'>;
+  /** Appelé à chaque modification locale d'une table synchronisée. */
+  onLocalChange: () => void = () => undefined;
 
   constructor(name = 'my-aquarium') {
     super(name);
@@ -96,6 +111,10 @@ export class AquariumDb extends Dexie {
         }
       });
     this.version(9).stores({ refMeta: 'id' });
+    this.version(10).stores({ outbox: 'key', syncMeta: 'id' });
+    installOutbox(this, () => {
+      this.onLocalChange();
+    });
   }
 }
 

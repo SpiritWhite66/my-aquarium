@@ -77,6 +77,8 @@ export class AuthService {
   private accessToken: string | null = null;
   private expiresAt = 0;
   private refreshing: Promise<boolean> | null = null;
+  /** Change à chaque déconnexion : une réponse arrivée après coup ne reconnecte pas. */
+  private epoch = 0;
 
   /** Au démarrage : reprend la session d'un appareil déjà connecté, sans rien demander aux autres. */
   async restore(): Promise<void> {
@@ -117,6 +119,7 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    this.epoch += 1;
     try {
       await this.call('/auth/logout', { method: 'POST' });
     } catch {
@@ -165,15 +168,17 @@ export class AuthService {
   }
 
   private async doRefresh(): Promise<boolean> {
+    const epoch = this.epoch;
     try {
       const res = await this.call('/auth/refresh', { method: 'POST' });
+      if (epoch !== this.epoch) return false;
       if (res.status === 401) {
         this.clear();
         return false;
       }
       if (!res.ok) return false;
       const body: unknown = await res.json();
-      if (!isSession(body)) return false;
+      if (!isSession(body) || epoch !== this.epoch) return false;
       this.accept(body);
       return true;
     } catch {
@@ -183,7 +188,12 @@ export class AuthService {
   }
 
   /** Requête authentifiée ; renouvelle le jeton si besoin. `null` si on n'est pas (ou plus) connecté. */
-  private async authed(path: string, init: { method?: string } = {}): Promise<Response | null> {
+  async authed(
+    path: string,
+    init: { method?: string; body?: unknown } = {},
+  ): Promise<Response | null> {
+    // Déconnecté (y compris pendant un échange en cours) : rien ne part, aucune session ne se rouvre.
+    if (this.user() === null) return null;
     if (this.accessToken === null || Date.now() > this.expiresAt - MARGIN_MS) {
       if (!(await this.refresh())) return null;
     }
@@ -224,6 +234,7 @@ export class AuthService {
   }
 
   private clear(): void {
+    this.epoch += 1;
     this.accessToken = null;
     this.expiresAt = 0;
     this.user.set(null);

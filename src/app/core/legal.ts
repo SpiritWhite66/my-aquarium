@@ -4,7 +4,7 @@
  * exige de changer les deux, pour que chaque compte soit invité à accepter la nouvelle version.
  */
 export const LEGAL = {
-  versions: { cgu: '1', confidentialite: '1' },
+  versions: { cgu: '1', confidentialite: '2' },
   /** Date de la version en vigueur. */
   updated: '2026-10-28',
   /** Adresse de contact (droits RGPD, signalements). Obligatoire dès que les comptes sont ouverts (un test le vérifie). */

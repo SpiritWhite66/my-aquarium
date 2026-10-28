@@ -62,19 +62,20 @@ const TITLES: Record<LegalDoc, string> = {
             <ul>
               <li><b>Ton adresse e-mail</b>, pour t’identifier et t’envoyer le lien de connexion.</li>
               <li><b>Tes appareils connectés</b> : nom du navigateur, dates de création et de dernière utilisation, pour que tu puisses les voir et les déconnecter.</li>
+              <li><b>Les données de tes aquariums</b>, tant que tu es connecté (voir ci-dessous).</li>
               <li><b>Tes acceptations</b> des conditions et de cette politique (version et date).</li>
               <li><b>Des journaux techniques</b> limités (sans e-mail ni contenu), pour la sécurité et le dépannage ; l’adresse IP est traitée par les hébergeurs pour assurer le service et se protéger des abus.</li>
             </ul>
-            <p>Pour l’instant, les données de tes aquariums restent sur ton appareil : elles ne sont pas envoyées au serveur. Cette page sera mise à jour avant que cela change.</p>
+            <p>Une fois connecté, <b>les données de tes aquariums</b> (bacs, habitants, relevés, entretien, matériel, diagnostics, fiches d’espèces créées) sont copiées sur le serveur pour être retrouvées sur tes autres appareils. Les photos restent pour l’instant sur l’appareil. Sans compte, rien ne quitte l’appareil.</p>
             <h2>Pourquoi, et sur quelle base légale</h2>
             <ul>
-              <li>Fournir le compte et la connexion : exécution du service que tu demandes.</li>
+              <li>Fournir le compte, la connexion et la synchronisation : exécution du service que tu demandes.</li>
               <li>Sécurité et prévention des abus : intérêt légitime.</li>
               <li>Conserver la preuve de ton acceptation : obligation de pouvoir la démontrer.</li>
             </ul>
             <h2>Combien de temps</h2>
             <ul>
-              <li>Compte : jusqu’à ce que tu le supprimes.</li>
+              <li>Compte et données synchronisées : jusqu’à ce que tu supprimes le compte (tout est alors effacé du serveur).</li>
               <li>Compte inactif : avertissement par e-mail après 12 mois sans connexion, suppression 30 jours plus tard.</li>
               <li>Lien de connexion : 15 minutes. Appareil connecté : 30 jours après sa dernière utilisation.</li>
               <li>Journaux techniques : 30 jours.</li>

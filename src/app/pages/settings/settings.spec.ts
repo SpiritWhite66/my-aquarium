@@ -589,6 +589,44 @@ describe('fmtBytes', () => {
       expect(TestBed.inject(AuthService).user()).not.toBeNull();
     });
 
+    it('montre l’état de la synchronisation et permet de la relancer', async () => {
+      ouverts();
+      localStorage.setItem('signedIn', '1');
+      const fetchMock = serveur({
+        'POST /auth/refresh': {
+          status: 200,
+          body: { accessToken: 'jeton', expiresIn: 900, user: me },
+        },
+        'GET /me/sessions': { status: 200, body: { items: [device()] } },
+        'POST /sync/push': { status: 200, body: { accepted: 1, ignored: 0 } },
+        'GET /sync/pull?after=0': { status: 200, body: { changes: [], cursor: 0, more: false } },
+      });
+      app = await bootApp();
+      await app.go('/reglages', 'Synchronisation');
+      await app.until(() => app.el().textContent.includes('À jour'));
+      const pulls = () =>
+        fetchMock.mock.calls.filter((c) => c[0].startsWith(`${API}/sync/pull`)).length;
+      const before = pulls();
+      app.press('button', 'Synchroniser maintenant');
+      await app.until(() => pulls() === before + 1);
+    });
+
+    it('signale un serveur qui ne répond pas, avec les modifications en attente', async () => {
+      ouverts();
+      localStorage.setItem('signedIn', '1');
+      serveur({
+        'POST /auth/refresh': {
+          status: 200,
+          body: { accessToken: 'jeton', expiresIn: 900, user: me },
+        },
+        'GET /me/sessions': { status: 200, body: { items: [device()] } },
+      });
+      app = await bootApp();
+      await app.go('/reglages', 'Synchronisation');
+      await app.until(() => app.el().textContent.includes('n’a pas répondu'));
+      expect(app.el().textContent).toMatch(/\d+ modifications en attente/);
+    });
+
     it('se déconnecte', async () => {
       ouverts();
       localStorage.setItem('signedIn', '1');

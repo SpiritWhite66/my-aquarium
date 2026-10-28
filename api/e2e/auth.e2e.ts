@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { authResponseSchema, sessionListSchema } from '@aquarium/shared';
+import { authResponseSchema, sessionListSchema, syncPullResultSchema } from '@aquarium/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { type RunningServer, startServer } from './server.js';
 
@@ -107,6 +107,43 @@ describe.skipIf(databaseUrl === undefined)('comptes (serveur compilé + PostgreS
       headers: { authorization: `Bearer ${renewed.accessToken}` },
     });
     expect(afterReplay.status).toBe(401);
+  });
+
+  it('synchronise les données entre deux appareils du même compte', async () => {
+    const owner = `synchro-${String(Date.now())}@exemple.fr`;
+    await fetch(`${server.base}/auth/magic-link`, {
+      method: 'POST',
+      headers: json,
+      body: JSON.stringify({ email: owner }),
+    });
+    const verify = await fetch(`${server.base}/auth/verify`, {
+      method: 'POST',
+      headers: json,
+      body: JSON.stringify({ token: await emailedToken(), consent: { terms: true, age15: true } }),
+    });
+    const { accessToken } = authResponseSchema.parse(await verify.json());
+    const auth = { authorization: `Bearer ${accessToken}` };
+
+    const push = await fetch(`${server.base}/sync/push`, {
+      method: 'POST',
+      headers: { ...auth, ...json },
+      body: JSON.stringify({
+        changes: [
+          {
+            table: 'tanks',
+            id: 't1',
+            updatedAt: '2026-10-01T10:00:00.000Z',
+            deleted: false,
+            data: { id: 't1', name: 'Salon' },
+          },
+        ],
+      }),
+    });
+    expect(await push.json()).toEqual({ accepted: 1, ignored: 0 });
+    const pull = syncPullResultSchema.parse(
+      await (await fetch(`${server.base}/sync/pull?after=0`, { headers: auth })).json(),
+    );
+    expect(pull.changes.map((c) => c.data?.['name'])).toEqual(['Salon']);
   });
 
   it('supprime le compte en libre-service', async () => {

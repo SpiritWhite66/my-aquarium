@@ -2,7 +2,7 @@
 
 Conception : [BACKEND.md](BACKEND.md) · Décisions : [ADR](adr/README.md) · Conformité et sécurité : [plan-transverse.md](plan-transverse.md) · Qualité : [qualite-backend.md](qualite-backend.md)
 
-**Avancement** : étapes 1 et 2 réalisées (code, tests et CI verts), sauf ce qui attend les comptes cloud (déploiement Render/Neon). Étape 3 : cadrée et découpée, pas commencée.
+**Avancement** : étapes 1 à 5 réalisées et déployées (catalogue en ligne, comptes, synchronisation). Restent : test Safari/iOS (étape 3), photos (étape 6), exploitation (étape 7).
 
 Principe : chaque étape est livrable seule, l'appli continue de fonctionner hors ligne à chaque étape, et le backend reste optionnel jusqu'à l'étape 4.
 
@@ -101,23 +101,27 @@ Décisions prises en route : cookie nommé `__Host-refresh` (refusé par le navi
 2. Jeton d'accès : JWT signé HS256 avec secret unique (simple) ou EdDSA (clé publique, plus lourd) ? (recommandé : HS256 via `jose`)
 3. Service d'e-mails : à choisir au lot 3c, sans effet sur 3a/3b grâce à l'interface `Mailer`.
 
-## 4. Sauvegarde vers le serveur
+## 4. Sauvegarde vers le serveur — réalisée par la synchronisation (étape 5)
 
-- [ ] Tables `aqua.*` reprenant le format de sauvegarde v1 (UUID, `updated_at`, `deleted_at`).
-- [ ] `POST /backup` et `GET /backup` en réutilisant l'import/export existant.
-- [ ] Tests d'isolation : un utilisateur ne lit ni n'écrit jamais les données d'un autre.
+- [x] Table `aqua.records` : une ligne par enregistrement de l'appli (table, id, données JSON, date de modification, suppression), clé `(user_id, table, id)`, supprimée avec le compte (cascade). Plutôt qu'une table par type : le format de l'appli peut évoluer sans migration serveur.
+- [x] Plus besoin de `POST /backup` / `GET /backup` : la synchronisation envoie et récupère tout. L'export ZIP reste disponible dans Réglages pour une sauvegarde hors ligne.
+- [x] Tests d'isolation : un compte ne lit ni n'écrase jamais les données d'un autre (même identifiant de ligne compris).
 
-**Terminé quand** : sauvegarde sur un appareil, restauration sur un autre.
+**Terminé quand** : sauvegarde sur un appareil, restauration sur un autre. ✔ (connexion sur le second appareil = récupération complète)
 
 ## 5. Synchronisation automatique
 
-- [ ] Migration Dexie : table `outbox`, champs `updated_at` / `deleted_at`, UUID partout.
-- [ ] `POST /sync/push` et `GET /sync/pull?since=`, règle « la dernière modification gagne ».
-- [ ] Déclenchement : démarrage, retour du réseau, après modification (avec délai).
-- [ ] Indicateur discret dans l'appli : synchronisé / en attente / erreur.
-- [ ] Tests : deux appareils simulés, conflits, suppression, hors ligne prolongé, horloge décalée.
+- [x] Dexie v10 : table `outbox` remplie automatiquement par un middleware sur chaque écriture locale (ajout, modification, suppression, y compris en masse), dans la même transaction. Les identifiants étaient déjà des UUID et chaque ligne a un `updatedAt`.
+- [x] `POST /sync/push` (100 lignes max, 64 Ko par ligne) et `GET /sync/pull?after=` (curseur serveur croissant, pages de 500) ; règle « la dernière modification gagne », date d'une horloge en avance ramenée à l'heure du serveur ; quota de 50 000 lignes par compte.
+- [x] Déclenchement : connexion et démarrage, retour du réseau, retour au premier plan, 3 s après une modification, toutes les 5 minutes ; un seul échange à la fois (verrou entre onglets).
+- [x] Indicateur dans Réglages › Compte : à jour / en cours / hors ligne / quota / erreur, modifications en attente, bouton « Synchroniser maintenant ».
+- [x] Premier passage d'un compte sur un appareil : tout ce que l'appareil contient part au serveur (fusion avec les autres appareils). Un autre compte sur le même appareil repart d'un envoi complet.
+- [x] Tests : deux appareils simulés, conflits, suppression, hors ligne, modification pendant l'envoi, horloge en avance (API), isolation, E2E sur le serveur compilé.
+- [x] Corrigé en route : une déconnexion pendant un renouvellement de session reconnectait l'appareil.
+- Limites : les photos ne voyagent pas encore (étape 6) ; les fiches d'espèces intégrées ou du catalogue en ligne non plus (seules celles créées par l'utilisateur) ; les suppressions restent en base (purge à 90 jours à faire, voir plan-transverse).
+- Politique de confidentialité passée en version 2 (données synchronisées) : nouvelle acceptation à la prochaine connexion par lien.
 
-**Terminé quand** : une modification faite hors ligne sur le téléphone apparaît sur l'ordinateur après retour du réseau.
+**Terminé quand** : une modification faite hors ligne sur le téléphone apparaît sur l'ordinateur après retour du réseau. ✔ (testé avec deux appareils simulés ; à vérifier sur tes vrais appareils)
 
 ## 6. Photos sur Backblaze B2
 

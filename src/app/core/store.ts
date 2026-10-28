@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { AQUARIUM_DB } from './db';
 import { AuthService } from './auth';
+import { SyncService } from './sync';
 import { RefSyncService } from './ref-sync';
 import { Clock } from './clock';
 import type { Inhabitant, MaintenanceTask, Observation, Species, Tank, WaterTest } from './models';
@@ -66,6 +67,8 @@ export class AquariumStore {
   private readonly speciesStore = inject(SpeciesStore);
   private readonly refSync = inject(RefSyncService);
   private readonly auth = inject(AuthService);
+  // Démarre la synchronisation automatique (elle attend qu'un compte soit connecté).
+  private readonly sync = inject(SyncService);
   private readonly populationStore = inject(PopulationStore);
   private readonly waterStore = inject(WaterStore);
   private readonly careStore = inject(CareStore);

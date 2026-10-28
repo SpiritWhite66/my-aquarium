@@ -489,4 +489,22 @@ describe('AuthService', () => {
       expect(await auth.deleteAccount()).toBe(false);
     });
   });
+
+  describe('déconnexion pendant un renouvellement', () => {
+    it('ne se reconnecte pas quand la réponse arrive après la déconnexion', async () => {
+      const auth = service({ signedIn: true });
+      let answer: (v: unknown) => void = () => undefined;
+      const late = new Promise((resolve) => {
+        answer = resolve;
+      });
+      fetchMock.mockReturnValueOnce(late);
+      const restoring = auth.restore();
+      reply(204);
+      await auth.logout();
+      answer({ ok: true, status: 200, json: () => Promise.resolve(session()) });
+      await restoring;
+      expect(auth.user()).toBeNull();
+      expect(localStorage.getItem('signedIn')).toBe('0');
+    });
+  });
 });

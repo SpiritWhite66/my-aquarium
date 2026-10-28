@@ -1,5 +1,15 @@
 import { sql } from 'drizzle-orm';
-import { index, jsonb, pgSchema, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  bigserial,
+  boolean,
+  index,
+  jsonb,
+  pgSchema,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 /** Référentiel public : espèces, équipements, consommables (ADR-0001). */
 export const refSchema = pgSchema('ref');
@@ -153,4 +163,29 @@ export const userConsents = authSchema.table(
       .default(sql`now()`),
   },
   (t) => [primaryKey({ columns: [t.userId, t.document, t.version] })],
+);
+
+/**
+ * Données des aquariums, une ligne par enregistrement de l'appli (étapes 4 et 5). Toujours lues et
+ * écrites avec le `user_id` du compte connecté. `seq` croît à chaque écriture : c'est le curseur de
+ * synchronisation (indépendant des horloges des appareils).
+ */
+export const records = aquaSchema.table(
+  'records',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    table: text('tbl').notNull(),
+    id: text('id').notNull(),
+    data: jsonb('data').$type<Record<string, unknown>>(),
+    deleted: boolean('deleted').notNull().default(false),
+    /** Date de la modification sur l'appareil (bornée à l'heure du serveur). */
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull(),
+    seq: bigserial('seq', { mode: 'number' }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.table, t.id] }),
+    index('records_user_seq_idx').on(t.userId, t.seq),
+  ],
 );

@@ -38,6 +38,8 @@ describe('textes légaux', () => {
     const text = app.el().textContent;
     expect(text).toContain('12 mois');
     expect(text).toContain('15 ans');
-    expect(text).toContain('restent sur ton appareil');
+    expect(text).toContain('rien ne quitte l’appareil');
+    expect(text).toContain('copiées sur le serveur');
+    expect(text).toContain('Les photos restent pour l’instant sur l’appareil');
   });
 });

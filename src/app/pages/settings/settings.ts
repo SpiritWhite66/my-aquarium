@@ -23,6 +23,7 @@ import { CareRepo } from '../../core/data/care.repo';
 import { PrefsRepo } from '../../core/data/prefs.repo';
 import { RefSyncService } from '../../core/ref-sync';
 import { AuthService } from '../../core/auth';
+import { SyncService } from '../../core/sync';
 
 @Component({
   selector: 'app-settings',
@@ -186,6 +187,14 @@ import { AuthService } from '../../core/auth';
                 </div>
                 <button class="btn out" type="button" (click)="auth.logout()">Se déconnecter</button>
               </div>
+              <div class="it" style="flex-wrap: wrap">
+                <span class="ic" [class.p]="sync.status() === 'ok'" [class.w]="syncWarn()"><app-icon name="download" [size]="20" /></span>
+                <div class="grow" style="min-width: 160px">
+                  <p style="font-weight: 600">Synchronisation</p>
+                  <p class="sub" aria-live="polite">{{ syncStatus() }}</p>
+                </div>
+                <button class="linkbtn" type="button" [disabled]="sync.status() === 'syncing'" (click)="sync.sync()">Synchroniser maintenant</button>
+              </div>
               @for (d of auth.devices(); track d.id) {
                 <div class="it" style="flex-wrap: wrap">
                   <div class="grow" style="min-width: 160px">
@@ -200,7 +209,7 @@ import { AuthService } from '../../core/auth';
               <div class="it" style="flex-wrap: wrap">
                 <div class="grow" style="min-width: 160px">
                   <p style="font-weight: 600">Supprimer mon compte</p>
-                  <p class="sub">Efface ton adresse et tes appareils connectés du serveur. Tes données restent sur cet appareil.</p>
+                  <p class="sub">Efface du serveur ton adresse, tes appareils et les données synchronisées. Tes données restent sur cet appareil.</p>
                 </div>
                 <button class="btn out" type="button" style="color: var(--dg)" (click)="deleteAccount()">Supprimer</button>
               </div>
@@ -256,13 +265,38 @@ import { AuthService } from '../../core/auth';
 export class SettingsPage {
   protected readonly refSync = inject(RefSyncService);
   protected readonly auth = inject(AuthService);
+  protected readonly sync = inject(SyncService);
+  protected readonly syncWarn = computed(() =>
+    ['offline', 'quota', 'error'].includes(this.sync.status()),
+  );
+  protected readonly syncStatus = computed(() => {
+    const pending = this.sync.pending();
+    const waiting = pending
+      ? ` ${String(pending)} modification${pending > 1 ? 's' : ''} en attente.`
+      : '';
+    const last = this.sync.lastSync();
+    switch (this.sync.status()) {
+      case 'syncing':
+        return 'Synchronisation en cours…';
+      case 'ok':
+        return `À jour${last ? ` (${new Date(last).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })})` : ''}. Tes données sont aussi sur tes autres appareils connectés.${waiting}`;
+      case 'offline':
+        return `Hors ligne : envoi au retour du réseau.${waiting}`;
+      case 'quota':
+        return `Limite de données du compte atteinte : les nouvelles modifications restent sur cet appareil.${waiting}`;
+      case 'error':
+        return `Le serveur n’a pas répondu, nouvel essai dans quelques minutes.${waiting}`;
+      default:
+        return `En attente.${waiting}`;
+    }
+  });
   protected readonly accountMessage = signal<{ text: string; error: boolean } | null>(null);
 
   protected async deleteAccount(): Promise<void> {
     const email = this.auth.user()?.email ?? '';
     if (
       !confirm(
-        `Supprimer définitivement le compte ${email} ? Ton adresse et tes appareils connectés seront effacés du serveur. Tes données resteront sur cet appareil. Cette action est irréversible.`,
+        `Supprimer définitivement le compte ${email} ? Ton adresse, tes appareils et les données synchronisées seront effacés du serveur. Tes données resteront sur cet appareil. Cette action est irréversible.`,
       )
     )
       return;
