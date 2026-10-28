@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { AQUARIUM_DB } from './db';
+import { AuthService } from './auth';
 import { RefSyncService } from './ref-sync';
 import { Clock } from './clock';
 import type { Inhabitant, MaintenanceTask, Observation, Species, Tank, WaterTest } from './models';
@@ -64,6 +65,7 @@ export class AquariumStore {
   private readonly destroyRef = inject(DestroyRef);
   private readonly speciesStore = inject(SpeciesStore);
   private readonly refSync = inject(RefSyncService);
+  private readonly auth = inject(AuthService);
   private readonly populationStore = inject(PopulationStore);
   private readonly waterStore = inject(WaterStore);
   private readonly careStore = inject(CareStore);
@@ -156,5 +158,6 @@ export class AquariumStore {
     this.ready.set(true);
     // Catalogue en ligne : seulement si le réglage est activé ; ne bloque jamais le démarrage.
     void this.refSync.sync();
+    void this.auth.restore();
   }
 }

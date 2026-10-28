@@ -5,7 +5,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { BACKUP_REMINDER_DAYS, BackupService, fmtBytes } from '../../core/backup';
 import { AquariumStore } from '../../core/store';
 import { PrefsStore } from '../../core/stores/prefs.store';
-import { API_URL } from '../../core/api-config';
+import { ACCOUNTS_ENABLED, API_URL } from '../../core/api-config';
+import { AuthService } from '../../core/auth';
 import { ThemeService } from '../../core/theme';
 import { bootApp, closeApp, type App } from '../../testing/app.testing';
 
@@ -444,5 +445,116 @@ describe('fmtBytes', () => {
     expect(fmtBytes(1536 * 1024)).toBe('1,5 Mo');
     expect(fmtBytes(3 * 1024 ** 3)).toBe('3,0 Go');
     expect(fmtBytes(1024 * 1024 - 1)).toBe('1024 Ko');
+  });
+
+  describe('compte', () => {
+    const API = 'https://api.exemple.test';
+    const me = {
+      id: '11111111-1111-4111-8111-111111111111',
+      email: 'alice@exemple.fr',
+      role: 'user',
+      createdAt: '2026-10-28T10:00:00.000Z',
+    };
+    const device = (over = {}) => ({
+      id: 'd1',
+      device: 'Firefox sur Linux',
+      createdAt: '2026-10-28T10:00:00.000Z',
+      lastUsedAt: '2026-10-28T11:00:00.000Z',
+      current: true,
+      ...over,
+    });
+
+    function serveur(routes: Record<string, { status: number; body?: unknown }>) {
+      const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+        const key = `${init?.method ?? 'GET'} ${url.replace(API, '')}`;
+        const r = routes[key] ?? { status: 500 };
+        return Promise.resolve({
+          ok: r.status >= 200 && r.status < 300,
+          status: r.status,
+          json: () => Promise.resolve(r.body),
+        });
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      return fetchMock;
+    }
+
+    function ouverts() {
+      TestBed.overrideProvider(API_URL, { useValue: API });
+      TestBed.overrideProvider(ACCOUNTS_ENABLED, { useValue: true });
+    }
+
+    it('est absent tant que les comptes sont fermés (réglage par défaut)', async () => {
+      app = await bootApp();
+      await app.go('/reglages', 'Catalogue en ligne');
+      expect(app.el().textContent).not.toContain('Compte');
+      expect(app.find('a[href="/connexion"]')).toBeNull();
+      expect(app.find('a[href="/confidentialite"]')).toBeNull();
+    });
+
+    it('propose de se connecter, sans obliger, et mène aux textes légaux', async () => {
+      ouverts();
+      app = await bootApp();
+      await app.go('/reglages', 'Se connecter');
+      expect(app.find('a[href="/connexion"]')).not.toBeNull();
+      expect(app.el().textContent).toContain('marche très bien sans compte');
+      const legal = ['/mentions-legales', '/confidentialite', '/conditions'];
+      for (const href of legal) expect(app.find(`a[href="${href}"]`)).not.toBeNull();
+    });
+
+    it('affiche le compte et les appareils, et déconnecte un autre appareil', async () => {
+      ouverts();
+      localStorage.setItem('signedIn', '1');
+      let appareils = [
+        device(),
+        device({ id: 'd2', device: 'Chrome sur Android', current: false }),
+      ];
+      const fetchMock = serveur({
+        'POST /auth/refresh': {
+          status: 200,
+          body: { accessToken: 'jeton', expiresIn: 900, user: me },
+        },
+      });
+      fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+        const key = `${init?.method ?? 'GET'} ${url.replace(API, '')}`;
+        if (key === 'POST /auth/refresh')
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ accessToken: 'jeton', expiresIn: 900, user: me }),
+          });
+        if (key === 'DELETE /me/sessions/d2') appareils = [appareils[0]];
+        return Promise.resolve({
+          ok: true,
+          status: key.startsWith('DELETE') ? 204 : 200,
+          json: () => Promise.resolve({ items: appareils }),
+        });
+      });
+      app = await bootApp();
+      await app.go('/reglages', 'alice@exemple.fr');
+      await app.until(() => app.el().textContent.includes('Chrome sur Android'));
+      expect(app.el().textContent).toContain('Firefox sur Linux (cet appareil)');
+      expect(app.find('button', 'Déconnecter')).not.toBeNull();
+      app.press('button', 'Déconnecter');
+      await app.until(() => !app.el().textContent.includes('Chrome sur Android'));
+      expect(fetchMock.mock.calls.some((c) => c[0] === `${API}/me/sessions/d2`)).toBe(true);
+    });
+
+    it('se déconnecte', async () => {
+      ouverts();
+      localStorage.setItem('signedIn', '1');
+      serveur({
+        'POST /auth/refresh': {
+          status: 200,
+          body: { accessToken: 'jeton', expiresIn: 900, user: me },
+        },
+        'GET /me/sessions': { status: 200, body: { items: [device()] } },
+        'POST /auth/logout': { status: 204 },
+      });
+      app = await bootApp();
+      await app.go('/reglages', 'alice@exemple.fr');
+      app.press('button', 'Se déconnecter');
+      await app.until(() => app.find('a[href="/connexion"]') !== null);
+      expect(TestBed.inject(AuthService).user()).toBeNull();
+    });
   });
 });

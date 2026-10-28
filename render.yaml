@@ -16,6 +16,9 @@ services:
         value: production
       - key: CORS_ORIGIN
         value: https://spiritwhite66.github.io
+      # Page de l'appli qui reçoit le lien de connexion (l'appli est servie sous /my-aquarium/).
+      - key: LOGIN_URL
+        value: https://spiritwhite66.github.io/my-aquarium/connexion
       - key: RUN_MIGRATIONS
         value: 'true'
       - key: DATABASE_URL

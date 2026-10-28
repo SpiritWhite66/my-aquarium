@@ -125,6 +125,29 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/gear/gear-forms').then((m) => m.ConsumableFormPage),
   },
   {
+    path: 'connexion',
+    title: 'Connexion · Mes aquariums',
+    loadComponent: () => import('./pages/account/login').then((m) => m.LoginPage),
+  },
+  {
+    path: 'mentions-legales',
+    title: 'Mentions légales',
+    data: { doc: 'mentions' },
+    loadComponent: () => import('./pages/legal/legal').then((m) => m.LegalPage),
+  },
+  {
+    path: 'confidentialite',
+    title: 'Politique de confidentialité',
+    data: { doc: 'confidentialite' },
+    loadComponent: () => import('./pages/legal/legal').then((m) => m.LegalPage),
+  },
+  {
+    path: 'conditions',
+    title: 'Conditions d’utilisation',
+    data: { doc: 'conditions' },
+    loadComponent: () => import('./pages/legal/legal').then((m) => m.LegalPage),
+  },
+  {
     path: 'reglages',
     title: 'Réglages',
     loadComponent: () => import('./pages/settings/settings').then((m) => m.SettingsPage),

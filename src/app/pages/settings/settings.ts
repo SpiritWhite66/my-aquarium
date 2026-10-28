@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AquariumStore } from '../../core/store';
 import { PhotoStore } from '../../core/stores/photo.store';
@@ -15,6 +22,7 @@ import { BackupRepo } from '../../core/data/backup.repo';
 import { CareRepo } from '../../core/data/care.repo';
 import { PrefsRepo } from '../../core/data/prefs.repo';
 import { RefSyncService } from '../../core/ref-sync';
+import { AuthService } from '../../core/auth';
 
 @Component({
   selector: 'app-settings',
@@ -165,6 +173,44 @@ import { RefSyncService } from '../../core/ref-sync';
         </div>
       </section>
 
+      @if (auth.available) {
+        <section>
+          <h2 class="h2">Compte</h2>
+          <div class="card">
+            @if (auth.user(); as user) {
+              <div class="it" style="flex-wrap: wrap">
+                <span class="ic p"><app-icon name="check" [size]="20" /></span>
+                <div class="grow" style="min-width: 160px">
+                  <p style="font-weight: 600">{{ user.email }}</p>
+                  <p class="sub">Connecté{{ user.role === 'admin' ? ' · administrateur' : '' }}</p>
+                </div>
+                <button class="btn out" type="button" (click)="auth.logout()">Se déconnecter</button>
+              </div>
+              @for (d of auth.devices(); track d.id) {
+                <div class="it" style="flex-wrap: wrap">
+                  <div class="grow" style="min-width: 160px">
+                    <p style="font-weight: 600">{{ d.device || 'Appareil inconnu' }}{{ d.current ? ' (cet appareil)' : '' }}</p>
+                    <p class="sub">Dernière utilisation : {{ date(d.lastUsedAt) }}</p>
+                  </div>
+                  @if (!d.current) {
+                    <button class="linkbtn" type="button" (click)="auth.revokeDevice(d.id)">Déconnecter</button>
+                  }
+                </div>
+              }
+            } @else {
+              <a class="it" routerLink="/connexion">
+                <span class="ic"><app-icon name="upload" [size]="20" /></span>
+                <div class="grow"><p style="font-weight: 600">Se connecter</p><p class="sub">Facultatif : un lien arrive par e-mail, pas de mot de passe. L’appli marche très bien sans compte.</p></div>
+                <app-icon name="chevron" [size]="18" style="color: var(--mu)" />
+              </a>
+            }
+          </div>
+          <p class="sub" style="margin: 0">
+            <a routerLink="/mentions-legales">Mentions légales</a> · <a routerLink="/confidentialite">Confidentialité</a> · <a routerLink="/conditions">Conditions d’utilisation</a>
+          </p>
+        </section>
+      }
+
       <section>
         <h2 class="h2">Données</h2>
         <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 12px">
@@ -199,6 +245,14 @@ import { RefSyncService } from '../../core/ref-sync';
 })
 export class SettingsPage {
   protected readonly refSync = inject(RefSyncService);
+  protected readonly auth = inject(AuthService);
+
+  constructor() {
+    // La liste des appareils se charge dès qu'on est connecté (y compris après la reprise de session).
+    effect(() => {
+      if (this.auth.user() !== null) void this.auth.loadDevices();
+    });
+  }
   protected readonly catalogStatus = computed(() => {
     if (!this.refSync.available) return 'Service pas encore disponible.';
     if (!this.refSync.enabled())

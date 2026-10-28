@@ -11,3 +11,14 @@ export const API_URL = new InjectionToken<string | null>('API_URL', {
   providedIn: 'root',
   factory: () => API_BASE_URL,
 });
+
+/**
+ * Comptes (connexion par lien envoyé par e-mail). Fermés tant que le serveur ne peut pas envoyer
+ * d'e-mails (étape 3c du plan) : ni écran de connexion, ni section « Compte », ni pages légales.
+ */
+const ACCOUNTS_OPEN = false;
+
+export const ACCOUNTS_ENABLED = new InjectionToken<boolean>('ACCOUNTS_ENABLED', {
+  providedIn: 'root',
+  factory: () => ACCOUNTS_OPEN,
+});

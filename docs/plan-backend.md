@@ -75,12 +75,13 @@ Décisions prises en route : cookie nommé `__Host-refresh` (refusé par le navi
 
 ### 3b. Appli (sans compte cloud)
 
-- [ ] Service d'authentification Angular (jeton d'accès en mémoire seulement, jamais en `localStorage`), intercepteur HTTP, renouvellement silencieux au démarrage.
-- [ ] Écran de connexion (saisie de l'e-mail, message « consultez vos e-mails », page de retour du lien) ; **l'appli reste entièrement utilisable sans compte** et le comportement par défaut ne change pas.
-- [ ] Réglages › Compte : état, appareils connectés, déconnexion.
-- [ ] Pages Confidentialité, Mentions légales, CGU accessibles hors ligne et sans compte (textes écrits en tant que particulier, conservation des comptes inactifs : 12 mois).
-- [ ] Interrupteur de fonctionnalité : l'écran de connexion n'apparaît que si l'adresse de l'API est renseignée.
-- [ ] Tests unitaires, accessibilité, Playwright avec une API simulée.
+- [x] Service d'authentification Angular (jeton d'accès en mémoire seulement, jamais en `localStorage`), requêtes authentifiées avec renouvellement automatique (verrou entre onglets), reprise silencieuse au démarrage.
+- [x] Écran de connexion (saisie de l'e-mail, message « consultez vos e-mails », page de retour du lien) ; **l'appli reste entièrement utilisable sans compte** et le comportement par défaut ne change pas.
+- [x] Réglages › Compte : état, appareils connectés, déconnexion.
+- [x] Pages Confidentialité, Mentions légales, CGU accessibles hors ligne et sans compte (textes écrits en tant que particulier, conservation des comptes inactifs : 12 mois).
+- [x] Interrupteur de fonctionnalité : comptes **fermés** par défaut (`ACCOUNTS_OPEN` dans `api-config.ts`), tant que l'envoi d'e-mails n'existe pas ; la section Compte et les liens légaux n'apparaissent pas.
+- [x] Tests unitaires (service, connexion, textes légaux, réglages) et Playwright de l'état par défaut (comptes fermés). Pas de test Playwright comptes ouverts : le bundle publié les ferme ; la connexion complète sera testée en 3c contre l'API réelle.
+- [ ] À faire avant l'ouverture : renseigner `contactEmail`, faire relire les textes (`src/app/pages/legal/legal.ts`), vérifier les adresses des hébergeurs et les garanties de transfert.
 
 ### 3c. Avec les comptes cloud
 
