@@ -318,11 +318,9 @@ describe('AuthService', () => {
   });
 
   describe('contrôle des réponses du serveur', () => {
-    const sansChamp = (obj: Record<string, unknown>, key: string) => {
-      const copie = { ...obj };
-      delete copie[key];
-      return copie;
-    };
+    /** Copie de l'objet sans l'un de ses champs. */
+    const sansChamp = (obj: Record<string, unknown>, key: string) =>
+      Object.fromEntries(Object.entries(obj).filter(([k]) => k !== key));
 
     it.each([
       ['rien', null],
