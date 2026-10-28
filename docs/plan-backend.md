@@ -136,9 +136,9 @@ Cadrage : [ADR-0007](adr/0007-authentification-sans-mot-de-passe.md) (connexion)
 
 ## Risques suivis
 
-| Risque | Parade |
-|---|---|
-| Une offre gratuite change ou disparaît | Docker, SQL standard et API S3 permettent de migrer |
-| Cookie bloqué sur Safari | Test dès l'étape 3, solutions prévues dans ADR-0007 |
+| Risque                                        | Parade                                                |
+| --------------------------------------------- | ----------------------------------------------------- |
+| Une offre gratuite change ou disparaît        | Docker, SQL standard et API S3 permettent de migrer   |
+| Cookie bloqué sur Safari                      | Test dès l'étape 3, solutions prévues dans ADR-0007   |
 | Perte de données lors d'un conflit de synchro | Règle documentée, sauvegarde JSON toujours disponible |
-| Quota B2 ou Neon atteint | Quota par utilisateur, compression, surveillance |
+| Quota B2 ou Neon atteint                      | Quota par utilisateur, compression, surveillance      |
