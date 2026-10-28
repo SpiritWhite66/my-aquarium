@@ -626,8 +626,12 @@ describe('fmtBytes', () => {
       });
       app = await bootApp();
       await app.go('/reglages', 'Synchronisation');
-      await app.until(() => app.el().textContent.includes('n’a pas répondu'));
-      expect(app.el().textContent).toMatch(/\d+ modifications en attente/);
+      // Le compteur d’attente se met à jour juste après le message d’erreur.
+      await app.until(
+        () =>
+          app.el().textContent.includes('n’a pas répondu') &&
+          /[1-9]\d* modifications? en attente/.test(app.el().textContent),
+      );
     });
 
     it('propose les rappels même appli fermée quand on est connecté avec les rappels activés', async () => {
