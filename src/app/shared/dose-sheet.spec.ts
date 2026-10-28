@@ -26,6 +26,9 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  // Les lectures en direct des magasins peuvent encore être en cours (surtout quand le test s'arrête
+  // dès le premier affichage) : fermer la base avant leur fin lève une erreur non gérée, au hasard.
+  await new Promise((resolve) => setTimeout(resolve, 50));
   TestBed.resetTestingModule();
   await db.delete();
 });
