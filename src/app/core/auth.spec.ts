@@ -316,4 +316,146 @@ describe('AuthService', () => {
       expect(await auth.revokeDevice('d2')).toBe(false);
     });
   });
+
+  describe('contrôle des réponses du serveur', () => {
+    const sansChamp = (obj: Record<string, unknown>, key: string) => {
+      const copie = { ...obj };
+      delete copie[key];
+      return copie;
+    };
+
+    it.each([
+      ['rien', null],
+      ['un texte', 'texte'],
+      ['un tableau vide', []],
+      ['sans jeton', sansChamp(session(), 'accessToken')],
+      ['sans durée', sansChamp(session(), 'expiresIn')],
+      ['avec une durée en texte', { ...session(), expiresIn: '900' }],
+      ['sans compte', sansChamp(session(), 'user')],
+      ['avec un compte vide', { ...session(), user: null }],
+      ['avec un compte sans identifiant', { ...session(), user: sansChamp(user, 'id') }],
+      ['avec un compte sans e-mail', { ...session(), user: sansChamp(user, 'email') }],
+      ['avec un compte sans date', { ...session(), user: sansChamp(user, 'createdAt') }],
+      ['avec un compte sans rôle', { ...session(), user: sansChamp(user, 'role') }],
+      ['avec un rôle vide', { ...session(), user: { ...user, role: '' } }],
+    ])('refuse une connexion %s', async (_nom, corps) => {
+      const auth = service();
+      reply(200, corps);
+      expect(await auth.verify('lien')).toBe('error');
+      expect(auth.user()).toBeNull();
+      expect(localStorage.getItem('signedIn')).toBeNull();
+    });
+
+    it.each([
+      ['rien', null],
+      ['un texte', 'texte'],
+      ['sans identifiant', sansChamp(device(), 'id')],
+      ['sans nom', sansChamp(device(), 'device')],
+      ['sans création', sansChamp(device(), 'createdAt')],
+      ['sans dernière utilisation', sansChamp(device(), 'lastUsedAt')],
+      ['sans indicateur', sansChamp(device(), 'current')],
+      ['avec un indicateur en texte', device({ current: 'oui' })],
+    ])('ignore un appareil %s', async (_nom, ligne) => {
+      const auth = service();
+      reply(200, session());
+      await auth.verify('lien');
+      reply(200, { items: [ligne, device()] });
+      await auth.loadDevices();
+      expect(auth.devices()).toEqual([device()]);
+    });
+
+    it('n’ouvre pas de session sur une réponse en erreur, même bien formée', async () => {
+      const auth = service();
+      reply(500, session());
+      expect(await auth.verify('lien')).toBe('error');
+      expect(auth.user()).toBeNull();
+    });
+
+    it('ne reprend pas la session sur une réponse en erreur, même bien formée', async () => {
+      const auth = service({ signedIn: true });
+      reply(500, session());
+      await auth.restore();
+      expect(auth.user()).toBeNull();
+    });
+
+    it('n’appelle pas la liste des appareils quand le renouvellement échoue', async () => {
+      const auth = service();
+      reply(200, session('jeton-court', 1));
+      await auth.verify('lien');
+      reply(500, session());
+      await auth.loadDevices();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      reply(200, { accessToken: 1 });
+      await auth.loadDevices();
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+      await auth.loadDevices();
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    });
+
+    it('refait un renouvellement à chaque fois (pas de réutilisation d’un ancien)', async () => {
+      const auth = service({ signedIn: true });
+      reply(200, session('jeton-1'));
+      await auth.restore();
+      reply(200, session('jeton-2'));
+      await auth.restore();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('forme des requêtes', () => {
+    it('demande en JSON, et n’envoie le type du corps et le jeton que quand il y en a', async () => {
+      const auth = service();
+      reply(204);
+      await auth.requestLink('a@exemple.fr');
+      const premiere = lastCall();
+      expect(premiere.init.method).toBe('POST');
+      expect(premiere.headers).toEqual({
+        accept: 'application/json',
+        'content-type': 'application/json',
+      });
+
+      reply(200, session('jeton-A'));
+      await auth.verify('lien');
+      reply(204);
+      await auth.logout();
+      const sortie = lastCall();
+      expect(sortie.init.method).toBe('POST');
+      expect(sortie.init.body).toBeUndefined();
+      expect(sortie.headers).toEqual({ accept: 'application/json' });
+
+      const auth2 = service();
+      reply(200, session('jeton-B'));
+      await auth2.verify('lien');
+      reply(200, { items: [] });
+      await auth2.loadDevices();
+      const liste = lastCall();
+      expect(liste.init.method).toBe('GET');
+      expect(liste.init.body).toBeUndefined();
+      expect(liste.headers).toEqual({
+        accept: 'application/json',
+        authorization: 'Bearer jeton-B',
+      });
+    });
+
+    it('renouvelle pile à l’approche de l’expiration, pas avant', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      try {
+        const auth = service();
+        reply(200, session('jeton-1', 100));
+        await auth.verify('lien');
+        reply(200, { items: [] });
+        vi.setSystemTime(Date.now() + 69_000);
+        await auth.loadDevices();
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        reply(200, session('jeton-2', 100));
+        reply(200, { items: [] });
+        vi.setSystemTime(Date.now() + 2_000);
+        await auth.loadDevices();
+        expect(fetchMock).toHaveBeenCalledTimes(4);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
 });
