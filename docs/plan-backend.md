@@ -48,7 +48,8 @@ flowchart LR
 - [x] **Interrupteur dans Réglages › Catalogue en ligne (bêta), désactivé par défaut** : désactivé, l'appli fonctionne exactement comme avant. Réglage propre à l'appareil, indisponible tant que l'adresse de l'API n'est pas renseignée (`src/app/core/api-config.ts`).
 - [x] Écriture réservée à l'admin (jeton `ADMIN_TOKEN` en attendant l'étape 3 ; sans jeton configuré, l'écriture est fermée).
 - [x] Tests unitaires, intégration (PostgreSQL réel), E2E du serveur compilé, E2E Playwright de l'état par défaut.
-- [ ] À faire au déploiement : renseigner l'adresse de l'API, ajouter l'API à `ngsw-config.json` (cache du service worker), définir `ADMIN_TOKEN` sur Render, lancer la migration et l'import sur Neon, test Playwright avec l'API réelle.
+- [x] Déployé le 2026-10-28 : API sur Render (`https://mes-aquariums-api.onrender.com`), base sur Neon (Francfort), 34 espèces importées, adresse renseignée dans `api-config.ts` et dans la CSP de l'appli. Le cache du service worker n'est pas nécessaire (copie locale dans Dexie).
+- [ ] Reste : définir `ADMIN_TOKEN` sur Render si l'écriture du référentiel est voulue, test Playwright avec l'API réelle.
 - Limites assumées : seules les espèces existent dans l'appli (pas encore de catalogue de matériel ni de consommables) ; les tables `equipment` et `consumable` et leurs routes sont prêtes mais vides, sans synchronisation côté appli.
 
 **Terminé quand** : une fiche ajoutée côté serveur apparaît dans l'appli, y compris après passage hors ligne.

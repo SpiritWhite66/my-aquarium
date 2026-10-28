@@ -111,8 +111,8 @@ test('le catalogue en ligne est désactivé par défaut : l’appli utilise son 
   const toggle = page.getByRole('switch', { name: 'Utiliser le catalogue en ligne' });
   await expect(toggle).not.toBeChecked();
   await expect(page.getByText('Catalogue en ligne (bêta)')).toBeVisible();
-  // Aucun serveur n'est configuré : le réglage est indisponible, rien n'est demandé au réseau.
-  await expect(toggle).toBeDisabled();
+  // L'API est configurée mais le réglage reste désactivé : rien n'est demandé au réseau.
+  await expect(toggle).toBeEnabled();
   await page.goto('/catalogue');
   await expect(page.getByText('Danio margaritatus').first()).toBeVisible();
 });

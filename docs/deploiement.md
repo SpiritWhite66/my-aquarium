@@ -19,7 +19,7 @@
 Depuis le poste de développement, après `npm run server:build` :
 
 ```
-DATABASE_URL='<chaîne Neon>' npm run import:ref -w api
+CORS_ORIGIN=https://spiritwhite66.github.io DATABASE_URL='<chaîne Neon>' npm run import:ref -w api
 ```
 
 L'import est rejouable (une fiche inchangée n'est pas réécrite). Vérifier `GET /ref/species`.

@@ -76,6 +76,7 @@ describe('réglages', () => {
       app.el().querySelectorAll<HTMLInputElement>('input[role=switch]')[1];
 
     it('est indisponible tant qu’aucune API n’est configurée', async () => {
+      TestBed.overrideProvider(API_URL, { useValue: null });
       app = await bootApp();
       await app.go('/reglages', 'Catalogue en ligne');
       expect(catalogSwitch().disabled).toBe(true);
