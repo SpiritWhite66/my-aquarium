@@ -19,6 +19,40 @@ export function createConsoleMailer(write: (line: string) => void): Mailer {
   };
 }
 
+export interface BrevoOptions {
+  apiKey: string;
+  from: { email: string; name: string };
+  /** Remplaçable dans les tests. */
+  fetch?: typeof fetch;
+}
+
+const BREVO_URL = 'https://api.brevo.com/v3/smtp/email';
+
+/** Envoi par l'API HTTPS de Brevo (les ports SMTP sont fermés sur l'offre gratuite de Render). */
+export function createBrevoMailer({ apiKey, from, fetch: send = fetch }: BrevoOptions): Mailer {
+  return {
+    send: async (mail) => {
+      const res = await send(BREVO_URL, {
+        method: 'POST',
+        headers: {
+          'api-key': apiKey,
+          'content-type': 'application/json',
+          accept: 'application/json',
+        },
+        body: JSON.stringify({
+          sender: from,
+          to: [{ email: mail.to }],
+          subject: mail.subject,
+          textContent: mail.text,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      // Ni la clé ni l'adresse du destinataire dans le message d'erreur : il finit dans les journaux.
+      if (!res.ok) throw new Error(`Brevo a répondu ${String(res.status)}`);
+    },
+  };
+}
+
 /** Garde les messages en mémoire, pour les tests. */
 export function createMemoryMailer(): Mailer & { sent: Mail[] } {
   const sent: Mail[] = [];

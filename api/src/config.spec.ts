@@ -97,5 +97,21 @@ describe('loadConfig', () => {
       expect(() => loadConfig(prod)).toThrow(/MAIL_TRANSPORT/);
       expect(loadConfig({ ...prod, MAIL_TRANSPORT: 'none' }).MAIL_TRANSPORT).toBe('none');
     });
+
+    it('exige la clé et l’expéditeur avec le transport brevo', () => {
+      const brevo = { ...base, MAIL_TRANSPORT: 'brevo' };
+      expect(() => loadConfig(brevo)).toThrow(/BREVO_API_KEY : requise[\s\S]*MAIL_FROM : requise/);
+      expect(() => loadConfig({ ...brevo, BREVO_API_KEY: 'cle-0123456789' })).toThrow(/MAIL_FROM/);
+      const ok = loadConfig({
+        ...brevo,
+        BREVO_API_KEY: 'cle-0123456789',
+        MAIL_FROM: 'moi@exemple.fr',
+      });
+      expect(ok).toMatchObject({ MAIL_FROM: 'moi@exemple.fr', MAIL_FROM_NAME: 'Mes aquariums' });
+    });
+
+    it('refuse un expéditeur qui n’est pas une adresse e-mail', () => {
+      expect(() => loadConfig({ ...base, MAIL_FROM: 'pas-une-adresse' })).toThrow(/MAIL_FROM/);
+    });
   });
 });

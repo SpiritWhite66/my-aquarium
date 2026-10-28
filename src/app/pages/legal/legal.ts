@@ -82,7 +82,7 @@ const TITLES: Record<LegalDoc, string> = {
             <h2>Cookies et traceurs</h2>
             <p>Aucun traceur publicitaire ni mesure d’audience. Un seul cookie, strictement nécessaire, garde ta connexion ouverte ; il n’existe que si tu te connectes. L’appli enregistre aussi des réglages sur ton appareil (thème, par exemple).</p>
             <h2>Qui reçoit tes données</h2>
-            <p>Nos prestataires techniques, uniquement pour faire fonctionner le service : GitHub (pages de l’appli), Render (API), Neon (base de données) et le service d’envoi d’e-mails. Certains sont établis aux États-Unis ; les transferts sont encadrés par les garanties prévues par le RGPD. Aucune donnée n’est vendue ni utilisée pour de la publicité.</p>
+            <p>Nos prestataires techniques, uniquement pour faire fonctionner le service : GitHub (pages de l’appli), Render (API), Neon (base de données) et Brevo (envoi des e-mails de connexion, société française). Certains sont établis aux États-Unis ; les transferts sont encadrés par les garanties prévues par le RGPD. Aucune donnée n’est vendue ni utilisée pour de la publicité.</p>
             <h2>Tes droits</h2>
             <p>Accès, rectification, effacement, limitation, opposition et portabilité de tes données : écris à l’adresse de contact, réponse sous un mois. Tu peux aussi saisir la CNIL (<a href="https://www.cnil.fr" rel="noopener noreferrer">cnil.fr</a>).</p>
             <h2>Âge</h2>

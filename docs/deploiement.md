@@ -34,7 +34,7 @@ L'import est rejouable (une fiche inchangée n'est pas réécrite). Vérifier `G
 
 L'interrupteur `ACCOUNTS_OPEN` de `src/app/core/api-config.ts` est **ouvert** : l'appli montre la section Compte, l'écran de connexion et les textes légaux. La connexion n'aboutit pas encore (le serveur répond « service d'envoi d'e-mails non disponible ») tant que ceci n'est pas fait :
 
-1. Choisir le service d'envoi d'e-mails et l'implémenter derrière l'interface `Mailer` (lot 3c).
+1. E-mails par **Brevo** (code prêt) : créer le compte, valider l'expéditeur, créer une clé d'API (filtrage par IP désactivé), puis sur Render `MAIL_TRANSPORT=brevo`, `MAIL_FROM` (l'expéditeur validé) et `BREVO_API_KEY`.
 2. Sur Render : `JWT_SECRET` (≥ 32 caractères, `openssl rand -base64 36`), `ADMIN_EMAILS` (ton adresse), et les variables du service d'e-mails. `LOGIN_URL` est déjà dans `render.yaml`. `MAIL_TRANSPORT=console` est interdit en production.
 3. Relire les textes légaux et vérifier les adresses des hébergeurs.
 4. Tester le cookie sur Safari / iOS.

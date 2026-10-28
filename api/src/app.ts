@@ -9,7 +9,7 @@ import type { Config } from './config.js';
 import { createDb, type Db } from './db/client.js';
 import { HttpError } from './http-error.js';
 import { createGuards } from './auth/guard.js';
-import { createConsoleMailer, type Mailer } from './auth/mailer.js';
+import { createBrevoMailer, createConsoleMailer, type Mailer } from './auth/mailer.js';
 import { registerAuthRoutes } from './auth/routes.js';
 import { registerRefRoutes } from './ref/routes.js';
 
@@ -23,6 +23,19 @@ export function loggerOptions(config: Pick<Config, 'LOG_LEVEL'>) {
     level: config.LOG_LEVEL,
     redact: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
   };
+}
+
+function mailerFor(config: Config): Mailer | undefined {
+  if (config.MAIL_TRANSPORT === 'console') {
+    return createConsoleMailer((line) => process.stdout.write(`${line}\n`));
+  }
+  if (config.MAIL_TRANSPORT === 'brevo' && config.BREVO_API_KEY && config.MAIL_FROM) {
+    return createBrevoMailer({
+      apiKey: config.BREVO_API_KEY,
+      from: { email: config.MAIL_FROM, name: config.MAIL_FROM_NAME },
+    });
+  }
+  return undefined;
 }
 
 /** Construit l'application sans l'écouter : les tests l'appellent via `inject`. */
@@ -60,11 +73,7 @@ export async function buildApp(
     adminToken: config.ADMIN_TOKEN,
     userRateLimitMax: config.USER_RATE_LIMIT_MAX,
   });
-  const mailer =
-    deps.mailer ??
-    (config.MAIL_TRANSPORT === 'console'
-      ? createConsoleMailer((line) => process.stdout.write(`${line}\n`))
-      : undefined);
+  const mailer = deps.mailer ?? mailerFor(config);
   registerAuthRoutes(app, { db, config, mailer, guards });
   registerRefRoutes(app, { db, authorizeWrite: guards.authorizeRefWrite });
 

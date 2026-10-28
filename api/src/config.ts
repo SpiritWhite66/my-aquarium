@@ -29,7 +29,12 @@ const envSchema = z.object({
   /** Page de l'appli qui reçoit le lien magique (`?token=…` y est ajouté). Défaut : `<CORS_ORIGIN>/connexion`. */
   LOGIN_URL: z.url().optional(),
   /** `console` écrit les e-mails sur la sortie standard (développement et tests de bout en bout seulement). */
-  MAIL_TRANSPORT: z.enum(['none', 'console']).default('none'),
+  MAIL_TRANSPORT: z.enum(['none', 'console', 'brevo']).default('none'),
+  /** Clé d'API Brevo (envoi des liens de connexion). Requise avec `MAIL_TRANSPORT=brevo`. */
+  BREVO_API_KEY: z.string().min(10).optional(),
+  /** Adresse d'expéditeur, validée chez le service d'envoi. Requise avec `MAIL_TRANSPORT=brevo`. */
+  MAIL_FROM: z.email().optional(),
+  MAIL_FROM_NAME: z.string().min(1).max(100).default('Mes aquariums'),
   /** Requêtes par minute et par compte connecté. */
   USER_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(300),
   /** Applique les migrations au démarrage (déploiement en une seule instance). */
@@ -59,6 +64,16 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     throw new Error(
       'Configuration invalide :\nMAIL_TRANSPORT : « console » interdit en production',
     );
+  }
+  if (result.data.MAIL_TRANSPORT === 'brevo') {
+    const missing = (['BREVO_API_KEY', 'MAIL_FROM'] as const).filter(
+      (k) => result.data[k] === undefined,
+    );
+    if (missing.length > 0) {
+      throw new Error(
+        `Configuration invalide :\n${missing.map((k) => `${k} : requise avec MAIL_TRANSPORT=brevo`).join('\n')}`,
+      );
+    }
   }
   return result.data;
 }
