@@ -22,8 +22,12 @@ import { BackupRepo } from '../../core/data/backup.repo';
 import { CareRepo } from '../../core/data/care.repo';
 import { PrefsRepo } from '../../core/data/prefs.repo';
 import { RefSyncService } from '../../core/ref-sync';
+import { API_URL } from '../../core/api-config';
 import { AuthService } from '../../core/auth';
 import { SyncService } from '../../core/sync';
+import { DiagLog } from '../../core/diag';
+import { AQUARIUM_DB, type SyncMeta } from '../../core/db';
+import { readPref } from '../../core/local-prefs';
 
 @Component({
   selector: 'app-settings',
@@ -48,6 +52,9 @@ import { SyncService } from '../../core/sync';
     .switch input:checked::after { transform: translateX(18px); }
     .switch input:disabled { opacity: .5; cursor: default; }
     .check.small { min-height: 32px; font-weight: 500; font-size: 14px; }
+    .diag { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .diag summary { font-weight: 600; cursor: pointer; min-height: 24px; }
+    .diag pre { margin: 0; font: 12px/1.45 var(--mono); white-space: pre-wrap; word-break: break-all; background: var(--sf2); border-radius: 10px; padding: 10px; max-height: 360px; overflow: auto; }
     .linkbtn { border: 0; background: none; padding: 4px 0; min-height: 24px; color: var(--pl); font: 600 13px var(--font); text-decoration: underline; cursor: pointer; }
   `,
   template: `
@@ -259,6 +266,17 @@ import { SyncService } from '../../core/sync';
           }
         </div>
       </section>
+
+      <details class="card diag" (toggle)="diagOpen($any($event.target).open)">
+        <summary>Détails techniques</summary>
+        <p class="sub">Pour diagnostiquer un problème de connexion ou de synchronisation. Aucun mot de passe ni jeton n’y figure.</p>
+        <pre>{{ diagText() }}</pre>
+        <div class="row" style="gap: 8px; flex-wrap: wrap">
+          <button class="btn ton" type="button" (click)="copyDiag()">Copier</button>
+          <button class="btn out" type="button" (click)="refreshDiag()">Actualiser</button>
+        </div>
+        @if (diagCopied()) { <p class="msg" role="status" style="color: var(--ok)">{{ diagCopied() }}</p> }
+      </details>
     </div>
   `,
 })
@@ -266,6 +284,52 @@ export class SettingsPage {
   protected readonly refSync = inject(RefSyncService);
   protected readonly auth = inject(AuthService);
   protected readonly sync = inject(SyncService);
+  private readonly diag = inject(DiagLog);
+  private readonly apiUrl = inject(API_URL);
+  private readonly localDb = inject(AQUARIUM_DB);
+  private readonly syncMeta = signal<SyncMeta | undefined>(undefined);
+  protected readonly diagCopied = signal('');
+
+  protected readonly diagText = computed(() => {
+    const user = this.auth.user();
+    const meta = this.syncMeta();
+    const nav = navigator as Omit<Navigator, 'locks' | 'serviceWorker'> & {
+      locks?: unknown;
+      serviceWorker?: { controller: unknown };
+    };
+    const lines = [
+      `Date : ${new Date().toISOString()}`,
+      `En ligne : ${nav.onLine ? 'oui' : 'non'}`,
+      `API : ${this.apiUrl ?? 'non configurée'} · comptes ${this.auth.available ? 'ouverts' : 'fermés'}`,
+      `Connecté : ${user ? `oui (${user.role})` : 'non'} · session mémorisée : ${readPref('signedIn') ?? 'non'}`,
+      `Synchronisation : ${this.sync.status()} · en attente : ${String(this.sync.pending())} · dernière : ${this.sync.lastSync() ?? 'jamais'}`,
+      `Curseur : ${meta ? String(meta.cursor) : 'aucun'} · compte de l’appareil : ${meta ? (meta.userId === user?.id ? 'le même' : 'différent') : 'aucun'}`,
+      `Verrous entre onglets : ${nav.locks ? 'oui' : 'non'} · service worker : ${nav.serviceWorker?.controller ? 'actif' : 'non'}`,
+      `Navigateur : ${nav.userAgent}`,
+      '',
+      'Derniers échanges (le plus récent en premier) :',
+      ...this.diag.entries().map((e) => `${e.at.slice(11, 19)}  ${e.what}  →  ${e.result}`),
+    ];
+    if (this.diag.entries().length === 0) lines.push('(aucun depuis l’ouverture de l’appli)');
+    return lines.join('\n');
+  });
+
+  protected diagOpen(open: boolean): void {
+    if (open) void this.refreshDiag();
+  }
+
+  protected async refreshDiag(): Promise<void> {
+    this.syncMeta.set(await this.localDb.syncMeta.get('sync'));
+  }
+
+  protected async copyDiag(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.diagText());
+      this.diagCopied.set('Copié : colle-le dans ton message.');
+    } catch {
+      this.diagCopied.set('Copie impossible : sélectionne le texte à la main.');
+    }
+  }
   protected readonly syncWarn = computed(() =>
     ['offline', 'quota', 'error'].includes(this.sync.status()),
   );

@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { ACCOUNTS_ENABLED, API_URL } from './api-config';
 import { readPref, writePref } from './local-prefs';
 import { withLock } from './locks';
+import { DiagLog, pathOnly } from './diag';
 
 export interface AccountUser {
   id: string;
@@ -70,6 +71,7 @@ function isDevice(v: unknown): v is Device {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly apiUrl = inject(API_URL);
+  private readonly diag = inject(DiagLog);
 
   readonly available = this.apiUrl !== null && inject(ACCOUNTS_ENABLED);
   readonly user = signal<AccountUser | null>(null);
@@ -215,13 +217,26 @@ export class AuthService {
     const headers: Record<string, string> = { accept: 'application/json' };
     if (init.body !== undefined) headers['content-type'] = 'application/json';
     if (init.bearer) headers['authorization'] = `Bearer ${init.bearer}`;
+    const what = `${init.method ?? 'GET'} ${pathOnly(path)}`;
     return fetch(`${this.apiUrl ?? ''}${path}`, {
       method: init.method ?? 'GET',
       headers,
       credentials: 'include',
       ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
+    }).then(
+      (res) => {
+        this.diag.record(what, String(res.status));
+        return res;
+      },
+      (err: unknown) => {
+        this.diag.record(
+          what,
+          err instanceof Error ? `${err.name} : ${err.message}` : 'erreur réseau',
+        );
+        throw err;
+      },
+    );
   }
 
   private accept(session: Session): void {

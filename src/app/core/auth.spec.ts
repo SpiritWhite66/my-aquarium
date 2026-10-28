@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ACCOUNTS_ENABLED, API_URL } from './api-config';
 import { AuthService } from './auth';
+import { DiagLog } from './diag';
 
 const API = 'https://api.exemple.test';
 const user = {
@@ -509,6 +510,22 @@ describe('AuthService', () => {
       await restoring;
       expect(auth.user()).toBeNull();
       expect(localStorage.getItem('signedIn')).toBe('0');
+    });
+  });
+
+  describe('journal de diagnostic', () => {
+    it('note chaque échange avec son code, ou l’erreur réseau, sans jeton', async () => {
+      const auth = service();
+      const diag = TestBed.inject(DiagLog);
+      reply(200, session('jeton-secret'));
+      await auth.verify('lien-secret');
+      fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+      await auth.requestLink('a@exemple.fr');
+      expect(diag.entries().map((e) => `${e.what} → ${e.result}`)).toEqual([
+        'POST /auth/magic-link → TypeError : Failed to fetch',
+        'POST /auth/verify → 200',
+      ]);
+      expect(JSON.stringify(diag.entries())).not.toMatch(/secret|a@exemple/);
     });
   });
 });

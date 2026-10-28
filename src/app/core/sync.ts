@@ -9,6 +9,7 @@ import {
 import { AuthService } from './auth';
 import { AQUARIUM_DB, type AquariumDb } from './db';
 import { withLock } from './locks';
+import { DiagLog } from './diag';
 import { markRemote, type OutboxEntry } from './sync-outbox';
 
 /** Requête vers l'API au nom du compte connecté (`null` : pas connecté ou réseau absent). */
@@ -154,6 +155,7 @@ const PERIOD_MS = 5 * 60 * 1000;
 export class SyncService {
   private readonly db = inject(AQUARIUM_DB);
   private readonly auth = inject(AuthService);
+  private readonly diag = inject(DiagLog);
   private readonly engine = new SyncEngine(this.db, (path, init) => this.auth.authed(path, init));
 
   readonly status = signal<SyncStatus>('off');
@@ -225,8 +227,17 @@ export class SyncService {
       // Deux onglets ne synchronisent pas en même temps.
       await withLock('aquarium-sync', 20_000, run);
       this.status.set('ok');
+      this.diag.record('synchronisation', 'ok');
       this.lastSync.set(new Date().toISOString());
     } catch (err) {
+      this.diag.record(
+        'synchronisation',
+        err instanceof SyncError
+          ? err.reason
+          : err instanceof Error
+            ? `${err.name} : ${err.message}`
+            : 'erreur',
+      );
       if (this.auth.user() === null) this.status.set('off');
       else
         this.status.set(err instanceof SyncError && err.reason !== 'server' ? err.reason : 'error');

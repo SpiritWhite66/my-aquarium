@@ -7,6 +7,7 @@ import { AquariumStore } from '../../core/store';
 import { PrefsStore } from '../../core/stores/prefs.store';
 import { ACCOUNTS_ENABLED, API_URL } from '../../core/api-config';
 import { AuthService } from '../../core/auth';
+import { DiagLog } from '../../core/diag';
 import { ThemeService } from '../../core/theme';
 import { bootApp, closeApp, type App } from '../../testing/app.testing';
 
@@ -255,7 +256,7 @@ describe('réglages', () => {
       await vi.waitFor(() => expect(message()).toBe('Sauvegarde téléchargée.'));
       expect(click).toHaveBeenCalled();
       expect(localStorage.getItem('lastBackup')).toBeTruthy();
-      expect(app.el().textContent).not.toContain('jamais');
+      expect(app.el().textContent).not.toContain('Dernière sauvegarde : jamais');
     });
 
     it('écrit directement dans le fichier choisi quand le navigateur sait le faire', async () => {
@@ -643,6 +644,38 @@ describe('fmtBytes', () => {
       app.press('button', 'Se déconnecter');
       await app.until(() => app.find('a[href="/connexion"]') !== null);
       expect(TestBed.inject(AuthService).user()).toBeNull();
+    });
+  });
+
+  describe('détails techniques', () => {
+    it('résume l’état et les derniers échanges, et se copie', async () => {
+      const writeText = vi.fn(() => Promise.resolve());
+      vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+      app = await bootApp();
+      await app.go('/reglages', 'Détails techniques');
+      TestBed.inject(DiagLog).record('GET /sync/pull', '500');
+      const details = app.find('details.diag') as HTMLDetailsElement;
+      details.open = true;
+      details.dispatchEvent(new Event('toggle'));
+      await app.until(() => app.find('.diag pre')?.textContent.includes('GET /sync/pull') === true);
+      const text = app.find('.diag pre')?.textContent ?? '';
+      expect(text).toContain('Connecté : non');
+      expect(text).toContain('Synchronisation : off');
+      expect(text).toContain('Curseur : aucun');
+      app.press('.diag button', 'Copier');
+      await app.until(() => app.el().textContent.includes('Copié'));
+      expect(writeText).toHaveBeenCalledWith(text);
+    });
+
+    it('propose de sélectionner à la main si la copie est refusée', async () => {
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        clipboard: { writeText: () => Promise.reject(new Error('refus')) },
+      });
+      app = await bootApp();
+      await app.go('/reglages', 'Détails techniques');
+      app.press('.diag button', 'Copier');
+      await app.until(() => app.el().textContent.includes('Copie impossible'));
     });
   });
 });
