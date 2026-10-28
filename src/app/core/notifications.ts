@@ -106,6 +106,8 @@ export class NotificationService {
   private shownOn = '';
 
   async check(): Promise<void> {
+    // Relit l'autorisation : elle a pu changer dans les réglages du navigateur.
+    if (this.supported) this.permission.set(Notification.permission);
     if (this.permission() !== 'granted' || this.checking) return;
     this.checking = true;
     try {
