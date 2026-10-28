@@ -24,13 +24,22 @@ describe('migrations', () => {
         await migrate(db, { migrationsFolder: folder });
         await migrate(db, { migrationsFolder: folder });
         const rows = await db.execute<{ schema_name: string }>(
-          sql`select schema_name from information_schema.schemata where schema_name in ('ref','aqua') order by 1`,
+          sql`select schema_name from information_schema.schemata where schema_name in ('ref','aqua','auth') order by 1`,
         );
-        expect(rows.map((r) => r.schema_name)).toEqual(['aqua', 'ref']);
+        expect(rows.map((r) => r.schema_name)).toEqual(['aqua', 'auth', 'ref']);
         const tables = await db.execute<{ table_name: string }>(
           sql`select table_name from information_schema.tables where table_schema = 'ref' order by 1`,
         );
         expect(tables.map((t) => t.table_name)).toEqual(['consumable', 'equipment', 'species']);
+        const authTables = await db.execute<{ table_name: string }>(
+          sql`select table_name from information_schema.tables where table_schema = 'auth' order by 1`,
+        );
+        expect(authTables.map((t) => t.table_name)).toEqual([
+          'login_tokens',
+          'sessions',
+          'user_consents',
+          'users',
+        ]);
       } finally {
         await close();
       }

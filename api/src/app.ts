@@ -1,3 +1,4 @@
+import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import etag from '@fastify/etag';
 import helmet from '@fastify/helmet';
@@ -7,6 +8,9 @@ import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
 import type { Config } from './config.js';
 import { createDb, type Db } from './db/client.js';
 import { HttpError } from './http-error.js';
+import { createGuards } from './auth/guard.js';
+import { createConsoleMailer, type Mailer } from './auth/mailer.js';
+import { registerAuthRoutes } from './auth/routes.js';
 import { registerRefRoutes } from './ref/routes.js';
 
 function errorBody(code: string, message: string): ApiError {
@@ -22,17 +26,23 @@ export function loggerOptions(config: Pick<Config, 'LOG_LEVEL'>) {
 }
 
 /** Construit l'application sans l'écouter : les tests l'appellent via `inject`. */
-export async function buildApp(config: Config, deps: { db?: Db } = {}): Promise<FastifyInstance> {
+export async function buildApp(
+  config: Config,
+  deps: { db?: Db; mailer?: Mailer } = {},
+): Promise<FastifyInstance> {
   const app = Fastify({
     logger: loggerOptions(config),
     trustProxy: config.NODE_ENV === 'production',
+    bodyLimit: 256 * 1024,
   });
 
   await app.register(helmet);
   await app.register(cors, {
     origin: config.CORS_ORIGIN,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
   });
+  await app.register(cookie);
   await app.register(etag);
   await app.register(rateLimit, { max: config.RATE_LIMIT_MAX, timeWindow: '1 minute' });
 
@@ -44,7 +54,19 @@ export async function buildApp(config: Config, deps: { db?: Db } = {}): Promise<
     db = connection.db;
     app.addHook('onClose', () => connection.close());
   }
-  registerRefRoutes(app, { db, adminToken: config.ADMIN_TOKEN });
+  const guards = createGuards({
+    db,
+    jwtSecret: config.JWT_SECRET,
+    adminToken: config.ADMIN_TOKEN,
+    userRateLimitMax: config.USER_RATE_LIMIT_MAX,
+  });
+  const mailer =
+    deps.mailer ??
+    (config.MAIL_TRANSPORT === 'console'
+      ? createConsoleMailer((line) => process.stdout.write(`${line}\n`))
+      : undefined);
+  registerAuthRoutes(app, { db, config, mailer, guards });
+  registerRefRoutes(app, { db, authorizeWrite: guards.authorizeRefWrite });
 
   app.setNotFoundHandler((_req, reply) => {
     void reply.code(404).send(errorBody('not_found', 'Ressource introuvable.'));

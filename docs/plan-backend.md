@@ -59,16 +59,18 @@ Cadrage : [ADR-0007](adr/0007-authentification-sans-mot-de-passe.md) (connexion)
 
 ### 3a. Socle serveur des comptes (sans compte cloud)
 
-- [ ] Schéma `auth` : `users` (id UUID, e-mail normalisé unique, rôle `user`/`admin`, `created_at`, `last_seen_at`), `sessions` (jeton de renouvellement **haché**, appareil, dates, révocation), `login_tokens` (lien magique : haché, usage unique, expiration 15 min), `user_consents` (document, version, date). Migration Drizzle.
-- [ ] Lien magique : `POST /auth/magic-link` (réponse identique que le compte existe ou non, limite de débit par IP et par e-mail), `POST /auth/verify`.
-- [ ] Jeton d'accès JWT court (15 min) ; jeton de renouvellement en cookie `HttpOnly`, `Secure`, `SameSite=None`, **rotation à chaque usage** et détection de réutilisation (révoque la session).
-- [ ] `POST /auth/refresh`, `POST /auth/logout`, `GET /me`, `GET /me/sessions`, `DELETE /me/sessions/:id` (liste des appareils, déconnexion à distance).
-- [ ] Envoi d'e-mails derrière une interface `Mailer` : implémentation « console/capture » pour les tests et le développement, implémentation SMTP ou API du service choisi ensuite.
-- [ ] Hook d'authentification Fastify (`requireUser`, `requireAdmin`) et couche commune de filtrage par `user_id` ; **test d'isolation obligatoire sur chaque route** protégée.
-- [ ] Rôle admin : l'écriture du référentiel passe de `ADMIN_TOKEN` à `requireAdmin` (le jeton reste un secours désactivable).
-- [ ] Consentement à l'inscription : refus sans acceptation des CGU/confidentialité (versions courantes) et déclaration « au moins 15 ans » ; nouvelle acceptation exigée quand la version change.
-- [ ] Quotas et limite de débit par compte.
+- [x] Schéma `auth` (migration `0001_comptes`) : `users` (id UUID, e-mail normalisé unique, rôle `user`/`admin`, `created_at`, `last_seen_at`), `sessions` (jeton de renouvellement **haché**, appareil, dates, révocation), `login_tokens` (lien magique : haché, usage unique, expiration 15 min), `user_consents` (document, version, date). Migration Drizzle.
+- [x] Lien magique : `POST /auth/magic-link` (réponse identique que le compte existe ou non, limite de débit par IP et par e-mail), `POST /auth/verify`.
+- [x] Jeton d'accès JWT court (15 min) ; jeton de renouvellement en cookie `HttpOnly`, `Secure`, `SameSite=None`, **rotation à chaque usage** et détection de réutilisation (révoque la session).
+- [x] `POST /auth/refresh`, `POST /auth/logout`, `GET /me`, `GET /me/sessions`, `DELETE /me/sessions/:id` (liste des appareils, déconnexion à distance).
+- [x] Envoi d'e-mails derrière une interface `Mailer` : implémentation « console/capture » pour les tests et le développement, implémentation SMTP ou API du service choisi ensuite.
+- [x] Hook d'authentification Fastify (`requireUser`, `requireAdmin`) et couche commune de filtrage par `user_id` ; **test d'isolation obligatoire sur chaque route** protégée.
+- [x] Rôle admin : l'écriture du référentiel passe de `ADMIN_TOKEN` à `requireAdmin` (le jeton reste un secours désactivable).
+- [x] Consentement à l'inscription : refus sans acceptation des CGU/confidentialité (versions courantes) et déclaration « au moins 15 ans » ; nouvelle acceptation exigée quand la version change.
+- [x] Quotas et limite de débit par compte.
 - [ ] Tests : unitaires, intégration (PostgreSQL réel), E2E du serveur compilé (parcours complet connexion → refresh → déconnexion), mutation ≥ seuils actuels.
+
+Décisions prises en route : cookie nommé `__Host-refresh` (refusé par le navigateur sans `Secure`, `Path=/` ou avec un `Domain`) ; les routes à cookie (`/auth/refresh`, `/auth/logout`) n'acceptent que l'en-tête `Origin` de l'appli (protection contre la falsification de requête, le cookie étant `SameSite=None`) ; chaque requête authentifiée vérifie que la session n'est ni révoquée ni expirée (la déconnexion à distance est immédiate) ; le rôle administrateur vient de `ADMIN_EMAILS`, appliqué à chaque connexion ; le consentement est demandé à la vérification du lien (réponse `409 consent_required`, lien non consommé), ce qui évite de révéler si une adresse a un compte.
 
 ### 3b. Appli (sans compte cloud)
 

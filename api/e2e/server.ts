@@ -33,6 +33,8 @@ async function waitReady(url: string): Promise<void> {
 
 export interface RunningServer {
   base: string;
+  /** Sortie standard du serveur (avec `MAIL_TRANSPORT=console`, les e-mails y sont écrits en JSON). */
+  output: () => string;
   stop: () => void;
 }
 
@@ -48,11 +50,16 @@ export async function startServer(env: Record<string, string>): Promise<RunningS
       LOG_LEVEL: 'silent',
       ...env,
     },
-    stdio: 'ignore',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+  let output = '';
+  child.stdout?.on('data', (chunk: Buffer) => {
+    output += chunk.toString();
   });
   await waitReady(`${base}/health`);
   return {
     base,
+    output: () => output,
     stop: () => {
       child.kill('SIGTERM');
     },

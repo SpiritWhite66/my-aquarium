@@ -15,3 +15,7 @@ export async function openTestDb(): Promise<{ db: Db; close: () => Promise<void>
 export async function clearRef(db: Db): Promise<void> {
   await db.execute(sql`truncate ref.species, ref.equipment, ref.consumable`);
 }
+
+export async function clearAuth(db: Db): Promise<void> {
+  await db.execute(sql`truncate auth.users, auth.login_tokens cascade`);
+}

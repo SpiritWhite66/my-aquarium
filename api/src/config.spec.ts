@@ -58,4 +58,38 @@ describe('loadConfig', () => {
     );
     expect(() => loadConfig({ ...base, PORT: '0' })).toThrow(/^Configuration invalide :\nPORT : /);
   });
+
+  describe('comptes', () => {
+    it('sont désactivés par défaut', () => {
+      expect(loadConfig(base)).toMatchObject({
+        MAIL_TRANSPORT: 'none',
+        ADMIN_EMAILS: [],
+        USER_RATE_LIMIT_MAX: 300,
+      });
+      expect(loadConfig(base).JWT_SECRET).toBeUndefined();
+    });
+
+    it('exige un secret JWT d’au moins 32 caractères', () => {
+      expect(() => loadConfig({ ...base, JWT_SECRET: 'court' })).toThrow(/JWT_SECRET/);
+      expect(loadConfig({ ...base, JWT_SECRET: 'x'.repeat(32) }).JWT_SECRET).toHaveLength(32);
+    });
+
+    it('normalise la liste des administrateurs', () => {
+      expect(loadConfig({ ...base, ADMIN_EMAILS: ' A@x.fr, ,b@x.fr ' }).ADMIN_EMAILS).toEqual([
+        'a@x.fr',
+        'b@x.fr',
+      ]);
+    });
+
+    it('interdit le transport console en production', () => {
+      const prod = {
+        ...base,
+        NODE_ENV: 'production',
+        DATABASE_URL: 'postgres://u:p@h/db',
+        MAIL_TRANSPORT: 'console',
+      };
+      expect(() => loadConfig(prod)).toThrow(/MAIL_TRANSPORT/);
+      expect(loadConfig({ ...prod, MAIL_TRANSPORT: 'none' }).MAIL_TRANSPORT).toBe('none');
+    });
+  });
 });

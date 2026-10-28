@@ -8,6 +8,13 @@
       "when": 1793140841285,
       "tag": "0000_schemas_et_referentiel",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793213255655,
+      "tag": "0001_comptes",
+      "breakpoints": true
     }
   ]
 }
