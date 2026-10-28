@@ -2,6 +2,8 @@
 
 Conception : [BACKEND.md](BACKEND.md) · Décisions : [ADR](adr/README.md) · Conformité et sécurité : [plan-transverse.md](plan-transverse.md) · Qualité : [qualite-backend.md](qualite-backend.md)
 
+**Avancement** : étapes 1 et 2 réalisées (code, tests et CI verts), sauf ce qui attend les comptes cloud (déploiement Render/Neon). Étape 3 : cadrée et découpée, pas commencée.
+
 Principe : chaque étape est livrable seule, l'appli continue de fonctionner hors ligne à chaque étape, et le backend reste optionnel jusqu'à l'étape 4.
 
 ```mermaid
@@ -53,17 +55,45 @@ flowchart LR
 
 ## 3. Comptes
 
-- [ ] Choisir le service d'envoi d'e-mails gratuit (lien magique) et/ou configurer Google OIDC.
-- [ ] Table des utilisateurs, jetons d'accès courts, jeton de renouvellement en cookie révocable.
-- [ ] Tester le cookie sur Safari / iOS ; sinon, sous-domaine commun ou repli sur jeton (ADR-0007).
-- [ ] Écran de connexion dans l'appli ; l'appli reste utilisable sans compte.
-- [ ] Rôle admin pour le référentiel.
-- [ ] Suppression complète du compte (RGPD), photos B2 comprises.
-- [ ] Politique de confidentialité, mentions légales, consentement à l'inscription.
-- [ ] Liste des appareils connectés, déconnexion à distance.
+Cadrage : [ADR-0007](adr/0007-authentification-sans-mot-de-passe.md) (connexion), [ADR-0011](adr/0011-cgu-confidentialite-consentement.md) (CGU et consentement), [ADR-0014](adr/0014-securite-applicative.md) (sécurité), [plan-transverse.md §3](plan-transverse.md). Le détail est découpé en trois lots : les deux premiers se font **sans aucun compte cloud** (PostgreSQL local, e-mails capturés par un faux serveur), le troisième demande les comptes.
+
+### 3a. Socle serveur des comptes (sans compte cloud)
+
+- [ ] Schéma `auth` : `users` (id UUID, e-mail normalisé unique, rôle `user`/`admin`, `created_at`, `last_seen_at`), `sessions` (jeton de renouvellement **haché**, appareil, dates, révocation), `login_tokens` (lien magique : haché, usage unique, expiration 15 min), `user_consents` (document, version, date). Migration Drizzle.
+- [ ] Lien magique : `POST /auth/magic-link` (réponse identique que le compte existe ou non, limite de débit par IP et par e-mail), `POST /auth/verify`.
+- [ ] Jeton d'accès JWT court (15 min) ; jeton de renouvellement en cookie `HttpOnly`, `Secure`, `SameSite=None`, **rotation à chaque usage** et détection de réutilisation (révoque la session).
+- [ ] `POST /auth/refresh`, `POST /auth/logout`, `GET /me`, `GET /me/sessions`, `DELETE /me/sessions/:id` (liste des appareils, déconnexion à distance).
+- [ ] Envoi d'e-mails derrière une interface `Mailer` : implémentation « console/capture » pour les tests et le développement, implémentation SMTP ou API du service choisi ensuite.
+- [ ] Hook d'authentification Fastify (`requireUser`, `requireAdmin`) et couche commune de filtrage par `user_id` ; **test d'isolation obligatoire sur chaque route** protégée.
+- [ ] Rôle admin : l'écriture du référentiel passe de `ADMIN_TOKEN` à `requireAdmin` (le jeton reste un secours désactivable).
+- [ ] Consentement à l'inscription : refus sans acceptation des CGU/confidentialité (versions courantes) et déclaration « au moins 15 ans » ; nouvelle acceptation exigée quand la version change.
 - [ ] Quotas et limite de débit par compte.
+- [ ] Tests : unitaires, intégration (PostgreSQL réel), E2E du serveur compilé (parcours complet connexion → refresh → déconnexion), mutation ≥ seuils actuels.
+
+### 3b. Appli (sans compte cloud)
+
+- [ ] Service d'authentification Angular (jeton d'accès en mémoire seulement, jamais en `localStorage`), intercepteur HTTP, renouvellement silencieux au démarrage.
+- [ ] Écran de connexion (saisie de l'e-mail, message « consultez vos e-mails », page de retour du lien) ; **l'appli reste entièrement utilisable sans compte** et le comportement par défaut ne change pas.
+- [ ] Réglages › Compte : état, appareils connectés, déconnexion.
+- [ ] Pages Confidentialité, Mentions légales, CGU accessibles hors ligne et sans compte (textes écrits en tant que particulier, conservation des comptes inactifs : 12 mois).
+- [ ] Interrupteur de fonctionnalité : l'écran de connexion n'apparaît que si l'adresse de l'API est renseignée.
+- [ ] Tests unitaires, accessibilité, Playwright avec une API simulée.
+
+### 3c. Avec les comptes cloud
+
+- [ ] Choisir le service d'envoi d'e-mails gratuit (quota, région UE, DPA) et/ou configurer Google OIDC.
+- [ ] Déploiement Render + Neon (voir étape 2) puis `JWT_SECRET`, clé d'envoi d'e-mails, domaine expéditeur (SPF/DKIM).
+- [ ] **Tester le cookie sur Safari / iOS** ; sinon sous-domaine commun ou repli sur jeton (ADR-0007).
+- [ ] Suppression complète du compte (RGPD), photos B2 comprises (complétée à l'étape 6) ; purge des comptes inactifs.
+- [ ] Test Playwright de bout en bout contre l'API réelle.
 
 **Terminé quand** : connexion et déconnexion fonctionnent sur ordinateur et mobile, Safari compris.
+
+**Points à trancher avant de commencer (3a)** :
+
+1. Google OIDC en plus du lien magique, ou lien magique seul pour la première version ? (recommandé : lien magique seul, Google ensuite)
+2. Jeton d'accès : JWT signé HS256 avec secret unique (simple) ou EdDSA (clé publique, plus lourd) ? (recommandé : HS256 via `jose`)
+3. Service d'e-mails : à choisir au lot 3c, sans effet sur 3a/3b grâce à l'interface `Mailer`.
 
 ## 4. Sauvegarde vers le serveur
 
