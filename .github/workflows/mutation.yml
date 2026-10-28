@@ -1,11 +1,13 @@
 name: Tests de mutation
 
-# Sur une pull request : seulement les fichiers modifiés. Sur main (et à la demande) : tout le code
-# concerné, mais en mode incrémental — seuls les mutants dont le code ou les tests ont changé sont rejoués.
+# Push et pull request : seulement les fichiers modifiés (code, ou son fichier de test).
+# Chaque lundi et à la demande : tout le code, en mode incrémental.
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: '23 2 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -41,11 +43,23 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
         run: |
-          if [ "$EVENT" = "pull_request" ]; then
-            changed=$(git diff --name-only "origin/$BASE_REF...HEAD" \
+          case "$EVENT" in
+            pull_request) range="origin/$BASE_REF...HEAD" ;;
+            push) range="$BEFORE..HEAD" ;;
+            *) range="" ;;
+          esac
+          # Premier push d'une branche (BEFORE nul) : tout muter.
+          if [ -n "$range" ] && ! git rev-parse -q --verify "${range%%..*}^{commit}" >/dev/null 2>&1 \
+             && [ "$EVENT" = "push" ]; then range=""; fi
+          if [ -n "$range" ]; then
+            # Un fichier de test modifié fait muter le code qu'il teste.
+            changed=$(git diff --name-only "$range" \
+              | sed -E 's/\.(edge\.|screen\.)?spec\.ts$/.ts/' \
               | grep -E '^src/app/core/(data/[^/]+\.repo|[^/]+)\.ts$' \
-              | grep -vE '\.(spec|testing)\.ts$|/(models|catalog|db|theme|clock|backup)\.ts$' || true)
+              | grep -vE '\.testing\.ts$|/(models|catalog|db|theme|clock|backup)\.ts$' \
+              | sort -u | while read -r f; do [ -f "$f" ] && echo "$f"; done || true)
             if [ -z "$changed" ]; then
               echo "Aucun fichier de logique modifié : rien à muter."
               echo "args=" >> "$GITHUB_OUTPUT"

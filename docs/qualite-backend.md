@@ -51,7 +51,9 @@ L'appli Angular n'a pas encore de linter : on l'ajoute aussi avec les mêmes rè
 
 - **Stryker** avec le lanceur Vitest, comme l'appli.
 - Seuils : **high 90 · low 75 · break 75** (identiques au front).
-- Sur PR : mutation **incrémentale** sur les fichiers modifiés. Chaque semaine : exécution complète.
+- À chaque push et sur PR : mutation **incrémentale** des seuls fichiers modifiés (un fichier de test modifié fait muter le code qu'il teste). Chaque lundi et à la demande (« Run workflow ») : exécution complète.
+- En local, ne muter que le fichier en cours : `npm run mutation -- --mutate src/app/core/auth.ts` (≈ 2 min, contre ≈ 30 pour tout `core`).
+- Les mutants de chaînes de caractères (`StringLiteral`, par exemple un message remplacé par `""`) sont ignorés : nombreux et peu utiles, ils doublaient la durée.
 - Priorité aux mutants survivants dans : autorisation (`user_id`), synchro (règle de conflit), purge RGPD, validation des entrées.
 
 ## 4. Tests d'intégration (base réelle)
