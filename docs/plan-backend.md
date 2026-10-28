@@ -79,9 +79,10 @@ Décisions prises en route : cookie nommé `__Host-refresh` (refusé par le navi
 - [x] Écran de connexion (saisie de l'e-mail, message « consultez vos e-mails », page de retour du lien) ; **l'appli reste entièrement utilisable sans compte** et le comportement par défaut ne change pas.
 - [x] Réglages › Compte : état, appareils connectés, déconnexion.
 - [x] Pages Confidentialité, Mentions légales, CGU accessibles hors ligne et sans compte (textes écrits en tant que particulier, conservation des comptes inactifs : 12 mois).
-- [x] Interrupteur de fonctionnalité : comptes **fermés** par défaut (`ACCOUNTS_OPEN` dans `api-config.ts`), tant que l'envoi d'e-mails n'existe pas ; la section Compte et les liens légaux n'apparaissent pas.
-- [x] Tests unitaires (service, connexion, textes légaux, réglages) et Playwright de l'état par défaut (comptes fermés). Pas de test Playwright comptes ouverts : le bundle publié les ferme ; la connexion complète sera testée en 3c contre l'API réelle.
-- [ ] À faire avant l'ouverture : renseigner `contactEmail`, faire relire les textes (`src/app/pages/legal/legal.ts`), vérifier les adresses des hébergeurs et les garanties de transfert.
+- [x] Interrupteur de fonctionnalité : `ACCOUNTS_OPEN` dans `api-config.ts`, **ouvert le 2026-10-28** à la demande de l'éditeur ; sans service d'e-mails, la connexion répond « envoi non disponible » (voir 3c).
+- [x] Tests unitaires (service, connexion, textes légaux, réglages) et Playwright (section Compte, écran de connexion, textes légaux). La connexion complète sera testée en 3c contre l'API réelle.
+- [x] Adresse de contact renseignée (`contactEmail`).
+- [ ] Reste : faire relire les textes (`src/app/pages/legal/legal.ts`), vérifier les adresses des hébergeurs et les garanties de transfert.
 
 ### 3c. Avec les comptes cloud
 

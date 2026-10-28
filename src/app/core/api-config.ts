@@ -13,10 +13,11 @@ export const API_URL = new InjectionToken<string | null>('API_URL', {
 });
 
 /**
- * Comptes (connexion par lien envoyé par e-mail). Fermés tant que le serveur ne peut pas envoyer
- * d'e-mails (étape 3c du plan) : ni écran de connexion, ni section « Compte », ni pages légales.
+ * Comptes (connexion par lien envoyé par e-mail). Fermés (`false`), l'appli n'a ni écran de connexion
+ * ni section « Compte » ni liens vers les textes légaux. Ouverts, la connexion n'aboutit que si le
+ * serveur sait envoyer des e-mails (étape 3c du plan).
  */
-const ACCOUNTS_OPEN = false;
+const ACCOUNTS_OPEN = true;
 
 export const ACCOUNTS_ENABLED = new InjectionToken<boolean>('ACCOUNTS_ENABLED', {
   providedIn: 'root',

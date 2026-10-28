@@ -30,14 +30,14 @@ L'import est rejouable (une fiche inchangée n'est pas réécrite). Vérifier `G
 - `ngsw-config.json` : ajouter l'API aux groupes de données si on veut la mettre en cache.
 - Réglages › Catalogue en ligne (bêta) : activer, puis tester hors ligne.
 
-## Comptes (étape 3, encore fermés)
+## Comptes (étape 3)
 
-Les comptes sont **fermés** dans l'appli (`ACCOUNTS_OPEN = false` dans `src/app/core/api-config.ts`) : ni écran de connexion ni section Compte. Avant de les ouvrir :
+L'interrupteur `ACCOUNTS_OPEN` de `src/app/core/api-config.ts` est **ouvert** : l'appli montre la section Compte, l'écran de connexion et les textes légaux. La connexion n'aboutit pas encore (le serveur répond « service d'envoi d'e-mails non disponible ») tant que ceci n'est pas fait :
 
 1. Choisir le service d'envoi d'e-mails et l'implémenter derrière l'interface `Mailer` (lot 3c).
 2. Sur Render : `JWT_SECRET` (≥ 32 caractères, `openssl rand -base64 36`), `ADMIN_EMAILS` (ton adresse), et les variables du service d'e-mails. `LOGIN_URL` est déjà dans `render.yaml`. `MAIL_TRANSPORT=console` est interdit en production.
-3. Renseigner `contactEmail` dans `src/app/core/legal.ts` (un test échoue tant que ce n'est pas fait quand les comptes sont ouverts), relire les textes légaux et vérifier les adresses des hébergeurs.
-4. Tester le cookie sur Safari / iOS, puis passer `ACCOUNTS_OPEN` à `true`.
+3. Relire les textes légaux et vérifier les adresses des hébergeurs.
+4. Tester le cookie sur Safari / iOS.
 
 ## À savoir sur l'offre gratuite
 

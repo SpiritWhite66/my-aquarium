@@ -64,9 +64,11 @@ describe('AuthService', () => {
       expect(service().available).toBe(true);
     });
 
-    it('est fermé par défaut dans l’appli publiée', () => {
+    it('suit la configuration de l’appli publiée', () => {
       TestBed.resetTestingModule();
-      expect(TestBed.inject(AuthService).available).toBe(false);
+      expect(TestBed.inject(AuthService).available).toBe(
+        TestBed.inject(API_URL) !== null && TestBed.inject(ACCOUNTS_ENABLED),
+      );
     });
 
     it('ne contacte jamais le serveur quand c’est indisponible', async () => {

@@ -117,16 +117,20 @@ test('le catalogue en ligne est désactivé par défaut : l’appli utilise son 
   await expect(page.getByText('Danio margaritatus').first()).toBeVisible();
 });
 
-test('les comptes sont fermés : ni section Compte, ni écran de connexion actif', async ({
+test('les comptes sont ouverts mais facultatifs : la connexion se propose sans rien imposer', async ({
   app,
   page,
 }) => {
   await app.seed();
   await page.goto('/reglages');
-  await expect(page.getByText('Catalogue en ligne (bêta)')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Compte' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: /Confidentialité/ })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Compte' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Se connecter/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Confidentialité' })).toBeVisible();
+  // L'appli reste utilisable sans compte.
+  await page.goto('/catalogue');
+  await expect(page.getByText('Danio margaritatus').first()).toBeVisible();
   await page.goto('/connexion');
-  await expect(page.getByText('Les comptes ne sont pas encore ouverts')).toBeVisible();
-  await expect(page.getByLabel('Adresse e-mail')).toHaveCount(0);
+  await expect(page.getByLabel('Adresse e-mail')).toBeVisible();
+  await page.goto('/confidentialite');
+  await expect(page.getByRole('heading', { name: 'Politique de confidentialité' })).toBeVisible();
 });

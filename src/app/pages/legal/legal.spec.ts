@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { LEGAL } from '../../core/legal';
 import { bootApp, closeApp, type App } from '../../testing/app.testing';
 
 let app: App;
@@ -25,11 +26,10 @@ describe('textes légaux', () => {
     expect(links).toEqual(['/mentions-legales', '/confidentialite']);
   });
 
-  it('signale l’adresse de contact manquante plutôt que de l’inventer', async () => {
+  it('donne l’adresse de contact en lien cliquable', async () => {
     app = await bootApp();
     await app.go('/mentions-legales', 'Hébergeurs');
-    expect(app.el().textContent).toContain('adresse de contact à renseigner');
-    expect(app.find('a[href^="mailto:"]')).toBeNull();
+    expect(app.find('a[href^="mailto:"]')?.textContent).toBe(LEGAL.contactEmail);
   });
 
   it('décrit ce qui est réellement enregistré, sans promettre ce qui n’existe pas', async () => {

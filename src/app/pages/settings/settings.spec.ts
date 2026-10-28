@@ -483,7 +483,8 @@ describe('fmtBytes', () => {
       TestBed.overrideProvider(ACCOUNTS_ENABLED, { useValue: true });
     }
 
-    it('est absent tant que les comptes sont fermés (réglage par défaut)', async () => {
+    it('est absent quand les comptes sont fermés', async () => {
+      TestBed.overrideProvider(ACCOUNTS_ENABLED, { useValue: false });
       app = await bootApp();
       await app.go('/reglages', 'Catalogue en ligne');
       expect(app.el().textContent).not.toContain('Compte');
