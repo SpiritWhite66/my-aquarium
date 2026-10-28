@@ -16,3 +16,5 @@ export type ApiError = z.infer<typeof apiErrorSchema>;
 export * from './ref.js';
 export * from './auth.js';
 export * from './sync.js';
+export * from './digest.js';
+export * from './push.js';

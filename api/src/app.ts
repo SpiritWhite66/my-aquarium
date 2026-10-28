@@ -12,6 +12,8 @@ import { createGuards } from './auth/guard.js';
 import { createBrevoMailer, createConsoleMailer, type Mailer } from './auth/mailer.js';
 import { registerAuthRoutes } from './auth/routes.js';
 import { registerSyncRoutes } from './sync/routes.js';
+import { registerPushRoutes } from './push/routes.js';
+import { createWebPushSender, type PushSender } from './push/sender.js';
 import { registerRefRoutes } from './ref/routes.js';
 
 function errorBody(code: string, message: string): ApiError {
@@ -38,6 +40,16 @@ export function loggerOptions(config: Pick<Config, 'LOG_LEVEL'>) {
   };
 }
 
+export function pushSenderFor(config: Config): PushSender | undefined {
+  const {
+    VAPID_PUBLIC_KEY: publicKey,
+    VAPID_PRIVATE_KEY: privateKey,
+    VAPID_SUBJECT: subject,
+  } = config;
+  if (!publicKey || !privateKey || !subject) return undefined;
+  return createWebPushSender({ publicKey, privateKey, subject });
+}
+
 export function mailerFor(config: Config): Mailer | undefined {
   if (config.MAIL_TRANSPORT === 'console') {
     return createConsoleMailer((line) => process.stdout.write(`${line}\n`));
@@ -54,7 +66,7 @@ export function mailerFor(config: Config): Mailer | undefined {
 /** Construit l'application sans l'écouter : les tests l'appellent via `inject`. */
 export async function buildApp(
   config: Config,
-  deps: { db?: Db; mailer?: Mailer } = {},
+  deps: { db?: Db; mailer?: Mailer; pushSender?: PushSender } = {},
 ): Promise<FastifyInstance> {
   const app = Fastify({
     logger: loggerOptions(config),
@@ -89,6 +101,12 @@ export async function buildApp(
   const mailer = deps.mailer ?? mailerFor(config);
   registerAuthRoutes(app, { db, config, mailer, guards });
   registerSyncRoutes(app, { db, guards });
+  registerPushRoutes(app, {
+    db,
+    guards,
+    publicKey: config.VAPID_PUBLIC_KEY,
+    sender: deps.pushSender ?? pushSenderFor(config),
+  });
   registerRefRoutes(app, { db, authorizeWrite: guards.authorizeAdmin });
 
   app.setNotFoundHandler((_req, reply) => {

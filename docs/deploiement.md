@@ -39,6 +39,10 @@ L'interrupteur `ACCOUNTS_OPEN` de `src/app/core/api-config.ts` est **ouvert** : 
 3. Relire les textes légaux et vérifier les adresses des hébergeurs.
 4. Tester le cookie sur Safari / iOS.
 
+## Notifications push
+
+Variables Render : `VAPID_PUBLIC_KEY` et `VAPID_SUBJECT` (dans `render.yaml`), `VAPID_PRIVATE_KEY` (secret, à saisir). Paire de clés : `npx web-push generate-vapid-keys` ; changer de paire invalide tous les abonnements (chaque appareil devra réactiver les rappels). La tâche GitHub `wake.yml` réveille le service toutes les 2 heures et lance l'envoi (secret `ADMIN_TOKEN` dans GitHub).
+
 ## Conservation des comptes
 
 Le service purge les comptes inactifs une minute après son démarrage puis chaque jour. Comme l'offre gratuite s'endort, la tâche GitHub `purge.yml` l'appelle aussi chaque semaine : elle exige le secret `ADMIN_TOKEN` dans GitHub › Settings › Secrets and variables › Actions (même valeur que sur Render). Sans lui, la tâche ne fait rien.

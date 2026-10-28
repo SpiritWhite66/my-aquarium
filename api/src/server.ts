@@ -1,4 +1,5 @@
-import { buildApp, mailerFor } from './app.js';
+import { buildApp, mailerFor, pushSenderFor } from './app.js';
+import { dispatch } from './push/repository.js';
 import { startRetention } from './auth/retention.js';
 import { loadConfig } from './config.js';
 import { applyMigrations } from './db/apply-migrations.js';
@@ -26,7 +27,28 @@ if (connection !== undefined) {
       app.log.error({ err }, 'échec de la conservation des comptes');
     },
   });
+  // Rappels push : un passage toutes les 15 minutes tant que le service est éveillé.
+  const pushSender = pushSenderFor(config);
+  const pushTimer =
+    pushSender === undefined
+      ? undefined
+      : setInterval(
+          () => {
+            dispatch(connection.db, pushSender).then(
+              (report) => {
+                if (report.sent + report.removed + report.failed > 0)
+                  app.log.info(report, 'rappels push');
+              },
+              (err: unknown) => {
+                app.log.error({ err }, 'échec des rappels push');
+              },
+            );
+          },
+          15 * 60 * 1000,
+        );
+  pushTimer?.unref();
   app.addHook('onClose', async () => {
+    clearInterval(pushTimer);
     stop();
     await connection.close();
   });

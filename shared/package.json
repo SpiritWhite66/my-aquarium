@@ -14,6 +14,10 @@
     "./sync-tables": {
       "types": "./dist/sync-tables.d.ts",
       "default": "./dist/sync-tables.js"
+    },
+    "./digest": {
+      "types": "./dist/digest.d.ts",
+      "default": "./dist/digest.js"
     }
   },
   "scripts": {

@@ -8,8 +8,11 @@ export function useFakeIndexedDb(): void {
   Dexie.dependencies.IDBKeyRange = IDBKeyRange;
 }
 
-/** Attend qu'une condition soit vraie (les requêtes IndexedDB sont asynchrones). */
-export async function waitFor(check: () => boolean, ms = 2000, tick?: () => void): Promise<void> {
+/**
+ * Attend qu'une condition soit vraie (les requêtes IndexedDB sont asynchrones). Délai large : quand
+ * toute la suite tourne en parallèle, le démarrage de l'appli simulée peut prendre plus de 2 s.
+ */
+export async function waitFor(check: () => boolean, ms = 5000, tick?: () => void): Promise<void> {
   const end = Date.now() + ms;
   while (!check()) {
     if (Date.now() > end) throw new Error('Condition jamais remplie');

@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   bigserial,
   boolean,
+  date,
   index,
   jsonb,
   pgSchema,
@@ -188,4 +189,25 @@ export const records = aquaSchema.table(
     primaryKey({ columns: [t.userId, t.table, t.id] }),
     index('records_user_seq_idx').on(t.userId, t.seq),
   ],
+);
+
+/** Appareils abonnés aux rappels push, avec leurs préférences (heure, fuseau, contenu). */
+export const pushSubscriptions = aquaSchema.table(
+  'push_subscriptions',
+  {
+    endpoint: text('endpoint').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    time: text('time').notNull(),
+    timeZone: text('time_zone').notNull(),
+    tasks: boolean('tasks').notNull(),
+    followUps: boolean('follow_ups').notNull(),
+    /** Dernier jour (local) traité : un seul rappel par jour. */
+    lastSentOn: date('last_sent_on', { mode: 'string' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('push_user_idx').on(t.userId)],
 );

@@ -1,0 +1,28 @@
+name: Réveil du service et rappels
+
+# Toutes les 2 heures : réveille l'API (l'offre gratuite de Render s'endort sans visite) et envoie les
+# rappels push dont l'heure est passée. Une fois éveillé, le service vérifie aussi toutes les 15 minutes.
+on:
+  schedule:
+    - cron: '7 */2 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Réveiller et envoyer les rappels
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          API: https://mes-aquariums-api.onrender.com
+        run: |
+          if [ -z "$ADMIN_TOKEN" ]; then
+            echo "::notice::Secret ADMIN_TOKEN absent : simple réveil, sans envoi des rappels."
+            curl --fail --silent --show-error --max-time 150 --retry 2 --retry-delay 15 "$API/health"
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --max-time 150 --retry 2 --retry-delay 15 \
+            -X POST -H "Authorization: Bearer $ADMIN_TOKEN" "$API/admin/push-dispatch"

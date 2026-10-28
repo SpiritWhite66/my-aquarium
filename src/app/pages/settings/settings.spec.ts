@@ -8,6 +8,8 @@ import { PrefsStore } from '../../core/stores/prefs.store';
 import { ACCOUNTS_ENABLED, API_URL } from '../../core/api-config';
 import { AuthService } from '../../core/auth';
 import { DiagLog } from '../../core/diag';
+import { PushService } from '../../core/push';
+import { DEFAULT_PREFS } from '../../core/reminders';
 import { ThemeService } from '../../core/theme';
 import { bootApp, closeApp, type App } from '../../testing/app.testing';
 
@@ -626,6 +628,50 @@ describe('fmtBytes', () => {
       await app.go('/reglages', 'Synchronisation');
       await app.until(() => app.el().textContent.includes('n’a pas répondu'));
       expect(app.el().textContent).toMatch(/\d+ modifications en attente/);
+    });
+
+    it('propose les rappels même appli fermée quand on est connecté avec les rappels activés', async () => {
+      ouverts();
+      localStorage.setItem('signedIn', '1');
+      serveur({
+        'POST /auth/refresh': {
+          status: 200,
+          body: { accessToken: 'jeton', expiresIn: 900, user: me },
+        },
+        'GET /me/sessions': { status: 200, body: { items: [device()] } },
+        'GET /push/key': { status: 200, body: { publicKey: 'AQAB' } },
+      });
+      vi.stubGlobal('PushManager', class {});
+      Object.defineProperty(navigator, 'serviceWorker', {
+        value: {
+          ready: new Promise(() => undefined),
+          getRegistration: () => Promise.resolve(undefined),
+        },
+        configurable: true,
+      });
+      try {
+        app = await bootApp();
+        await app.db.prefs.put({ ...DEFAULT_PREFS, enabled: true, time: '08:30' });
+        await app.go('/reglages', 'Même appli fermée');
+        expect(app.el().textContent).toContain('Envoyés par le serveur');
+        const push = TestBed.inject(PushService);
+        const enable = vi.spyOn(push, 'enable').mockResolvedValue();
+        const toggle = [...app.el().querySelectorAll<HTMLInputElement>('input[role=switch]')].find(
+          (i) => i.parentElement?.textContent.includes('même appli fermée'),
+        );
+        if (!toggle) throw new Error('interrupteur absent');
+        toggle.checked = true;
+        toggle.dispatchEvent(new Event('change'));
+        await app.flush();
+        expect(enable).toHaveBeenCalled();
+        // Activé : l'abonnement démarre (le service worker simulé ne répond jamais).
+        push.enabled.set(true);
+        await app.until(() => app.el().textContent.includes('Activation…'));
+        push.state.set('on');
+        await app.until(() => app.el().textContent.includes('le rappel arrive vers 08:30'));
+      } finally {
+        delete (navigator as unknown as Record<string, unknown>)['serviceWorker'];
+      }
     });
 
     it('se déconnecte', async () => {

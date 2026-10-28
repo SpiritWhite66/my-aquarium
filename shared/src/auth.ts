@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Versions en vigueur des textes légaux (`docs/legal/`). Les changer exige une nouvelle
  * acceptation à la connexion suivante (ADR-0011).
  */
-export const LEGAL_VERSIONS = { cgu: '1', confidentialite: '2', age15: '1' } as const;
+export const LEGAL_VERSIONS = { cgu: '1', confidentialite: '3', age15: '1' } as const;
 
 /** Adresse normalisée (espaces retirés, minuscules) : c'est l'identité du compte. */
 export const emailSchema = z.string().trim().toLowerCase().max(254).pipe(z.email());

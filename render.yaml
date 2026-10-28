@@ -21,6 +21,13 @@ services:
         value: https://spiritwhite66.github.io/my-aquarium/connexion
       - key: RUN_MIGRATIONS
         value: 'true'
+      # Notifications push : la clé publique n'est pas secrète, la clé privée se saisit dans le tableau de bord.
+      - key: VAPID_PUBLIC_KEY
+        value: BL-JsNkzHf_JUJ1sxvrirmUK-ZmYbdGSzCaZHstKQItAh7UkyhadL8p4XFr-hKRyDaLuuKEpRvKrCWui1qHe7Sg
+      - key: VAPID_SUBJECT
+        value: mailto:vguillamot@gmail.com
+      - key: VAPID_PRIVATE_KEY
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: ADMIN_TOKEN

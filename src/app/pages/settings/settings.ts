@@ -25,6 +25,7 @@ import { RefSyncService } from '../../core/ref-sync';
 import { API_URL } from '../../core/api-config';
 import { AuthService } from '../../core/auth';
 import { SyncService } from '../../core/sync';
+import { PushService } from '../../core/push';
 import { DiagLog } from '../../core/diag';
 import { AQUARIUM_DB, type SyncMeta } from '../../core/db';
 import { readPref } from '../../core/local-prefs';
@@ -119,6 +120,19 @@ import { readPref } from '../../core/local-prefs';
               <button class="linkbtn" type="button" (click)="notif.test()">Tester</button>
             </div>
           }
+          @if (prefs().enabled && auth.user() && push.supported) {
+            <div class="it" style="flex-wrap: wrap">
+              <span class="ic w"><app-icon name="bell" [size]="20" /></span>
+              <div class="grow" style="min-width: 160px">
+                <p style="font-weight: 600">Même appli fermée</p>
+                <p class="sub" aria-live="polite">{{ pushStatus() }}</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" role="switch" [checked]="push.enabled()" [disabled]="push.state() === 'busy'" (change)="togglePush($any($event.target).checked)" />
+                <span class="sr-only">Recevoir les rappels même appli fermée</span>
+              </label>
+            </div>
+          }
           <button class="it" type="button" style="width: 100%; border: 0; background: transparent; text-align: left; font: inherit; cursor: pointer" (click)="exportIcs()">
             <span class="ic w"><app-icon name="bell" [size]="20" /></span>
             <div class="grow"><p style="font-weight: 600">Ajouter à mon agenda</p><p class="sub">Fichier .ics avec les tâches répétées et une alerte à 9 h (Google Agenda, Outlook…)</p></div>
@@ -192,7 +206,7 @@ import { readPref } from '../../core/local-prefs';
                   <p style="font-weight: 600">{{ user.email }}</p>
                   <p class="sub">Connecté{{ user.role === 'admin' ? ' · administrateur' : '' }}</p>
                 </div>
-                <button class="btn out" type="button" (click)="auth.logout()">Se déconnecter</button>
+                <button class="btn out" type="button" (click)="logout()">Se déconnecter</button>
               </div>
               <div class="it" style="flex-wrap: wrap">
                 <span class="ic" [class.p]="sync.status() === 'ok'" [class.w]="syncWarn()"><app-icon name="download" [size]="20" /></span>
@@ -408,6 +422,33 @@ export class SettingsPage {
       ? `Chaque jour à ${this.prefs().time}, même appli fermée.`
       : `Chaque jour à partir de ${this.prefs().time}, à l’ouverture de l’appli. Installe-la sur Android (Chrome) pour les recevoir appli fermée.`;
   });
+  protected readonly push = inject(PushService);
+  protected readonly pushStatus = computed(() => {
+    if (!this.push.enabled()) {
+      return this.push.state() === 'denied'
+        ? 'Notifications bloquées dans les réglages du navigateur pour ce site.'
+        : 'Envoyés par le serveur à l’heure choisie, sur chaque appareil où tu l’actives.';
+    }
+    switch (this.push.state()) {
+      case 'busy':
+        return 'Activation…';
+      case 'error':
+        return 'Le serveur n’a pas pu enregistrer cet appareil : nouvel essai à la prochaine ouverture.';
+      default:
+        return `Activé : le rappel arrive vers ${this.prefs().time}, même appli fermée (parfois avec un peu de retard).`;
+    }
+  });
+
+  protected async togglePush(on: boolean): Promise<void> {
+    if (on) await this.push.enable();
+    else await this.push.disable();
+  }
+
+  protected async logout(): Promise<void> {
+    await this.push.forgetDevice();
+    await this.auth.logout();
+  }
+
   protected async toggleNotif(on: boolean): Promise<void> {
     if (on) await this.notif.enable();
     else await this.notif.disable();

@@ -216,7 +216,7 @@ describe.skipIf(testDatabaseUrl === undefined)('comptes (PostgreSQL réel)', () 
       expect([...rows]).toEqual([
         { document: 'age15', version: '1' },
         { document: 'cgu', version: '1' },
-        { document: 'confidentialite', version: '2' },
+        { document: 'confidentialite', version: '3' },
       ]);
     });
 

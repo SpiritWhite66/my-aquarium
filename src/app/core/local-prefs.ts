@@ -3,7 +3,8 @@
 // une restauration sur un autre appareil ne doit pas en emporter les réglages.
 // (Les préférences structurées, comme les notifications, vivent dans la table `prefs` de Dexie.)
 
-export type LocalPrefKey = 'theme' | 'lastBackup' | 'backupSnooze' | 'onlineCatalog' | 'signedIn';
+export type LocalPrefKey =
+  'theme' | 'lastBackup' | 'backupSnooze' | 'onlineCatalog' | 'signedIn' | 'serverPush';
 
 /** null si la préférence est absente ou si le stockage est indisponible (navigation privée, données bloquées). */
 export function readPref(key: LocalPrefKey): string | null {

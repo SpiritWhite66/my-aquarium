@@ -63,6 +63,8 @@ describe('NotificationService', () => {
         store.dueTasks().length === 1 &&
         TestBed.inject(PrefsStore).notificationPrefs().enabled &&
         Object.keys(TestBed.inject(PrefsStore).notificationPrefs().digests ?? {}).length > 0,
+      // Démarrage complet de l'appli (base, catalogue, rappels) : plus lent quand toute la suite tourne.
+      5000,
     );
 
     await Promise.all([service.check(), service.check(), service.check()]);

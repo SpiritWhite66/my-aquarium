@@ -42,6 +42,14 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((v) => v === 'true'),
+  /** Clés VAPID des notifications push (`npx web-push generate-vapid-keys`). Absentes : push désactivé. */
+  VAPID_PUBLIC_KEY: z.string().min(20).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(20).optional(),
+  /** Contact transmis aux services de push : `mailto:…` ou une adresse https. */
+  VAPID_SUBJECT: z
+    .string()
+    .regex(/^(mailto:|https:\/\/)/, 'mailto:… ou https://…')
+    .optional(),
   APP_VERSION: z.string().min(1).default('dev'),
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(100),
 });
@@ -63,6 +71,14 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   if (result.data.NODE_ENV === 'production' && result.data.MAIL_TRANSPORT === 'console') {
     throw new Error(
       'Configuration invalide :\nMAIL_TRANSPORT : « console » interdit en production',
+    );
+  }
+  const vapid = (['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT'] as const).filter(
+    (k) => result.data[k] === undefined,
+  );
+  if (vapid.length > 0 && vapid.length < 3) {
+    throw new Error(
+      `Configuration invalide :\n${vapid.map((k) => `${k} : requise avec les autres variables VAPID`).join('\n')}`,
     );
   }
   if (result.data.MAIL_TRANSPORT === 'brevo') {

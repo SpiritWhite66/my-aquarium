@@ -123,6 +123,18 @@ Décisions prises en route : cookie nommé `__Host-refresh` (refusé par le navi
 
 **Terminé quand** : une modification faite hors ligne sur le téléphone apparaît sur l'ordinateur après retour du réseau. ✔ (testé avec deux appareils simulés ; à vérifier sur tes vrais appareils)
 
+## 5 bis. Rappels envoyés par le serveur (notifications push)
+
+- [x] Calcul du rappel du jour déplacé dans `shared/src/digest.ts` : même texte pour les rappels locaux et ceux du serveur.
+- [x] Table `aqua.push_subscriptions` (adresse d'abonnement, clés, heure, fuseau, contenu, jour du dernier envoi), supprimée avec le compte.
+- [x] `GET /push/key`, `PUT` / `DELETE /push/subscription`, `POST /admin/push-dispatch` ; un envoi par jour et par appareil, à l'heure locale choisie, à partir des données synchronisées ; abonnement expiré (404/410) supprimé, échec passager réessayé.
+- [x] Envoi signé VAPID (`web-push`) ; passage toutes les 15 minutes tant que le service est éveillé, et tâche GitHub `wake.yml` toutes les 2 heures qui réveille le service et lance l'envoi (secret `ADMIN_TOKEN` dans GitHub requis pour l'envoi).
+- [x] Appli : Réglages › Rappels › « Même appli fermée » (connecté, rappels activés) ; service worker : affichage du rappel reçu avec la même étiquette que les rappels locaux (pas de doublon) ; désabonnement à la désactivation et à la déconnexion.
+- [x] Politique de confidentialité version 3 (abonnement, transit par le service de notification du navigateur).
+- [ ] À faire de ton côté : `VAPID_PRIVATE_KEY` dans Render (la clé publique et le contact sont dans `render.yaml`, à ajouter aussi si le Blueprint n'est pas resynchronisé), secret `ADMIN_TOKEN` dans GitHub.
+- [ ] Tester sur la tablette Android et, appli installée, sur iPhone / iPad (iOS 16.4 ou plus).
+- Limites : avec un réveil toutes les 2 heures, le rappel peut arriver jusqu'à environ 2 heures après l'heure choisie quand le service dormait ; les suivis de diagnostic sont calculés dans le fuseau de l'appareil abonné.
+
 ## 6. Photos sur Backblaze B2
 
 - [ ] Bucket privé, clé limitée au bucket, CORS limité à GitHub Pages.

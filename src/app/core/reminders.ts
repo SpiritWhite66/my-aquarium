@@ -2,6 +2,7 @@
 // Calculé à l'avance pour les prochains jours, pour que le service worker n'ait qu'à le lire.
 
 import type { Diagnosis, MaintenanceTask, Tank } from './models';
+import { buildDigest, followUpsDueOn, type Digest } from '@aquarium/shared/digest';
 import { addDays, localDay } from './dates';
 
 export interface NotificationPrefs {
@@ -17,10 +18,7 @@ export interface NotificationPrefs {
   digestsUntil?: string;
 }
 
-export interface Digest {
-  title: string;
-  body: string;
-}
+export type { Digest };
 
 /** Nombre de jours préparés à l'avance pour le service worker. */
 export const DIGEST_DAYS = 30;
@@ -41,44 +39,16 @@ export const DEFAULT_PREFS: NotificationPrefs = {
 
 /** Date du suivi prévu par le dernier diagnostic de chaque bac. */
 export function followUpsDue(diagnoses: Diagnosis[], day: string): Diagnosis[] {
-  const latest = new Map<string, Diagnosis>();
-  for (const d of diagnoses) {
-    const prev = latest.get(d.tankId);
-    if (!prev || d.date > prev.date) latest.set(d.tankId, d);
-  }
-  return [...latest.values()].filter(
-    (d) => d.followUp && addDays(localDay(d.date), d.followUp.inDays) <= day,
-  );
+  return followUpsDueOn(diagnoses, day, localDay);
 }
 
-/** Notification du jour `day`, ou rien s'il n'y a rien à faire. */
+/** Notification du jour `day`, ou rien s'il n'y a rien à faire (même calcul que le serveur). */
 export function digestFor(
   day: string,
   data: { tasks: MaintenanceTask[]; diagnoses: Diagnosis[]; tanks: Tank[] },
   prefs: Pick<NotificationPrefs, 'tasks' | 'followUps'>,
 ): Digest | undefined {
-  const name = new Map(data.tanks.filter((t) => !t.archived).map((t) => [t.id, t.name]));
-  const lines: string[] = [];
-  let count = 0;
-  if (prefs.tasks) {
-    const due = data.tasks.filter((t) => t.active && t.nextDue <= day && name.has(t.tankId));
-    count += due.length;
-    const multi = name.size > 1;
-    lines.push(
-      ...due.slice(0, 4).map((t) => `${t.label}${multi ? ` (${name.get(t.tankId) ?? ''})` : ''}`),
-    );
-    if (due.length > 4) lines.push(`et ${due.length - 4} autre(s)`);
-  }
-  if (prefs.followUps) {
-    const f = followUpsDue(data.diagnoses, day).filter((d) => name.has(d.tankId));
-    count += f.length;
-    lines.push(...f.map((d) => `Suivi du diagnostic : ${name.get(d.tankId)}`));
-  }
-  if (!count) return undefined;
-  return {
-    title: count > 1 ? `${count} choses à faire pour tes bacs` : 'Une chose à faire pour tes bacs',
-    body: lines.join('\n'),
-  };
+  return buildDigest(day, data, prefs, localDay);
 }
 
 /** Notifications des `days` prochains jours, à partir de `today`. */

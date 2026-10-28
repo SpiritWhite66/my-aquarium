@@ -113,5 +113,27 @@ describe('loadConfig', () => {
     it('refuse un expéditeur qui n’est pas une adresse e-mail', () => {
       expect(() => loadConfig({ ...base, MAIL_FROM: 'pas-une-adresse' })).toThrow(/MAIL_FROM/);
     });
+
+    it('exige les trois variables VAPID ensemble', () => {
+      expect(() => loadConfig({ ...base, VAPID_PUBLIC_KEY: 'x'.repeat(20) })).toThrow(
+        /VAPID_PRIVATE_KEY : requise[\s\S]*VAPID_SUBJECT : requise/,
+      );
+      expect(() =>
+        loadConfig({
+          ...base,
+          VAPID_PUBLIC_KEY: 'x'.repeat(20),
+          VAPID_PRIVATE_KEY: 'y'.repeat(20),
+          VAPID_SUBJECT: 'contact@exemple.fr',
+        }),
+      ).toThrow(/VAPID_SUBJECT/);
+      expect(
+        loadConfig({
+          ...base,
+          VAPID_PUBLIC_KEY: 'x'.repeat(20),
+          VAPID_PRIVATE_KEY: 'y'.repeat(20),
+          VAPID_SUBJECT: 'mailto:contact@exemple.fr',
+        }).VAPID_SUBJECT,
+      ).toBe('mailto:contact@exemple.fr');
+    });
   });
 });

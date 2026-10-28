@@ -17,5 +17,7 @@ export async function clearRef(db: Db): Promise<void> {
 }
 
 export async function clearAuth(db: Db): Promise<void> {
-  await db.execute(sql`truncate auth.users, auth.login_tokens, aqua.records cascade`);
+  await db.execute(
+    sql`truncate auth.users, auth.login_tokens, aqua.records, aqua.push_subscriptions cascade`,
+  );
 }

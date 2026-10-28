@@ -8,6 +8,39 @@ self.addEventListener('periodicsync', (event) => {
   if (event.tag === SYNC_TAG) event.waitUntil(remind());
 });
 
+// Rappel envoyé par le serveur (compte connecté) : même étiquette que les rappels locaux, la
+// notification du jour remplace l'autre au lieu de doubler, et le jour est noté comme fait.
+self.addEventListener('push', (event) => {
+  let data = null;
+  try {
+    data = event.data ? event.data.json() : null;
+  } catch {
+    return;
+  }
+  if (!data || data.tag !== 'aquarium-daily') return;
+  event.waitUntil(
+    self.registration
+      .showNotification(data.title, { body: data.body, icon: 'icons/icon-192x192.png', badge: 'icons/icon-192x192.png', tag: 'aquarium-daily' })
+      .then(markShown),
+  );
+});
+
+async function markShown() {
+  const dbs = await indexedDB.databases?.();
+  if (dbs && !dbs.some((d) => d.name === 'my-aquarium')) return;
+  const db = await request(indexedDB.open('my-aquarium'));
+  try {
+    if (!db.objectStoreNames.contains('prefs')) return;
+    const prefs = await request(db.transaction('prefs').objectStore('prefs').get('notifications'));
+    if (!prefs) return;
+    const tx = db.transaction('prefs', 'readwrite');
+    tx.objectStore('prefs').put({ ...prefs, lastShown: localDay(new Date()) });
+    await new Promise((r) => (tx.oncomplete = r));
+  } finally {
+    db.close();
+  }
+}
+
 self.addEventListener('notificationclick', (event) => {
   if (event.notification.tag !== 'aquarium-daily') return;
   event.notification.close();

@@ -63,10 +63,13 @@ const TITLES: Record<LegalDoc, string> = {
               <li><b>Ton adresse e-mail</b>, pour t’identifier et t’envoyer le lien de connexion.</li>
               <li><b>Tes appareils connectés</b> : nom du navigateur, dates de création et de dernière utilisation, pour que tu puisses les voir et les déconnecter.</li>
               <li><b>Les données de tes aquariums</b>, tant que tu es connecté (voir ci-dessous).</li>
+              <li><b>Les rappels envoyés par le serveur</b>, si tu les actives sur un appareil : l’adresse d’abonnement fournie par ton navigateur, l’heure et le fuseau horaire du rappel, et le jour du dernier envoi.</li>
               <li><b>Tes acceptations</b> des conditions et de cette politique (version et date).</li>
               <li><b>Des journaux techniques</b> limités (type de requête, chemin, code de réponse : ni e-mail, ni adresse IP, ni contenu), pour le dépannage. L’adresse IP est utilisée sur le moment pour limiter les abus, sans être enregistrée par l’appli ; les hébergeurs la traitent pour assurer le service.</li>
             </ul>
             <p>Une fois connecté, <b>les données de tes aquariums</b> (bacs, habitants, relevés, entretien, matériel, diagnostics, fiches d’espèces créées) sont copiées sur le serveur pour être retrouvées sur tes autres appareils. Les photos restent pour l’instant sur l’appareil. Sans compte, rien ne quitte l’appareil.</p>
+            <h2>Notifications</h2>
+            <p>Les rappels « même appli fermée » sont facultatifs et se règlent appareil par appareil (Réglages › Rappels). Le serveur prépare le texte (par exemple « Changement d’eau (Salon) ») à partir de tes données synchronisées et le transmet, chiffré, au service de notification de ton navigateur (Google pour Chrome, Apple pour Safari, Mozilla pour Firefox), qui le remet à l’appareil. L’abonnement est effacé quand tu désactives ces rappels, quand tu te déconnectes, quand ton navigateur le retire, ou avec ton compte.</p>
             <h2>Pourquoi, et sur quelle base légale</h2>
             <ul>
               <li>Fournir le compte, la connexion et la synchronisation : exécution du service que tu demandes.</li>
@@ -83,7 +86,7 @@ const TITLES: Record<LegalDoc, string> = {
             <h2>Cookies et traceurs</h2>
             <p>Aucun traceur publicitaire ni mesure d’audience. Un seul cookie, strictement nécessaire, garde ta connexion ouverte ; il n’existe que si tu te connectes. L’appli enregistre aussi des réglages sur ton appareil (thème, par exemple).</p>
             <h2>Qui reçoit tes données</h2>
-            <p>Nos prestataires techniques, uniquement pour faire fonctionner le service : GitHub (pages de l’appli), Render (API), Neon (base de données) et Brevo (envoi des e-mails de connexion, société française). Certains sont établis aux États-Unis ; les transferts sont encadrés par les garanties prévues par le RGPD. Aucune donnée n’est vendue ni utilisée pour de la publicité.</p>
+            <p>Nos prestataires techniques, uniquement pour faire fonctionner le service : GitHub (pages de l’appli), Render (API), Neon (base de données), Brevo (envoi des e-mails de connexion, société française) et, pour les notifications que tu actives, le service de notification de ton navigateur. Certains sont établis aux États-Unis ; les transferts sont encadrés par les garanties prévues par le RGPD. Aucune donnée n’est vendue ni utilisée pour de la publicité.</p>
             <h2>Tes droits</h2>
             <p>Accès, rectification, effacement, limitation, opposition et portabilité de tes données : suppression du compte depuis Réglages › Compte, ou pour tout autre droit écris à l’adresse de contact (réponse sous un mois). Tu peux aussi saisir la CNIL (<a href="https://www.cnil.fr" rel="noopener noreferrer">cnil.fr</a>).</p>
             <h2>Âge</h2>

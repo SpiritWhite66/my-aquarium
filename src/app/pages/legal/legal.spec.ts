@@ -40,6 +40,7 @@ describe('textes légaux', () => {
     expect(text).toContain('15 ans');
     expect(text).toContain('rien ne quitte l’appareil');
     expect(text).toContain('copiées sur le serveur');
+    expect(text).toContain('service de notification de ton navigateur');
     expect(text).toContain('Les photos restent pour l’instant sur l’appareil');
   });
 });
