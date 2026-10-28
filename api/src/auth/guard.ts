@@ -14,8 +14,8 @@ export interface Guards {
   /** Exige un jeton d'accès valide dont la session n'est ni révoquée ni expirée. */
   requireUser: (req: FastifyRequest) => Promise<AuthContext>;
   requireAdmin: (req: FastifyRequest) => Promise<AuthContext>;
-  /** Écriture du référentiel : session administrateur, ou jeton de secours `ADMIN_TOKEN`. */
-  authorizeRefWrite: (req: FastifyRequest) => Promise<void>;
+  /** Actions d'administration (écriture du référentiel, purge) : session administrateur, ou jeton de secours `ADMIN_TOKEN`. */
+  authorizeAdmin: (req: FastifyRequest) => Promise<void>;
 }
 
 export interface GuardOptions {
@@ -80,7 +80,7 @@ export function createGuards(options: GuardOptions): Guards {
     return context;
   };
 
-  const authorizeRefWrite = async (req: FastifyRequest): Promise<void> => {
+  const authorizeAdmin = async (req: FastifyRequest): Promise<void> => {
     const hasSessions = options.jwtSecret !== undefined;
     if (options.adminToken === undefined && !hasSessions) {
       throw new HttpError(403, 'forbidden', "L'écriture du référentiel est désactivée.");
@@ -92,5 +92,5 @@ export function createGuards(options: GuardOptions): Guards {
     await requireAdmin(req);
   };
 
-  return { requireUser, requireAdmin, authorizeRefWrite };
+  return { requireUser, requireAdmin, authorizeAdmin };
 }

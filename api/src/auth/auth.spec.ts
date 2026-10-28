@@ -513,6 +513,112 @@ describe.skipIf(testDatabaseUrl === undefined)('comptes (PostgreSQL réel)', () 
     });
   });
 
+  describe('suppression du compte', () => {
+    const del = (t?: string) =>
+      app.inject({ method: 'DELETE', url: '/me', headers: t === undefined ? {} : bearer(t) });
+    const count = async (table: string): Promise<number> => {
+      const [row] = await db.execute<{ n: string }>(
+        sql`select count(*)::text as n from ${sql.identifier('auth')}.${sql.identifier(table)}`,
+      );
+      return Number(row?.n);
+    };
+
+    it('exige une connexion', async () => {
+      expect((await del()).statusCode).toBe(401);
+      expect((await del('abc')).statusCode).toBe(401);
+    });
+
+    it('efface le compte, ses appareils, ses consentements et ses liens en attente', async () => {
+      const a = await login('alice@exemple.fr');
+      await post('/auth/magic-link', { email: 'alice@exemple.fr' });
+      const res = await del(a.accessToken);
+      expect(res.statusCode).toBe(204);
+      expect(res.cookies.find((c) => c.name === REFRESH_COOKIE)?.value).toBe('');
+      for (const table of ['users', 'sessions', 'user_consents', 'login_tokens']) {
+        expect(await count(table), table).toBe(0);
+      }
+    });
+
+    it('coupe aussitôt toutes les sessions du compte', async () => {
+      const first = await login('alice@exemple.fr');
+      await post('/auth/magic-link', { email: 'alice@exemple.fr' });
+      const second = authResponseSchema.parse(
+        (await post('/auth/verify', { token: lastToken(), consent })).json(),
+      );
+      expect((await del(first.accessToken)).statusCode).toBe(204);
+      expect(
+        (await app.inject({ url: '/me', headers: bearer(second.accessToken) })).statusCode,
+      ).toBe(401);
+      expect((await refresh(first.refreshToken)).statusCode).toBe(401);
+      expect((await del(first.accessToken)).statusCode).toBe(401);
+    });
+
+    it('isolation : ne touche à aucune donnée des autres comptes', async () => {
+      const alice = await login('alice@exemple.fr');
+      const bob = await login('bob@exemple.fr');
+      expect((await del(alice.accessToken)).statusCode).toBe(204);
+      expect(await count('users')).toBe(1);
+      expect(await count('sessions')).toBe(1);
+      expect(await count('user_consents')).toBe(3);
+      expect((await app.inject({ url: '/me', headers: bearer(bob.accessToken) })).statusCode).toBe(
+        200,
+      );
+    });
+
+    it('permet de se réinscrire ensuite avec la même adresse, en redonnant son consentement', async () => {
+      const a = await login('alice@exemple.fr');
+      await del(a.accessToken);
+      await post('/auth/magic-link', { email: 'alice@exemple.fr' });
+      const refused = await post('/auth/verify', { token: lastToken() });
+      expect(refused.statusCode).toBe(409);
+    });
+  });
+
+  describe('purge des comptes inactifs (route d’administration)', () => {
+    const purge = (headers: Record<string, string>) =>
+      app.inject({ method: 'POST', url: '/admin/purge-inactive', headers });
+
+    it('est réservée aux administrateurs', async () => {
+      app = await start({ ADMIN_EMAILS: 'admin@exemple.fr' });
+      const admin = await login('admin@exemple.fr');
+      const user = await login('simple@exemple.fr');
+      expect((await purge({})).statusCode).toBe(401);
+      expect((await purge(bearer(user.accessToken))).statusCode).toBe(403);
+      const ok = await purge(bearer(admin.accessToken));
+      expect(ok.statusCode).toBe(200);
+      expect(ok.json()).toEqual({ warned: 0, deleted: 0 });
+      expect(ok.headers['cache-control']).toBe('no-store');
+    });
+
+    it('accepte le jeton de secours et avertit les comptes inactifs', async () => {
+      const token = 'jeton-de-test-0123456789-0123456789';
+      app = await start({ ADMIN_TOKEN: token });
+      await login('vieux@exemple.fr');
+      mailer.sent.length = 0;
+      await db.execute(sql`update auth.users set last_seen_at = now() - interval '13 months'`);
+      const res = await purge(bearer(token));
+      expect(res.json()).toEqual({ warned: 1, deleted: 0 });
+      expect(mailer.sent.map((m) => m.to)).toEqual(['vieux@exemple.fr']);
+    });
+
+    it('un avertissement est annulé par la reconnexion', async () => {
+      const token = 'jeton-de-test-0123456789-0123456789';
+      app = await start({ ADMIN_TOKEN: token });
+      const a = await login('vieux@exemple.fr');
+      await db.execute(sql`update auth.users set last_seen_at = now() - interval '13 months'`);
+      await purge(bearer(token));
+      const [warned] = await db.execute<{ w: Date | null }>(
+        sql`select inactivity_warned_at as w from auth.users`,
+      );
+      expect(warned?.w).not.toBeNull();
+      expect((await refresh(a.refreshToken)).statusCode).toBe(200);
+      const [after] = await db.execute<{ w: Date | null }>(
+        sql`select inactivity_warned_at as w from auth.users`,
+      );
+      expect(after?.w).toBeNull();
+    });
+  });
+
   describe('écriture du référentiel', () => {
     const species = {
       kind: 'fish',

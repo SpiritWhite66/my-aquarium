@@ -540,6 +540,55 @@ describe('fmtBytes', () => {
       expect(fetchMock.mock.calls.some((c) => c[0] === `${API}/me/sessions/d2`)).toBe(true);
     });
 
+    it('supprime le compte après confirmation, et rien si on annule', async () => {
+      ouverts();
+      localStorage.setItem('signedIn', '1');
+      const fetchMock = serveur({
+        'POST /auth/refresh': {
+          status: 200,
+          body: { accessToken: 'jeton', expiresIn: 900, user: me },
+        },
+        'GET /me/sessions': { status: 200, body: { items: [device()] } },
+        'DELETE /me': { status: 204 },
+      });
+      const asked = vi.fn().mockReturnValueOnce(false).mockReturnValueOnce(true);
+      vi.stubGlobal('confirm', asked);
+      app = await bootApp();
+      await app.go('/reglages', 'alice@exemple.fr');
+      const deletions = () => fetchMock.mock.calls.filter((c) => c[0] === `${API}/me`).length;
+
+      app.press('button', 'Supprimer');
+      await app.flush();
+      expect(asked.mock.calls[0]?.[0]).toContain('alice@exemple.fr');
+      expect(asked.mock.calls[0]?.[0]).toContain('irréversible');
+      expect(deletions()).toBe(0);
+
+      app.press('button', 'Supprimer');
+      await app.until(() => app.find('a[href="/connexion"]') !== null);
+      expect(deletions()).toBe(1);
+      expect(app.find('.msg')?.textContent).toContain('Compte supprimé');
+    });
+
+    it('signale une suppression impossible et garde le compte', async () => {
+      ouverts();
+      localStorage.setItem('signedIn', '1');
+      serveur({
+        'POST /auth/refresh': {
+          status: 200,
+          body: { accessToken: 'jeton', expiresIn: 900, user: me },
+        },
+        'GET /me/sessions': { status: 200, body: { items: [device()] } },
+        'DELETE /me': { status: 500 },
+      });
+      vi.stubGlobal('confirm', () => true);
+      app = await bootApp();
+      await app.go('/reglages', 'alice@exemple.fr');
+      app.press('button', 'Supprimer');
+      await app.until(() => app.find('.msg')?.textContent.includes('impossible') === true);
+      expect(app.find('.msg')?.textContent).toContain('Suppression impossible');
+      expect(TestBed.inject(AuthService).user()).not.toBeNull();
+    });
+
     it('se déconnecte', async () => {
       ouverts();
       localStorage.setItem('signedIn', '1');

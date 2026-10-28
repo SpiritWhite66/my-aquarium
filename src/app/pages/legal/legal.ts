@@ -84,7 +84,7 @@ const TITLES: Record<LegalDoc, string> = {
             <h2>Qui reçoit tes données</h2>
             <p>Nos prestataires techniques, uniquement pour faire fonctionner le service : GitHub (pages de l’appli), Render (API), Neon (base de données) et Brevo (envoi des e-mails de connexion, société française). Certains sont établis aux États-Unis ; les transferts sont encadrés par les garanties prévues par le RGPD. Aucune donnée n’est vendue ni utilisée pour de la publicité.</p>
             <h2>Tes droits</h2>
-            <p>Accès, rectification, effacement, limitation, opposition et portabilité de tes données : écris à l’adresse de contact, réponse sous un mois. Tu peux aussi saisir la CNIL (<a href="https://www.cnil.fr" rel="noopener noreferrer">cnil.fr</a>).</p>
+            <p>Accès, rectification, effacement, limitation, opposition et portabilité de tes données : suppression du compte depuis Réglages › Compte, ou pour tout autre droit écris à l’adresse de contact (réponse sous un mois). Tu peux aussi saisir la CNIL (<a href="https://www.cnil.fr" rel="noopener noreferrer">cnil.fr</a>).</p>
             <h2>Âge</h2>
             <p>Le compte est réservé aux personnes d’au moins 15 ans.</p>
           }
@@ -100,7 +100,7 @@ const TITLES: Record<LegalDoc, string> = {
             <h2>Comportement</h2>
             <p>Tu t’engages à ne pas perturber le service, ni tenter d’accéder aux données d’autres personnes. Un compte peut être suspendu en cas d’abus.</p>
             <h2>Fin du compte</h2>
-            <p>Tu peux demander la suppression de ton compte à tout moment à l’adresse de contact. Les comptes inactifs sont supprimés comme indiqué dans la <a routerLink="/confidentialite">politique de confidentialité</a>.</p>
+            <p>Tu peux supprimer ton compte à tout moment depuis Réglages › Compte (ou en écrivant à l’adresse de contact). Les comptes inactifs sont supprimés comme indiqué dans la <a routerLink="/confidentialite">politique de confidentialité</a>.</p>
             <h2>Responsabilité</h2>
             <p>Dans la limite permise par la loi, l’éditeur n’est pas responsable des pertes de données ni des dommages indirects liés à l’usage du service.</p>
             <h2>Évolution et droit applicable</h2>

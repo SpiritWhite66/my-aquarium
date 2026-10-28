@@ -36,8 +36,8 @@ describe.skipIf(databaseUrl === undefined)('comptes (serveur compilé + PostgreS
   async function emailedToken(): Promise<string> {
     const deadline = Date.now() + 5000;
     while (Date.now() < deadline) {
-      const match = /\?token=([\w-]+)/.exec(server.output());
-      if (match?.[1] !== undefined) return match[1];
+      const last = [...server.output().matchAll(/\?token=([\w-]+)/g)].at(-1);
+      if (last?.[1] !== undefined) return last[1];
       await new Promise((r) => setTimeout(r, 50));
     }
     throw new Error('aucun e-mail reçu sur la sortie du serveur');
@@ -107,6 +107,26 @@ describe.skipIf(databaseUrl === undefined)('comptes (serveur compilé + PostgreS
       headers: { authorization: `Bearer ${renewed.accessToken}` },
     });
     expect(afterReplay.status).toBe(401);
+  });
+
+  it('supprime le compte en libre-service', async () => {
+    const other = `suppr-${String(Date.now())}@exemple.fr`;
+    await fetch(`${server.base}/auth/magic-link`, {
+      method: 'POST',
+      headers: json,
+      body: JSON.stringify({ email: other }),
+    });
+    const verify = await fetch(`${server.base}/auth/verify`, {
+      method: 'POST',
+      headers: json,
+      body: JSON.stringify({ token: await emailedToken(), consent: { terms: true, age15: true } }),
+    });
+    const { accessToken } = authResponseSchema.parse(await verify.json());
+    const bearer = { authorization: `Bearer ${accessToken}` };
+
+    const del = await fetch(`${server.base}/me`, { method: 'DELETE', headers: bearer });
+    expect(del.status).toBe(204);
+    expect((await fetch(`${server.base}/me`, { headers: bearer })).status).toBe(401);
   });
 
   it('autorise le cookie entre origines (CORS avec identifiants)', async () => {

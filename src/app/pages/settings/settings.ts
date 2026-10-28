@@ -197,6 +197,13 @@ import { AuthService } from '../../core/auth';
                   }
                 </div>
               }
+              <div class="it" style="flex-wrap: wrap">
+                <div class="grow" style="min-width: 160px">
+                  <p style="font-weight: 600">Supprimer mon compte</p>
+                  <p class="sub">Efface ton adresse et tes appareils connectés du serveur. Tes données restent sur cet appareil.</p>
+                </div>
+                <button class="btn out" type="button" style="color: var(--dg)" (click)="deleteAccount()">Supprimer</button>
+              </div>
             } @else {
               <a class="it" routerLink="/connexion">
                 <span class="ic"><app-icon name="upload" [size]="20" /></span>
@@ -208,6 +215,9 @@ import { AuthService } from '../../core/auth';
           <p class="sub" style="margin: 0">
             <a routerLink="/mentions-legales">Mentions légales</a> · <a routerLink="/confidentialite">Confidentialité</a> · <a routerLink="/conditions">Conditions d’utilisation</a>
           </p>
+          @if (accountMessage(); as m) {
+            <p class="msg" [style.color]="m.error ? 'var(--dg)' : 'var(--ok)'" role="status">{{ m.text }}</p>
+          }
         </section>
       }
 
@@ -246,6 +256,26 @@ import { AuthService } from '../../core/auth';
 export class SettingsPage {
   protected readonly refSync = inject(RefSyncService);
   protected readonly auth = inject(AuthService);
+  protected readonly accountMessage = signal<{ text: string; error: boolean } | null>(null);
+
+  protected async deleteAccount(): Promise<void> {
+    const email = this.auth.user()?.email ?? '';
+    if (
+      !confirm(
+        `Supprimer définitivement le compte ${email} ? Ton adresse et tes appareils connectés seront effacés du serveur. Tes données resteront sur cet appareil. Cette action est irréversible.`,
+      )
+    )
+      return;
+    const ok = await this.auth.deleteAccount();
+    this.accountMessage.set(
+      ok
+        ? { text: 'Compte supprimé. Tes données restent sur cet appareil.', error: false }
+        : {
+            text: 'Suppression impossible pour le moment. Vérifie ta connexion puis réessaie.',
+            error: true,
+          },
+    );
+  }
 
   constructor() {
     // La liste des appareils se charge dès qu'on est connecté (y compris après la reprise de session).

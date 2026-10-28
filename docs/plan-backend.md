@@ -89,7 +89,8 @@ Décisions prises en route : cookie nommé `__Host-refresh` (refusé par le navi
 - [ ] Choisir le service d'envoi d'e-mails gratuit (quota, région UE, DPA) et/ou configurer Google OIDC.
 - [ ] Déploiement Render + Neon (voir étape 2) puis `JWT_SECRET`, clé d'envoi d'e-mails, domaine expéditeur (SPF/DKIM).
 - [ ] **Tester le cookie sur Safari / iOS** ; sinon sous-domaine commun ou repli sur jeton (ADR-0007).
-- [ ] Suppression complète du compte (RGPD), photos B2 comprises (complétée à l'étape 6) ; purge des comptes inactifs.
+- [x] Suppression complète du compte en libre-service (`DELETE /me`, bouton dans Réglages › Compte, confirmation) : compte, appareils, consentements, liens en attente. Les photos B2 et les données d'aquarium seront ajoutées à `deleteAccount` aux étapes 4 et 6 ; l'offre d'effacer aussi les données locales viendra avec la synchronisation (étape 4).
+- [x] Purge des comptes inactifs : avertissement par e-mail après 12 mois sans connexion, suppression 30 jours plus tard, jamais sans avertissement envoyé ; se reconnecter annule l'avertissement. Lancée une minute après le démarrage du service puis chaque jour, et chaque semaine par la tâche GitHub `purge.yml` (`POST /admin/purge-inactive`, qui réveille aussi le service).
 - [ ] Test Playwright de bout en bout contre l'API réelle.
 
 **Terminé quand** : connexion et déconnexion fonctionnent sur ordinateur et mobile, Safari compris.
@@ -134,6 +135,14 @@ Décisions prises en route : cookie nommé `__Host-refresh` (refusé par le navi
 - [ ] Sauvegarde régulière de la base (dump vers B2).
 - [ ] Alerte simple si `/health` échoue (service de surveillance gratuit).
 - [ ] Documentation : variables d'environnement, déploiement, restauration.
+
+## Actions de sécurité à faire plus tard (de ton côté)
+
+- [ ] Changer le mot de passe de la base Neon (Roles › `neondb_owner` › Reset password) puis mettre la nouvelle `DATABASE_URL` dans Render : l'ancien est apparu dans une conversation.
+- [ ] Remplacer `ADMIN_TOKEN` et `JWT_SECRET` (`openssl rand -base64 36`) dans Render : ils sont aussi apparus dans une conversation. Changer `JWT_SECRET` déconnecte tout le monde.
+- [ ] Ajouter le secret `ADMIN_TOKEN` (même valeur que dans Render) dans GitHub › Settings › Secrets and variables › Actions, pour que la tâche hebdomadaire `purge.yml` puisse lancer la purge. Sans lui, elle ne fait rien (le service purge déjà chaque jour tant qu'il tourne).
+- [ ] Activer sur GitHub : Dependency graph, Secret scanning, Push protection.
+- [ ] Vérifier la clé d'API Brevo : filtrage par IP désactivé, aucune copie hors de Render.
 
 ## Plus tard (non cadré)
 

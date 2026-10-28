@@ -90,6 +90,8 @@ export const users = authSchema.table('users', {
     .default('user'),
   createdAt: createdAt(),
   lastSeenAt: timestamp('last_seen_at', { withTimezone: true, mode: 'date' }),
+  /** Avertissement d'inactivité envoyé le … ; remis à zéro dès que la personne se reconnecte. */
+  inactivityWarnedAt: timestamp('inactivity_warned_at', { withTimezone: true, mode: 'date' }),
 });
 
 /** Lien magique : seul le hachage est stocké, usage unique, durée courte. */

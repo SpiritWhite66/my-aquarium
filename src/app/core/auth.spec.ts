@@ -456,4 +456,37 @@ describe('AuthService', () => {
       }
     });
   });
+
+  describe('suppression du compte', () => {
+    it('supprime côté serveur puis ferme la session locale', async () => {
+      const auth = service();
+      reply(200, session('jeton-A'));
+      await auth.verify('lien');
+      reply(204);
+      expect(await auth.deleteAccount()).toBe(true);
+      const { url, init, headers } = lastCall();
+      expect(url).toBe(`${API}/me`);
+      expect(init.method).toBe('DELETE');
+      expect(headers['authorization']).toBe('Bearer jeton-A');
+      expect(auth.user()).toBeNull();
+      expect(localStorage.getItem('signedIn')).toBe('0');
+    });
+
+    it('garde la session quand le serveur refuse ou ne répond pas', async () => {
+      const auth = service();
+      reply(200, session());
+      await auth.verify('lien');
+      reply(500, {});
+      expect(await auth.deleteAccount()).toBe(false);
+      fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+      expect(await auth.deleteAccount()).toBe(false);
+      expect(auth.user()).not.toBeNull();
+    });
+
+    it('échoue sans connexion', async () => {
+      const auth = service();
+      reply(401, {});
+      expect(await auth.deleteAccount()).toBe(false);
+    });
+  });
 });

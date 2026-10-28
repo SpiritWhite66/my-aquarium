@@ -14,6 +14,7 @@ import { ACCESS_TTL_SECONDS, signAccessToken } from './crypto.js';
 import type { Guards } from './guard.js';
 import { type Mailer, magicLinkMail } from './mailer.js';
 import * as repo from './repository.js';
+import { purgeInactiveAccounts } from './retention.js';
 
 /** `__Host-` : le navigateur refuse le cookie sans `Secure`, sans `Path=/` ou avec un `Domain`. */
 export const REFRESH_COOKIE = '__Host-refresh';
@@ -167,6 +168,20 @@ export function registerAuthRoutes(
       })),
     };
     return noStore(reply).send(body);
+  });
+
+  // Suppression du compte en libre-service (RGPD) : le jeton d'accès sert de confirmation, l'appli
+  // demande une confirmation explicite avant d'appeler.
+  app.delete('/me', async (req, reply) => {
+    const { user } = await guards.requireUser(req);
+    await repo.deleteAccount(need().db, user.id);
+    return noStore(reply).clearCookie(REFRESH_COOKIE, cookieOptions).code(204).send();
+  });
+
+  // Appelée chaque semaine par une tâche planifiée : réveille le service et applique la conservation.
+  app.post('/admin/purge-inactive', async (req, reply) => {
+    await guards.authorizeAdmin(req);
+    return noStore(reply).send(await purgeInactiveAccounts(need().db, mailer));
   });
 
   app.delete('/me/sessions/:id', async (req, reply) => {

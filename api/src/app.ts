@@ -25,7 +25,7 @@ export function loggerOptions(config: Pick<Config, 'LOG_LEVEL'>) {
   };
 }
 
-function mailerFor(config: Config): Mailer | undefined {
+export function mailerFor(config: Config): Mailer | undefined {
   if (config.MAIL_TRANSPORT === 'console') {
     return createConsoleMailer((line) => process.stdout.write(`${line}\n`));
   }
@@ -75,7 +75,7 @@ export async function buildApp(
   });
   const mailer = deps.mailer ?? mailerFor(config);
   registerAuthRoutes(app, { db, config, mailer, guards });
-  registerRefRoutes(app, { db, authorizeWrite: guards.authorizeRefWrite });
+  registerRefRoutes(app, { db, authorizeWrite: guards.authorizeAdmin });
 
   app.setNotFoundHandler((_req, reply) => {
     void reply.code(404).send(errorBody('not_found', 'Ressource introuvable.'));

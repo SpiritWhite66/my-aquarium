@@ -39,6 +39,10 @@ L'interrupteur `ACCOUNTS_OPEN` de `src/app/core/api-config.ts` est **ouvert** : 
 3. Relire les textes légaux et vérifier les adresses des hébergeurs.
 4. Tester le cookie sur Safari / iOS.
 
+## Conservation des comptes
+
+Le service purge les comptes inactifs une minute après son démarrage puis chaque jour. Comme l'offre gratuite s'endort, la tâche GitHub `purge.yml` l'appelle aussi chaque semaine : elle exige le secret `ADMIN_TOKEN` dans GitHub › Settings › Secrets and variables › Actions (même valeur que sur Render). Sans lui, la tâche ne fait rien.
+
 ## À savoir sur l'offre gratuite
 
 - Le service s'endort après ~15 min sans requête : la première requête met environ une minute. L'appli reste utilisable hors ligne.

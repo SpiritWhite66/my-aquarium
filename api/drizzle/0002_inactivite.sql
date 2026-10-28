@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."users" ADD COLUMN "inactivity_warned_at" timestamp with time zone;

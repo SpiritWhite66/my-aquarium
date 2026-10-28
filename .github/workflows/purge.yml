@@ -1,0 +1,27 @@
+name: Conservation des comptes
+
+# Réveille le service (offre gratuite : il dort sans visite) et applique la règle de conservation :
+# avertissement après 12 mois d'inactivité, suppression 30 jours plus tard (politique de confidentialité).
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Lancer la purge
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          if [ -z "$ADMIN_TOKEN" ]; then
+            echo "::notice::Secret ADMIN_TOKEN absent du dépôt : purge non lancée (le service la fait aussi chaque jour tant qu'il tourne)."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --max-time 150 --retry 2 --retry-delay 15 \
+            -X POST -H "Authorization: Bearer $ADMIN_TOKEN" \
+            https://mes-aquariums-api.onrender.com/admin/purge-inactive

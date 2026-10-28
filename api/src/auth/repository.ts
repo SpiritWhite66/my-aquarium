@@ -103,7 +103,10 @@ export async function verifyLoginToken(
     const [user] = await tx
       .insert(users)
       .values({ email: login.email, role, lastSeenAt: sql`now()` })
-      .onConflictDoUpdate({ target: users.email, set: { role, lastSeenAt: sql`now()` } })
+      .onConflictDoUpdate({
+        target: users.email,
+        set: { role, lastSeenAt: sql`now()`, inactivityWarnedAt: null },
+      })
       .returning(userColumns);
     if (user === undefined) throw new Error('création du compte impossible');
 
@@ -179,7 +182,7 @@ export async function rotateSession(db: Db, presented: string): Promise<RefreshO
   }
   const [user] = await db
     .update(users)
-    .set({ lastSeenAt: sql`now()` })
+    .set({ lastSeenAt: sql`now()`, inactivityWarnedAt: null })
     .where(eq(users.id, rotated.userId))
     .returning(userColumns);
   if (user === undefined) return { kind: 'invalid' };
@@ -243,4 +246,19 @@ export async function revokeSession(db: Db, userId: string, sessionId: string): 
     .where(and(eq(sessions.id, sessionId), eq(sessions.userId, userId), isNull(sessions.revokedAt)))
     .returning({ id: sessions.id });
   return rows.length > 0;
+}
+
+/**
+ * Supprime le compte et tout ce qui s'y rattache : sessions et consentements (suppression en
+ * cascade), liens de connexion en attente (rattachés à l'adresse, pas au compte). Les données des
+ * étapes suivantes (aquariums, photos) devront être ajoutées ici.
+ */
+export async function deleteAccount(db: Db, userId: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [user] = await tx.select({ email: users.email }).from(users).where(eq(users.id, userId));
+    if (user === undefined) return false;
+    await tx.delete(loginTokens).where(eq(loginTokens.email, user.email));
+    await tx.delete(users).where(eq(users.id, userId));
+    return true;
+  });
 }

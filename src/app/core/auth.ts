@@ -125,6 +125,14 @@ export class AuthService {
     this.clear();
   }
 
+  /** Supprime définitivement le compte et ses données sur le serveur. Les données de l'appareil ne sont pas touchées. */
+  async deleteAccount(): Promise<boolean> {
+    const res = await this.authed('/me', { method: 'DELETE' });
+    if (!res?.ok) return false;
+    this.clear();
+    return true;
+  }
+
   async loadDevices(): Promise<void> {
     const res = await this.authed('/me/sessions');
     if (!res?.ok) return;
