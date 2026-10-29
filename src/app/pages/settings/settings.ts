@@ -319,6 +319,7 @@ export class SettingsPage {
       `Synchronisation : ${this.sync.status()} · en attente : ${String(this.sync.pending())} · dernière : ${this.sync.lastSync() ?? 'jamais'}`,
       `Curseur : ${meta ? String(meta.cursor) : 'aucun'} · compte de l’appareil : ${meta ? (meta.userId === user?.id ? 'le même' : 'différent') : 'aucun'}`,
       `Verrous entre onglets : ${nav.locks ? 'oui' : 'non'} · service worker : ${nav.serviceWorker?.controller ? 'actif' : 'non'}`,
+      `Notifications : ${typeof Notification === 'undefined' ? 'non gérées' : Notification.permission} · appli installée : ${typeof matchMedia === 'function' && matchMedia('(display-mode: standalone)').matches ? 'oui' : 'non'}`,
       `Navigateur : ${nav.userAgent}`,
       '',
       'Derniers échanges (le plus récent en premier) :',
