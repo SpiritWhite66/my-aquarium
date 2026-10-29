@@ -20,7 +20,7 @@ self.addEventListener('push', (event) => {
   if (!data || data.tag !== 'aquarium-daily') return;
   event.waitUntil(
     self.registration
-      .showNotification(data.title, { body: data.body, icon: 'icons/icon-192x192.png', badge: 'icons/icon-192x192.png', tag: 'aquarium-daily' })
+      .showNotification(data.title, { body: data.body, icon: 'icons/icon-192x192.png', badge: 'icons/badge-96x96.png', tag: 'aquarium-daily' })
       .then(markShown),
   );
 });
@@ -82,7 +82,7 @@ async function remind() {
       digest = { title: 'Rappels à mettre à jour', body: 'Ouvre l’appli pour que les rappels de tes bacs continuent.' };
     }
     if (!digest) return;
-    await self.registration.showNotification(digest.title, { body: digest.body, icon: 'icons/icon-192x192.png', badge: 'icons/icon-192x192.png', tag: 'aquarium-daily' });
+    await self.registration.showNotification(digest.title, { body: digest.body, icon: 'icons/icon-192x192.png', badge: 'icons/badge-96x96.png', tag: 'aquarium-daily' });
     const tx = db.transaction('prefs', 'readwrite');
     tx.objectStore('prefs').put({ ...prefs, lastShown: today });
     await new Promise((r) => (tx.oncomplete = r));

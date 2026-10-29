@@ -236,7 +236,7 @@ describe('affichage', () => {
     expect(showNotification).toHaveBeenCalledWith('Une chose à faire pour tes bacs', {
       body: 'Test',
       icon: 'icons/icon-192x192.png',
-      badge: 'icons/icon-192x192.png',
+      badge: 'icons/badge-96x96.png',
       tag: 'aquarium-daily',
     });
     expect(shown).toEqual([]);

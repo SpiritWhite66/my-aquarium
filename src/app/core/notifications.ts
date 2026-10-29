@@ -131,7 +131,7 @@ export class NotificationService {
     const options = {
       body: d.body,
       icon: 'icons/icon-192x192.png',
-      badge: 'icons/icon-192x192.png',
+      badge: 'icons/badge-96x96.png',
       tag: 'aquarium-daily',
     };
     const reg = await this.registration();
